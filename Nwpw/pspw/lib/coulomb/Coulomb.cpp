@@ -36,12 +36,83 @@
 
 namespace pwdft {
 
+/*************************************************
+ *                                               *
+ *  Coulomb_Operator::update_lattice_keep_basis  *
+ *                                               *
+ *************************************************/
+void Coulomb_Operator::update_lattice_keep_basis()
+{
+   if (mypneb == nullptr)
+   {
+       throw std::runtime_error( "Coulomb_Operator::update_lattice_keep_basis: " "null Pneb pointer");
+   }
+
+   if (vg == nullptr)
+   {
+       throw std::runtime_error( "Coulomb_Operator::update_lattice_keep_basis: " "kernel is not allocated");
+   }
+
+   const int nfft3d = mypneb->nfft3d;
+   const int npack0 = mypneb->npack(0);
+   const double* Gx = mypneb->Gxyz(0);
+   const double* Gy = mypneb->Gxyz(1);
+   const double* Gz = mypneb->Gxyz(2);
+
+   constexpr double four_pi = 4.0 * units::PI;
+
+   const int taskid = mypneb->d3db::parall->taskid_i();
+   const int zero_owner = mypneb->ijktop(0, 0, 0);
+   const int zero_index = mypneb->ijktoindex(0, 0, 0);
+
+   std::vector<double> kernel(nfft3d, 0.0);
+
+   for (int k=0; k<nfft3d; ++k)
+   {
+      const double g2 = Gx[k]*Gx[k] + Gy[k]*Gy[k] + Gz[k]*Gz[k];
+
+      if (zero_owner == taskid && k == zero_index)
+      {
+          kernel[k] = 0.0;
+      }
+      else if (g2 > 1.0e-14)
+      {
+          kernel[k] = four_pi / g2;
+      }
+      else
+      {
+          kernel[k] = 0.0;
+      }
+   }
+
+   // Reuse the existing mask and packarray.
+   mypneb->t_pack(0, kernel.data());
+   mypneb->tt_pack_copy( 0, kernel.data(), vg);
+}
+
 /*******************************************
  *                                         *
  *     Coulomb_Operator::Coulomb_Operator  *
  *                                         *
  *******************************************/
-Coulomb_Operator::Coulomb_Operator(Pneb *mygrid, Control2 &control) {
+Coulomb_Operator::Coulomb_Operator( Pneb* mygrid, Control2& control)
+{
+   mypneb = mygrid;
+
+    if (mypneb == nullptr)
+    {
+        throw std::invalid_argument("Coulomb_Operator: null Pneb pointer");
+    }
+
+    vg = new double[mypneb->npack(0)]();
+
+    update_lattice_keep_basis();
+}
+
+
+/*
+Coulomb_Operator::Coulomb_Operator(Pneb *mygrid, Control2 &control) 
+{
   int k, pzero, zero, taskid;
   double gg;
   double *Gx = mygrid->Gxyz(0);
@@ -70,6 +141,7 @@ Coulomb_Operator::Coulomb_Operator(Pneb *mygrid, Control2 &control) {
 
   delete[] tmp;
 }
+*/
 
 /*******************************************
  *                                         *
@@ -200,5 +272,7 @@ void Coulomb_Operator::euv(const double *dng, double *stress)
    }
    
 }
+
+void update_lattice_keep_basis();
 
 } // namespace pwdft

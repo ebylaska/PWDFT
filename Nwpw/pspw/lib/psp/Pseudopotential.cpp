@@ -1912,6 +1912,7 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin,
    myion = myionin;
    mypneb = mypnebin;
    mystrfac = mystrfacin;
+   control_ = &control;
  
    myefield = new nwpw_efield(myion,mypneb,mystrfac,control,coutput);
    myapc    = new nwpw_apc(myion,mypneb,mystrfac,control,coutput);
@@ -3977,5 +3978,51 @@ std::string Pseudopotential::print_pspall()
  
    return stream.str();
 }
+
+
+/**************************************************
+ *                                                *
+ *   Pseudopotential::update_lattice_keep_basis   *
+ *                                                *
+ **************************************************/
+/**
+ * @brief Rebuild lattice-dependent pseudopotential data in place.
+ *
+ * Reconstructs the pseudopotential object at the same memory address after
+ * the lattice and reciprocal-space grid have changed. This preserves the
+ * validity of pointers held by Electron_Operators while regenerating the
+ * reciprocal-space local, nonlocal, semicore, and stress kernels.
+ *
+ * @param coutput Output stream used for pseudopotential diagnostics.
+ *
+ * @note This method must be called only when no Pseudopotential member
+ *       function is currently executing.
+ */
+void Pseudopotential::update_lattice_keep_basis(std::ostream& coutput)
+{
+   if (control_ == nullptr)
+   {
+      throw std::runtime_error( "Pseudopotential::update_lattice_keep_basis: " "Control2 pointer is null");
+   }
+
+   if (myion == nullptr || mypneb == nullptr || mystrfac == nullptr)
+   {
+      throw std::runtime_error("Pseudopotential::update_lattice_keep_basis: " "invalid dependent object");
+   }
+
+   // Save the dependencies before destroying this object.
+   Ion* ion          = myion;
+   Pneb* pneb        = mypneb;
+   Strfac* strfac    = mystrfac;
+   Control2* control = control_;
+
+   // The object must be reconstructed at exactly the same address.
+   //    Electron_Operators contains a pointer to this Pseudopotential object.
+   //    Placement new preserves that address.
+   this->~Pseudopotential();
+
+   new (this) Pseudopotential(ion, pneb, strfac, *control, coutput);
+}
+
 
 } // namespace pwdft

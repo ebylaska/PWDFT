@@ -332,4 +332,38 @@ void HFX_Operator::e_exchange(const double *psi_r,double& ehfx_out, double& phfx
    */
 }
 
+
+/**********************************************
+ *                                            *
+ *   HFX_Operator::update_lattice_keep_basis  *   
+ *                                            *
+ **********************************************/
+void HFX_Operator::update_lattice_keep_basis()
+{
+   if (!hfx_on) return;
+
+   // Periodic HFX caches vg. Rebuild it from the updated PGrid.
+   if (solver_type == 0)
+   {
+      if (mypneb == nullptr)
+      {
+         throw std::runtime_error( "HFX_Operator::update_lattice_keep_basis: " "null Pneb pointer");
+      }
+
+      if (vg == nullptr)
+      {
+         vg = new double[ static_cast<std::size_t>(mypneb->npack(0)) ]();
+      }
+
+      coulomb_screened_kernel( mypneb, screening_type, rcut, pp, attenuation, kernel_filter_filename, vg);
+
+      return;
+   }
+
+   // Aperiodic HFX:
+   //    mycoulomb2 is unchanged when the isolated computational box is fixed.
+   //    Rebuild it only if the box itself has changed.
+   //
+}
+
 } // namespace pwdft

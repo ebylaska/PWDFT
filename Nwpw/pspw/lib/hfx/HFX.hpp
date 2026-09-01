@@ -11,16 +11,16 @@ namespace pwdft {
 
 class HFX_Operator {
 
-   Pneb *mypneb;
+   Pneb *mypneb = nullptr;
 
    bool has_coulomb2 = false;
    bool new_coulomb2 = false;
-   Coulomb2_Operator *mycoulomb2;
+   Coulomb2_Operator *mycoulomb2 = nullptr;
 
    int ispin;
    int norbs[2];
    int *orbital_list[2];
-   double *vg;
+   double *vg=nullptr;
    double *ehfx_orb[2];
 
    std::string kernel_filter_filename;
@@ -155,6 +155,9 @@ public:
       }
       return os;
    }
+
+   void update_lattice_keep_basis();
+
 };
 
 

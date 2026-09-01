@@ -4749,4 +4749,158 @@ void PGrid::rrrr_FD_laplacian(const double *rho, double *rhoxx, double *rhoyy,
   }
 }
 
+
+/****************************************
+ *                                      *
+ *   PGrid::update_lattice_keep_basis   *
+ *                                      *
+ ****************************************/
+/**
+ * @brief Update the lattice while preserving the existing FFT basis support.
+ *
+ * The FFT dimensions, plane-wave mask, packed-index maps, distribution maps,
+ * and allocated work arrays are preserved. The physical reciprocal vectors
+ * are recomputed for the new lattice and repacked into Gpack[0] and Gpack[1].
+ *
+ * This is intended for variable-cell optimization where rebuilding the hard
+ * plane-wave mask at every step would introduce basis-set jitter.
+ *
+ * @param[in] unita_new
+ *     New column-major 3x3 direct-lattice matrix.
+ *
+ * @note
+ *     The existing mask remains frozen. The retained integer FFT indices are
+ *     unchanged, but their physical G-vectors and kinetic energies change.
+ *
+ * @throws std::invalid_argument
+ *     If unita_new is null.
+ *
+ * @throws std::runtime_error
+ *     If the lattice is singular.
+ */
+
+void PGrid::update_lattice_keep_basis(const double unita_new[9])
+{
+   if (unita_new == nullptr)
+   {
+       throw std::invalid_argument("PGrid::update_lattice_keep_basis: " "null lattice pointer");
+   }
+
+   if (lattice == nullptr)
+   {
+       throw std::runtime_error("PGrid::update_lattice_keep_basis: " "null lattice object");
+   }
+
+   const int old_n2ft3d     = n2ft3d;
+   const int old_nwave_all0 = nwave_all[0];
+   const int old_nwave_all1 = nwave_all[1];
+   const int old_nida0      = nida[0];
+   const int old_nida1      = nida[1];
+   const int old_nidb0      = nidb[0];
+   const int old_nidb1      = nidb[1];
+
+   // Update direct lattice, reciprocal lattice, reciprocal transform,
+   //    and cell volume. The cutoff values and FFT dimensions remain fixed.
+   lattice->update_unita_keep_basis(unita_new);
+
+   const int nxh = nx / 2;
+   const int nyh = ny / 2;
+   const int nzh = nz / 2;
+
+   double ggmax = 0.0;
+   double ggmin = 9.9e9;
+
+   double* Gx = Garray;
+   double* Gy = Garray + nfft3d;
+   double* Gz = Garray + 2*nfft3d;
+
+   // Garray contains only entries owned by this task. Entries not owned
+   // by this task are zero and are not used locally by t_pack().
+   std::fill(Garray, Garray+3*nfft3d, 0.0);
+
+   // Use the same integer FFT-index traversal as the constructor.
+   // Do not change the mask or packarray.
+   for (int k3= -nzh+1; k3<=nzh; ++k3)
+   {
+      for (int k2= -nyh+1; k2<=nyh; ++k2)
+      {
+         for (int k1=0; k1<=nxh; ++k1)
+         {
+            const double gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
+            const double gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
+            const double gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
+
+            const double g2 = gx*gx + gy*gy + gz*gz;
+
+            ggmax = std::max(ggmax, g2);
+
+            if (g2 > 1.0e-6) ggmin = std::min(ggmin, g2);
+
+            int i = k1;
+            int j = k2;
+            int k = k3;
+
+            if (i < 0) i += nx;
+            if (j < 0) j += ny;
+            if (k < 0) k += nz;
+
+            const int index = ijktoindex(i, j, k);
+            const int owner = ijktop(i, j, k);
+
+            if (owner == parall->taskid_i())
+            {
+               Gx[index] = gx;
+               Gy[index] = gy;
+               Gz[index] = gz;
+            }
+         }
+      }
+   }
+
+   Gmax = std::sqrt(ggmax);
+
+   if (ggmin < 9.9e9)
+      Gmin = std::sqrt(ggmin);
+
+   // Repack the updated physical G-vectors using the existing mask,
+   // packarray, and balance maps.
+   std::vector<double> Gtmp( static_cast<std::size_t>(nfft3d), 0.0);
+
+   for (int nb=0; nb<=1; ++nb)
+   {
+       const int packed_size = nida[nb] + nidb[nb];
+
+       for (int component=0; component<3; ++component)
+       {
+           std::memcpy(Gtmp.data(), Garray+component*nfft3d, static_cast<std::size_t>(nfft3d)*sizeof(double));
+
+           // t_pack uses the old packarray and old mask. It may also
+           //    apply the existing load-balancing map.
+           t_pack(nb, Gtmp.data());
+
+           tt_pack_copy(nb, Gtmp.data(), Gpack[nb]+component*packed_size);
+       }
+   }
+
+   // The real-space grid coordinates depend on the direct lattice, but
+   //    the FFT dimensions and allocation remain unchanged.
+   if (has_r_grid)
+      regenerate_r_grid();
+
+   // These quantities must not change in a fixed-basis update.
+   if (n2ft3d != old_n2ft3d ||
+       nwave_all[0] != old_nwave_all0 ||
+       nwave_all[1] != old_nwave_all1 ||
+       nida[0] != old_nida0 ||
+       nida[1] != old_nida1 ||
+       nidb[0] != old_nidb0 ||
+       nidb[1] != old_nidb1)
+   {
+      throw std::runtime_error("PGrid::update_lattice_keep_basis: " "FFT/basis layout changed unexpectedly");
+   }
+}
+
+
+
+
 } // namespace pwdft

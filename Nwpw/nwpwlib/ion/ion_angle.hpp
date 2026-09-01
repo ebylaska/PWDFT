@@ -52,6 +52,8 @@ public:
   double energy();
   double energyfion(double *);
   std::string print_all(const int);
+
+  void update_lattice(const double unita[9]);
 };
 } // namespace pwdft
 

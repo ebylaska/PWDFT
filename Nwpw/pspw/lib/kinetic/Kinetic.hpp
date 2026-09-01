@@ -10,9 +10,11 @@ class Kinetic_Operator {
   double *tg;
   Pneb *mypneb;
 
+  void rebuild_kinetic_coefficients();
+
 public:
   /* Constructors */
-  Kinetic_Operator(Pneb *);
+  explicit Kinetic_Operator(Pneb *);
 
   /* destructor */
   ~Kinetic_Operator() { delete[] tg; }
@@ -26,6 +28,9 @@ public:
   void ke_euv(double *psi, double *stress, double *occ = nullptr);
  
   void ke_precondition(const double, const int, double *, double*);
+
+  void update_lattice_keep_basis();
+
 };
 
 } // namespace pwdft

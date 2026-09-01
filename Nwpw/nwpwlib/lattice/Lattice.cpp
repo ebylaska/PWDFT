@@ -289,4 +289,58 @@ void Lattice::min_diff(double *rxyz)
 
 }
 
+/**************************************
+ *                                    *
+ *  Lattice::update_untia_keep_basis  *
+ *                                    *
+ **************************************/
+/**
+ * @brief Update direct and reciprocal lattice metadata without changing
+ *        the FFT grid or plane-wave cutoff metadata.
+ *
+ * The direct lattice vectors, reciprocal lattice vectors, reciprocal
+ * coordinate transform, and cell volume are recomputed. The FFT grid
+ * dimensions and effective cutoff values are left unchanged.
+ *
+ * @param[in] unita_new
+ *     New column-major 3x3 direct-lattice matrix.
+ *
+ * @throws std::invalid_argument
+ *     If unita_new is null.
+ *
+ * @throws std::runtime_error
+ *     If the new lattice is singular.
+ */
+void Lattice::update_unita_keep_basis( const double unita_new[9])
+{
+   if (unita_new == nullptr)
+   {
+       throw std::invalid_argument( "Lattice::update_unita_keep_basis: " "null lattice pointer");
+   }
+
+   // Compute the determinant before modifying the current lattice.
+   const double det = unita_new[0] * (unita_new[4] * unita_new[8] - unita_new[7] * unita_new[5])
+                    - unita_new[3] * (unita_new[1] * unita_new[8] - unita_new[7] * unita_new[2])
+                    + unita_new[6] * (unita_new[1] * unita_new[5] - unita_new[4] * unita_new[2]);
+
+   if (std::abs(det) < 1.0e-14)
+   {
+       throw std::runtime_error( "Lattice::update_unita_keep_basis: " "singular lattice");
+   }
+
+   // Copy the new direct lattice.
+   for (int i = 0; i < 9; ++i)
+       punita[i] = unita_new[i];
+
+   // Recompute:
+   //    - punitg : reciprocal lattice vectors, including 2*pi
+   //    - pub    : reciprocal coordinate transform, without 2*pi
+   //    - pomega : cell volume
+   //  - Keep pecut and pwcut unchanged. They define the fixed basis
+   //   support/cutoff policy selected when the PGrid was constructed.
+   get_cube(punita, punitg, &pomega);
+   get_ub(punita, pub);
+}
+
+
 } // namespace pwdft

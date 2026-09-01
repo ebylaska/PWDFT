@@ -95,6 +95,8 @@ Ewald::Ewald(Parallel *inparall, Ion *inion, Lattice *inlattice, Control2 &contr
    double q, z, zz;
    double eps = 1.0e-12;
  
+   ercut_auto = (control.ewald_rcut() <= 0.0);
+
    ewaldparall = inparall;
    ewaldion = inion;
    ewaldlattice = inlattice;
@@ -977,5 +979,191 @@ void Ewald::stress(double *stress)
 
 
 }
+
+
+/*****************************************
+ *                                       *
+ *    Ewald::update_lattice_keep_basis   *
+ *                                       *
+ *****************************************/
+/**
+ * @brief Update Ewald quantities after a lattice change.
+ *
+ * The existing Ewald reciprocal-space support is preserved:
+ *
+ *     enpack
+ *     enida
+ *     i_indx
+ *     j_indx
+ *     k_indx
+ *
+ * The physical reciprocal vectors, reciprocal kernels, real-space cell-image
+ * vectors, Mandelung constant, self/background terms, and ionic phase factors
+ * are recomputed using the current lattice.
+ *
+ * This avoids reallocating the Ewald arrays and preserves the existing Ewald
+ * basis layout. The method is appropriate only for sufficiently small lattice
+ * changes. If the Ewald cutoff support must change, reconstruct the Ewald
+ * object instead.
+ */
+void Ewald::update_lattice_keep_basis()
+{
+   if (ewaldlattice == nullptr || ewaldion == nullptr || ewaldparall == nullptr)
+   {
+      throw std::runtime_error( "Ewald::update_lattice_keep_basis: " "invalid Ewald dependencies");
+   }
+
+   const int tnp  = ewaldparall->np();
+   const int tid  = ewaldparall->taskid();
+   const int nion = ewaldion->nion;
+
+   constexpr double pi     = units::PI;
+   constexpr double fourpi = 4.0 * pi;
+   constexpr double eps    = 1.0e-12;
+
+   // Refresh cached direct and reciprocal lattice matrices.
+   for (int j=0; j<3; ++j)
+   {
+      for (int i=0; i<3; ++i)
+      {
+         unita[i + 3*j] = ewaldlattice->unita(i, j);
+         unitg[i + 3*j] = ewaldlattice->unitg(i, j);
+      }
+   }
+
+   // Recompute ercut only if it was automatically selected.
+   if (ercut_auto)
+   {
+      double a = std::sqrt(unita[0]*unita[0] + unita[1]*unita[1] + unita[2]*unita[2]);
+      double b = std::sqrt(unita[3]*unita[3] + unita[4]*unita[4] + unita[5]*unita[5]);
+      double c = std::sqrt(unita[6]*unita[6] + unita[7]*unita[7] + unita[8]*unita[8]);
+
+      ercut = std::min({a, b, c}) / pi;
+   }
+
+   // The real-space cutoff shell size is fixed by the original object.
+   //    Recompute its Cartesian lattice-image vectors.
+   int l = 0;
+
+   rcell[l] = 0.0;
+   rcell[l + enshl3d] = 0.0;
+   rcell[l + 2 * enshl3d] = 0.0;
+
+   for (int k = -encut; k <= encut; ++k)
+   {
+      for (int j = -encut; j <= encut; ++j)
+      {
+         for (int i = -encut; i <= encut; ++i)
+         {
+            if (i == 0 && j == 0 && k == 0)
+                continue;
+
+            ++l;
+
+            rcell[l]           = i*unita[0] + j*unita[3] + k*unita[6];
+            rcell[l+enshl3d]   = i*unita[1] + j*unita[4] + k*unita[7];
+            rcell[l+2*enshl3d] = i*unita[2] + j*unita[5] + k*unita[8];
+         }
+      }
+   }
+
+   // Recompute reciprocal Ewald vectors and kernels using the existing
+   //    integer reciprocal-grid indices.
+   std::fill(eG, eG + 3*enpack, 0.0);
+
+   for (int k=0; k<enpack; ++k)
+   {
+      int i = i_indx[k];
+      int j = j_indx[k];
+      int lz = k_indx[k];
+
+      // Convert stored FFT indices to signed indices.
+      if (j >= eny / 2)
+         j -= eny;
+
+      if (lz >= enz / 2)
+         lz -= enz;
+
+      const double gx = i  * unitg[0] + j  * unitg[3] + lz * unitg[6];
+      const double gy = i  * unitg[1] + j  * unitg[4] + lz * unitg[7];
+      const double gz = i  * unitg[2] + j  * unitg[5] + lz * unitg[8];
+
+      eG[k] = gx;
+      eG[k + enpack] = gy;
+      eG[k + 2 * enpack] = gz;
+   }
+
+   // Recompute reciprocal kernels.
+   //    The zero-G entry is excluded from the Coulomb kernel. In the
+   //    original implementation this is represented by enida.
+   const double w = 0.25 * ercut * ercut;
+
+   for (int k=0; k<enpack; ++k)
+   {
+      vg[k] = 0.0;
+      vcx[k] = 0.0;
+   }
+
+   for (int k=enida; k<enpack; ++k)
+   {
+      const double gx = eG[k];
+      const double gy = eG[k + enpack];
+      const double gz = eG[k + 2 * enpack];
+
+      const double gg = gx*gx + gy*gy + gz*gz;
+
+      if (gg > eps)
+      {
+         const double kernel = fourpi / gg;
+
+         vcx[k] = kernel;
+         vg[k] = kernel * std::exp(-w * gg);
+      }
+   }
+
+   // Recompute the lattice-dependent Mandelung constant.
+   alpha = mandelung_get(ewaldlattice);
+
+   // Recompute the Ewald correction term.
+   double zz = 0.0;
+   double z  = 0.0;
+
+   for (int i=0; i<nion; ++i)
+   {
+      const double q = zv[ewaldion->katm[i]];
+
+      zz += q * q;
+      z  += q;
+   }
+
+   double cewald_local = 0.0;
+
+   for (int k = 0; k < enpack; ++k)
+      cewald_local += vg[k];
+
+   cewald_local *= 2.0;
+
+   if (tnp > 1)
+   {
+      cewald = ewaldparall->SumAll(0, cewald_local);
+   }
+   else
+   {
+      cewald = cewald_local;
+   }
+
+   const double rs = std::pow(3.0*ewaldlattice->omega()/fourpi, 1.0/3.0);
+
+   cewald = -0.5*zz*(alpha/rs+cewald/ewaldlattice->omega()) - 0.5*(z*z-zz)*ercut*ercut*pi/ewaldlattice->omega();
+
+    // Recompute ionic phase factors using the updated reciprocal lattice
+    //    and current ionic positions.
+   phafac();
+
+   // ftmp, ss, exi, and tmp3 are work arrays and do not need rebuilding.
+   (void)tid;
+}
+
+
 
 } // namespace pwdft

@@ -18,6 +18,10 @@ class Ewald
    double unita[9], unitg[9], ercut, cewald, alpha;
    double eecut;
 
+private:
+   bool ercut_auto = false;
+
+
 public:
    Parallel *ewaldparall;
    Ion *ewaldion;
@@ -70,6 +74,9 @@ public:
    double rsalpha() {
      return (alpha * pow((16.0 * atan(1.0) / 3.0), 1.0 / 3.0));
    }
+
+   void update_lattice_keep_basis();
+
 };
 } // namespace pwdft
 

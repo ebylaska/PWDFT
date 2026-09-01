@@ -25,6 +25,8 @@ public:
    /* constructor */
    Lattice(Control2 &);
  
+
+   //lattice operations
    double unita1d(const int i) { return punita[i]; }
    double unitg1d(const int i) { return punitg[i]; }
    double unita(const int i, const int j) { return punita[i+j*3]; }
@@ -45,6 +47,10 @@ public:
  
    bool fast_erf() { return pfast_erf; }
    bool aperiodic() { return paperiodic; }
+
+   // update lattice
+   void update_unita_keep_basis(const double unita_new[9]);
+   
 
 };
 } // namespace pwdft

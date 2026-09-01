@@ -19,6 +19,39 @@
 
 namespace pwdft {
 
+
+/*********************************************************
+ *                                                       *
+ *     Kinetic_Operator::rebuild_kinetic_coefficients    *
+ *                                                       *
+ *********************************************************/
+void Kinetic_Operator::rebuild_kinetic_coefficients()
+{
+   if (mypneb == nullptr)
+   {
+       throw std::runtime_error("Kinetic_Operator: null Pneb pointer");
+   }
+
+   if (tg == nullptr)
+   {
+       throw std::runtime_error( "Kinetic_Operator: kinetic array is not allocated");
+   }
+
+   const std::size_t ksize = static_cast<std::size_t>(mypneb->npack(1));
+
+   double* Gx = mypneb->Gpackxyz(1, 0);
+   double* Gy = mypneb->Gpackxyz(1, 1);
+   double* Gz = mypneb->Gpackxyz(1, 2);
+
+   for (std::size_t k = 0; k < ksize; ++k)
+   {
+      const double g2 = Gx[k]*Gx[k] + Gy[k]*Gy[k] + Gz[k]*Gz[k];
+
+      // Kinetic operator convention: T(G) = -|G|^2 / 2
+      tg[k] = -0.5 * g2;
+   }
+}
+
 /*******************************************
  *                                         *
  *     Kinetic_Operator::Kinetic_Operator  *
@@ -35,6 +68,21 @@ namespace pwdft {
  * 
  * @note This constructor allocates memory for 'tg' that must be managed by the class.
  */
+Kinetic_Operator::Kinetic_Operator(Pneb* mygrid) : mypneb(mygrid)
+{
+   if (mypneb == nullptr)
+   {
+       throw std::runtime_error("Kinetic_Operator: null Pneb pointer");
+   }
+
+   const std::size_t ksize = static_cast<std::size_t>(mypneb->npack(1));
+
+   tg = new double[ksize];
+
+   rebuild_kinetic_coefficients();
+}
+
+/*
 Kinetic_Operator::Kinetic_Operator(Pneb *mygrid) : mypneb(mygrid)
 {
    //mypneb = mygrid;
@@ -61,6 +109,7 @@ Kinetic_Operator::Kinetic_Operator(Pneb *mygrid) : mypneb(mygrid)
       this->tg[k] = -0.5*gg;
    }
 }
+*/
 
 
 /*******************************************
@@ -364,6 +413,23 @@ void Kinetic_Operator::ke_precondition(const double Ep, const int neall, double 
       }
    }
 }
+
+/************************************************
+ *                                              *
+ *  Kinetic_Operator::update_lattice_keep_basis *  
+ *                                              *
+ ************************************************/
+ /**
+  * @brief Recompute kinetic coefficients after a lattice update.
+  *
+  * The FFT grid, plane-wave support, and packed basis are assumed to be
+  * unchanged. Only the physical G-vectors have changed.
+  */
+void Kinetic_Operator::update_lattice_keep_basis()
+{
+   rebuild_kinetic_coefficients();
+}
+
 
 
 } // namespace pwdft

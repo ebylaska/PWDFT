@@ -3703,6 +3703,146 @@ void Ion::compute_molecular_thermo(const std::vector<double>& freq_cm,
 
 
 
+/***********************************************
+ *                                             *
+ *    Ion::transform_positions_with_lattice    *
+ *                                             *
+ ***********************************************/
+/**
+ * @brief Transform ionic positions to a new lattice while preserving
+ *        their fractional coordinates.
+ *
+ * For each position:
+ *
+ *     s       = A_old^{-1} r_old
+ *     r_new   = A_new s
+ *
+ * Both lattice matrices use column-major storage, with lattice vectors
+ * stored as columns. The ionic positions @c rion1 and @c rion2 are updated.
+ *
+ * Velocities are not transformed because @c rion0 stores Cartesian
+ * velocities rather than positions.
+ *
+ * @param[in] unita_old
+ *     Original 3x3 column-major lattice matrix.
+ *
+ * @param[in] unita_new
+ *     New 3x3 column-major lattice matrix.
+ *
+ * @throws std::runtime_error
+ *     If the old lattice is singular.
+ */
+void  Ion::transform_positions_with_lattice(const double unita_old[9], const double unita_new[9])
+{
+   if (unita_old == nullptr || unita_new == nullptr)
+   {
+       throw std::invalid_argument(
+           "Ion::transform_positions_with_lattice: "
+           "null lattice pointer");
+   }
+
+   // Copy the lattice matrices so the function also works safely if
+   // the input arrays alias internal storage that may be modified later.
+   double Aold[9];
+   double Anew[9];
+
+   for (int i=0; i<9; ++i)
+   {
+      Aold[i] = unita_old[i];
+      Anew[i] = unita_new[i];
+   }
+
+   // Column-major determinant:
+   //     A = | A0 A3 A6 |
+   //         | A1 A4 A7 |
+   //         | A2 A5 A8 |
+   const double det = Aold[0] * (Aold[4] * Aold[8] - Aold[7] * Aold[5])
+                    - Aold[3] * (Aold[1] * Aold[8] - Aold[7] * Aold[2])
+                    + Aold[6] * (Aold[1] * Aold[5] - Aold[4] * Aold[2]);
+
+   if (std::abs(det) < 1.0e-14)
+   {
+       throw std::runtime_error(
+           "Ion::transform_positions_with_lattice: "
+           "old lattice is singular");
+   }
+
+   // Inverse of the old column-major lattice matrix.
+   const double invdet = 1.0 / det;
+
+   double Aold_inv[9];
+
+   Aold_inv[0] = (Aold[4] * Aold[8] - Aold[7] * Aold[5]) * invdet;
+   Aold_inv[1] = (Aold[2] * Aold[7] - Aold[1] * Aold[8]) * invdet;
+   Aold_inv[2] = (Aold[1] * Aold[5] - Aold[2] * Aold[4]) * invdet;
+   Aold_inv[3] = (Aold[5] * Aold[6] - Aold[3] * Aold[8]) * invdet;
+   Aold_inv[4] = (Aold[0] * Aold[8] - Aold[6] * Aold[2]) * invdet;
+   Aold_inv[5] = (Aold[2] * Aold[3] - Aold[0] * Aold[5]) * invdet;
+   Aold_inv[6] = (Aold[3] * Aold[7] - Aold[6] * Aold[4]) * invdet;
+   Aold_inv[7] = (Aold[1] * Aold[6] - Aold[0] * Aold[7]) * invdet;
+   Aold_inv[8] = (Aold[0] * Aold[4] - Aold[3] * Aold[1]) * invdet;
+
+   // Transform one Cartesian position:
+   //     s = Aold_inv * r_old
+   //     r = Anew     * s
+   auto transform_array = [&](double* positions) {
+      if (positions == nullptr)
+          return;
+
+      for (int atom = 0; atom < nion; ++atom)
+      {
+         const double x = positions[3 * atom + 0];
+         const double y = positions[3 * atom + 1];
+         const double z = positions[3 * atom + 2];
+
+         // Old Cartesian position -> fractional position.
+         const double sx = Aold_inv[0]*x + Aold_inv[3]*y + Aold_inv[6]*z;
+         const double sy = Aold_inv[1]*x + Aold_inv[4]*y + Aold_inv[7]*z;
+         const double sz = Aold_inv[2]*x + Aold_inv[5]*y + Aold_inv[8]*z;
+
+         // Fractional position -> new Cartesian position.
+         positions[3 * atom + 0] = Anew[0]*sx + Anew[3]*sy + Anew[6]*sz;
+         positions[3 * atom + 1] = Anew[1]*sx + Anew[4]*sy + Anew[7]*sz;
+         positions[3 * atom + 2] = Anew[2]*sx + Anew[5]*sy + Anew[8]*sz;
+      }
+   };
+
+   // rion1 and rion2 are Cartesian position arrays.
+   transform_array(rion1);
+   transform_array(rion2);
+
+   // rion_incell0 is also a position-like buffer, if it has already
+   //    been initialized. It is safer to regenerate it later with:
+   // 
+   //      set_rion_incell(1, new_lattice);
+   //  
+   //    so it is intentionally not transformed here.
+}
+
+
+/***********************************************
+ *                                             *
+ *    Ion::update_constraint_lattice           *
+ *                                             *
+ ***********************************************/
+void Ion::update_constraint_lattice(const double unita_new[9])
+{
+   if (mybond != nullptr)
+      mybond->update_lattice(unita_new);
+
+   if (mybondings != nullptr)
+      mybondings->update_lattice(unita_new);
+
+   // Add this if ion_angle/ion_cbond are enabled in Ion.
+   /*
+   if (myangle != nullptr)
+      myangle->update_lattice(unita_new);
+
+   if (mycbond != nullptr)
+      mycbond->update_lattice(unita_new);
+   */
+
+}
 
 
 

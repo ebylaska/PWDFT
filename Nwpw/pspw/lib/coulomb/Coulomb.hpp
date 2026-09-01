@@ -10,8 +10,11 @@ namespace pwdft {
 
 class Coulomb_Operator {
 
-  double *vg;
-  Pneb *mypneb;
+  //double *vg;
+  //Pneb *mypneb;
+
+  double* vg = nullptr;
+  Pneb* mypneb = nullptr;
 
 public:
   /* Constructors */
@@ -19,6 +22,8 @@ public:
 
   /* destructor */
   ~Coulomb_Operator() { delete[] vg; }
+
+  void update_lattice_keep_basis();
 
   void vcoulomb(const double *, double *);
   double ecoulomb(const double *);

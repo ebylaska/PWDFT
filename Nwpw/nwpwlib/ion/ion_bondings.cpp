@@ -285,5 +285,20 @@ void ion_bondings::min_diff_xyz(double *x, double *y, double *z)
      return stream.str();
   }
 
+   /*******************************************
+    *                                         *
+    *       ion_bondings::update_lattice      *
+    *                                         *
+    *******************************************/
+   void ion_bondings::update_lattice(const double unita_new[9])
+   {
+      if (!bondings_exists) return;
+
+      for (int i=0; i<9; ++i)
+         ua[i] = unita_new[i];
+
+      get_ub(ua, ub);
+   }
+
 } // namespace pwdft
 

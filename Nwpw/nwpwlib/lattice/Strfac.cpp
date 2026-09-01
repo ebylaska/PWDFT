@@ -172,7 +172,8 @@ void Strfac::phafac()
  *       Strfac::strfac_pack     *
  *                               *
  *********************************/
-void Strfac::strfac_pack(const int nb, const int ii, double *strx) {
+void Strfac::strfac_pack(const int nb, const int ii, double *strx) 
+{
    int npack, nx, ny, nz;
    npack = mygrid->npack(nb);
    nx = mygrid->nx;
@@ -202,6 +203,55 @@ void Strfac::strfac_pack(const int nb, const int ii, double *strx) {
       strx[2*i]   = (ai*c - bi*d);
       strx[2*i+1] = (ai*d + bi*c);
    }
+}
+
+
+/*****************************************
+ *                                       *
+ *   Strfac::update_lattice_keep_basis   *
+ *                                       *
+ *****************************************/
+/**
+ * @brief Rebuild structure-factor phase data after a lattice/position update.
+ *
+ * The FFT grid, plane-wave mask, packed index maps, and allocation sizes are
+ * preserved. The cached direct and reciprocal lattice matrices are refreshed,
+ * and the ionic phase-factor tables are regenerated from the current ionic
+ * positions and reciprocal lattice.
+ *
+ * This must be called after:
+ *
+ *   1. the ionic Cartesian positions have been transformed to the new lattice;
+ *   2. the PGrid/Lattice reciprocal vectors have been updated.
+ */
+void Strfac::update_lattice_keep_basis()
+{
+   if (mygrid == nullptr || myion == nullptr)
+   {
+      throw std::runtime_error("Strfac::update_lattice_keep_basis: " "invalid grid or ion pointer");
+   }
+
+   Lattice* lattice = mygrid->lattice;
+
+   if (lattice == nullptr)
+   {
+      throw std::runtime_error("Strfac::update_lattice_keep_basis: " "null lattice pointer");
+   }
+
+   // Refresh cached lattice matrices.
+   for (int j=0; j<3; ++j)
+   {
+      for (int i = 0; i < 3; ++i)
+      {
+         unita[i+3*j] = lattice->unita(i,j);
+         unitg[i+3*j] = lattice->unitg(i,j);
+      }
+   }
+
+   // Rebuild wx1, wy1, wz1 from the current ionic positions and
+   // reciprocal lattice.
+   //    - The integer FFT indices and packed index arrays are unchanged.
+   phafac();
 }
 
 } // namespace pwdft

@@ -34,6 +34,90 @@ namespace pwdft {
  *         Constructors         *
  *                              *
  ********************************/
+/**
+ * @brief Construct a distributed PNEB electronic-structure object.
+ *
+ * Initializes the parallel orbital and real-space data structures required
+ * by the PNEB calculation. The object combines:
+ *
+ *   - @c d1db for distributed orbital/matrix storage and one-dimensional
+ *     parallel mappings;
+ *   - @c PGrid for FFT-grid, plane-wave, reciprocal-space, and lattice
+ *     information.
+ *
+ * The constructor performs the following initialization steps:
+ *
+ *   1. Initializes the @c d1db and @c PGrid base classes.
+ *   2. Determines the two-dimensional parallel decomposition in the
+ *      orbital/matrix distribution:
+ *
+ *          np_i x np_j
+ *
+ *   3. Allocates and partitions the block matrices used by the PNEB
+ *      transformations, including the @c s22, @c s21, @c s12, @c s11,
+ *      @c sa1, @c sa0, @c st1, and @c st2 work regions.
+ *   4. For parallel matrix layouts, constructs the spin-dependent local
+ *      block sizes and global distribution counts:
+ *
+ *          ma, ma1, ma2, mc, nc, na
+ *
+ *      and performs the required global reductions across the parallel
+ *      communicator.
+ *   5. Allocates temporary work arrays for matrix transformations,
+ *      block communication, real-space operations, and packed orbital
+ *      storage.
+ *   6. Builds the local matrix-index maps in @c mindx for each spin channel.
+ *      These maps associate distributed matrix blocks with their global
+ *      orbital indices.
+ *   7. Stores control parameters governing initial orbital generation and
+ *      orbital I/O buffering.
+ *
+ * The constructor preserves the FFT-grid and plane-wave layout established
+ * by @c PGrid. In particular, the FFT dimensions, packed-grid sizes, and
+ * associated distribution structures are inherited from the initialized
+ * lattice/grid configuration.
+ *
+ * @param[in] inparall
+ *     Parallel execution context. It supplies communicator information,
+ *     process-grid dimensions, task identifiers, and collective operations.
+ *
+ * @param[in] inlattice
+ *     Simulation lattice and reciprocal-space configuration passed to
+ *     @c PGrid.
+ *
+ * @param[in] control
+ *     Calculation-control object containing mapping, FFT, orbital,
+ *     initialization, I/O, and numerical options.
+ *
+ * @param[in] ispin
+ *     Number of spin channels. Expected values are normally one or two.
+ *
+ * @param[in] ne
+ *     Array containing the number of orbitals/states in each spin channel.
+ *     The caller must provide at least @p ispin valid entries.
+ *
+ * @pre
+ *     @p inparall, @p inlattice, and @p control must describe compatible
+ *     parallel, lattice, and FFT configurations.
+ *
+ * @pre
+ *     @p ne must contain valid orbital counts for every spin channel.
+ *
+ * @note
+ *     Several arrays are allocated only when the matrix distribution is
+ *     parallelized, i.e. when the second parallel dimension has more than
+ *     one task.
+ *
+ * @note
+ *     The dynamically allocated arrays are released by the @c Pneb
+ *     destructor. Allocation failures are handled through nothrow
+ *     allocation and should be checked if the surrounding code requires
+ *     explicit failure diagnostics.
+ *
+ * @note
+ *     The constructor initializes distribution and storage metadata; it
+ *     does not perform an SCF iteration or generate the initial orbitals.
+ */
 // Pneb::Pneb(Parallel *inparall, Lattice *inlattice, Control2& control, int
 // ispin, int *ne)
 //   : PGrid(inparall, inlattice, control),

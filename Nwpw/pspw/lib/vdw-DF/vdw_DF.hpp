@@ -92,6 +92,7 @@ public:
    //void v_vdw(int, int, double *, double *, double * double *, double * double *);
    void evaluate(int, const double *, const double *, double *,  double *, double *);
 
+   void update_lattice_keep_basis();
 
 };
 

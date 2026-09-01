@@ -300,5 +300,20 @@ ion_angle::ion_angle(double *rion1, Control2 &control)
      }
   }
 
+   /*******************************************
+    *                                         *
+    *         ion_angle::update_lattice       *
+    *                                         *
+    *******************************************/
+   void ion_angle::update_lattice(const double unita_new[9])
+   {
+      if (!angle_exists) return;
+
+      for (int i=0; i<9; ++i)
+         ua[i] = unita_new[i];
+
+      get_ub(ua, ub);
+   }
+
 } // namespace pwdft
 

@@ -282,6 +282,10 @@ public:
       gauss[k] = std::exp(-w * gg);
     }
   }
+
+  void update_lattice_keep_basis(const double unita_new[9]);
+
+
 };
 
 } // namespace pwdft

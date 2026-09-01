@@ -35,6 +35,8 @@ public:
 
   void phafac();
   void strfac_pack(const int, const int, double *);
+
+  void update_lattice_keep_basis();
 };
 } // namespace pwdft
 

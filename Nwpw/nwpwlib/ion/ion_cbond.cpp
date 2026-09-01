@@ -273,5 +273,21 @@ ion_cbond::ion_cbond(double *rion1, Control2 &control)
      }
   }
 
+   /*******************************************
+    *                                         *
+    *         ion_cbond::lattice_update       *
+    *                                         *
+    *******************************************/
+   void ion_cbond::update_lattice(const double unita_new[9])
+   {
+      if (!cbond_exists) return;
+
+      for (int i=0; i<9; ++i)
+         ua[i] = unita_new[i];
+
+      get_ub(ua, ub);
+   }
+
+
 } // namespace pwdft
 

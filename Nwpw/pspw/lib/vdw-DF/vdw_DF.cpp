@@ -809,6 +809,34 @@ void vdw_DF::evaluate(int ispin, const double *dn, const double *agr,
 }
 
 
+/***************************************
+ *                                     *
+ *  vdw_DF::update_lattice_keep_basis  *
+ *                                     *
+ ***************************************/
+void vdw_DF::update_lattice_keep_basis()
+{
+   if (mygrid == nullptr)
+      throw std::runtime_error("vdw_DF::update_lattice_keep_basis: null grid");
+
+   if (mygrid->npack(0) != npack0)
+      throw std::runtime_error("vdw_DF::update_lattice_keep_basis: " "packed basis size changed");
+
+   const double* Gx = mygrid->Gpackxyz(0, 0);
+   const double* Gy = mygrid->Gpackxyz(0, 1);
+   const double* Gz = mygrid->Gpackxyz(0, 2);
+
+   const double dk = kmax / static_cast<double>(nk);
+
+   for (int k=0; k<npack0; ++k)
+   {
+      const double g = std::sqrt(Gx[k]*Gx[k] + Gy[k]*Gy[k] + Gz[k]*Gz[k]);
+      Gpack[k] = g;
+      const int interval = static_cast<int>(g / dk);
+      nxpack[k] = util_splint_nx( gphi, interval, g, nk1);
+   }
+}
+
 
 }
 

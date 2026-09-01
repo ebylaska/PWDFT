@@ -52,6 +52,8 @@ class Pseudopotential {
 private:
   void apply_pspspin_scaling(double *, int, int, int);
 
+  Control2* control_ = nullptr;
+
 public:
   nwpw_efield *myefield;
   nwpw_apc *myapc;
@@ -285,6 +287,9 @@ public:
       name = 'l';
     return name;
   }
+
+  void update_lattice_keep_basis(std::ostream& coutput);
+
 };
 
 } // namespace pwdft

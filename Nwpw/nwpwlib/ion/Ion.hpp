@@ -629,6 +629,9 @@ public:
    const ThermoResults& fetch_thermo() const { return thermo; }
 
 
+   void  transform_positions_with_lattice(const double *, const double *);
+   void update_constraint_lattice(const double unita_new[9]);
+
 
 };
 } // namespace pwdft
