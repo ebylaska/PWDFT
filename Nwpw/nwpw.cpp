@@ -893,6 +893,7 @@ int main(int argc, char *argv[]) {
                << std::endl;
      std::cout << std::endl << std::endl;
   }
+  
 
   // Broadcast nwinput across MPI tasks
   if (np > 1) 
@@ -903,14 +904,20 @@ int main(int argc, char *argv[]) {
         nwinput.resize(nwinput_size);
      MPI_Bcast(const_cast<char *>(nwinput.data()), nwinput_size, MPI_CHAR, MASTER, MPI_COMM_WORLD);
   }
+  if (oprint) std::cout << "HERA" << std::endl;
 
   MPI_Barrier(MPI_COMM_WORLD);
+  if (oprint) std::cout << "HERB" << std::endl;
   std::string rtdbstr = parse_nwinput(nwinput);
 
   rtdbstr = resolve_symmetry_and_cell(rtdbstr);
 
 
+  if (oprint) std::cout << "HERC" << std::endl;
+
   int task = parse_task(rtdbstr);
+
+  if (oprint)  std::cout << "HERD" << std::endl;
   MPI_Barrier(MPI_COMM_WORLD);
 
   if (oprint)
@@ -1101,6 +1108,29 @@ int main(int argc, char *argv[]) {
         MPI_Barrier(MPI_COMM_WORLD);
         ierr += pwdft::band_bomd(MPI_COMM_WORLD, rtdbstr, std::cout);
      }
+
+     if (task == 20)
+     {
+        if (oprint)
+           std::cout << std::endl
+                     << "Running pspw relax - rtdbstr = "
+                     << rtdbstr << std::endl
+                     << std::endl;
+        MPI_Barrier(MPI_COMM_WORLD);
+        ierr += pwdft::driver_optimizer(MPI_COMM_WORLD, rtdbstr, std::cout, pwdft::pspw_minimizer);
+     }
+
+     if (task == 21)
+     {
+        if (oprint)
+           std::cout << std::endl
+                     << "Running band relax - rtdbstr = "
+                     << rtdbstr << std::endl
+                     << std::endl;
+        MPI_Barrier(MPI_COMM_WORLD);
+        ierr += pwdft::driver_optimizer(MPI_COMM_WORLD, rtdbstr, std::cout, pwdft::band_minimizer);
+     }
+
 
 
     

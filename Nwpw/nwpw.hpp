@@ -8,6 +8,9 @@
 
 namespace pwdft {
 
+using minimizer_function = int (*)(MPI_Comm, std::string&, std::ostream&);
+extern int driver_optimizer(MPI_Comm, std::string &, std::ostream &, minimizer_function);
+
 extern int band_cpsd(MPI_Comm, std::string &);
 extern int band_minimizer(MPI_Comm, std::string &, std::ostream &);
 extern int band_geovib(MPI_Comm, std::string &, std::ostream &);
