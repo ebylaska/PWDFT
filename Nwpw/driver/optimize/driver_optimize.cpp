@@ -1,9 +1,9 @@
+
+#include <algorithm>
+#include <array>
 #include <cmath>
-#include <cstdio>
-#include <cstdlib>
 #include <iostream>
 #include <string>
-#include <vector>
 //
 //#include "iofmt.hpp"
 #include "Parallel.hpp"
@@ -60,11 +60,11 @@ static double unita_relative_difference(const std::array<double, 9>& current, co
 }
 
 
-static bool update_unita_frozen(std::string& rtdbstring, std::ostream& coutput, const double lattice_tolerance)
+static bool update_unita_frozen(std::string& rtdbstring, std::ostream& coutput, const double lattice_tolerance, const bool oprint)
 {
    if (lattice_tolerance < 0.0)
    {
-       coutput << "driver_optimizer: negative lattice tolerance\n";
+        if (oprint) coutput << "driver_optimizer: negative lattice tolerance\n";
        return false;
    }
 
@@ -76,11 +76,7 @@ static bool update_unita_frozen(std::string& rtdbstring, std::ostream& coutput, 
    }
    catch (const json::exception& ex)
    {
-       coutput
-           << "driver_optimizer: invalid RTDB JSON: "
-           << ex.what()
-           << '\n';
-
+       if (oprint) coutput << "driver_optimizer: invalid RTDB JSON: " << ex.what() << '\n';
        return false;
    }
 
@@ -94,11 +90,7 @@ static bool update_unita_frozen(std::string& rtdbstring, std::ostream& coutput, 
        !rtdbjson["geometries"].is_object() ||
        !rtdbjson["geometries"].contains(geomname))
    {
-       coutput
-           << "driver_optimizer: geometry '"
-           << geomname
-           << "' not found\n";
-
+       if (oprint) coutput << "driver_optimizer: geometry '" << geomname << "' not found\n";
        return false;
    }
 
@@ -111,8 +103,7 @@ static bool update_unita_frozen(std::string& rtdbstring, std::ostream& coutput, 
            geometry.value("unita", json{}),
            current_unita))
    {
-       coutput
-           << "driver_optimizer: invalid current geometry lattice\n";
+       if (oprint) coutput << "driver_optimizer: invalid current geometry lattice\n";
 
        return false;
    }
@@ -160,8 +151,7 @@ static bool update_unita_frozen(std::string& rtdbstring, std::ostream& coutput, 
            simulation_cell["unita_frozen"],
            current_unita);
 
-       coutput
-           << "driver_optimizer: initialized unita_frozen\n";
+       if (oprint) coutput << "driver_optimizer: initialized unita_frozen\n";
    }
    else
    {
@@ -176,14 +166,13 @@ static bool update_unita_frozen(std::string& rtdbstring, std::ostream& coutput, 
                simulation_cell["unita_frozen"],
                current_unita);
 
-           coutput
-               << "driver_optimizer: resetting unita_frozen\n"
-               << "  relative lattice change = "
-               << difference
-               << "\n"
-               << "  tolerance               = "
-               << lattice_tolerance
-               << '\n';
+           if (oprint) coutput << "driver_optimizer: resetting unita_frozen\n"
+                               << "  relative lattice change = "
+                               << difference
+                               << "\n"
+                               << "  tolerance               = "
+                               << lattice_tolerance
+                               << '\n';
        }
    }
 
@@ -253,13 +242,12 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
               << '\n'
               << '\n'
               << "  The current lattice may change during unit-cell optimization.\n"
-              << "  The RTDB variable unita_frozen preserves the reference lattice\n"
-              << "  used to define the numerical grid and basis support.\n"
-              << "  For large unitcell changes the unita_frozen is changed.\n"
-              << "  The reference lattice used to establish the numerical grid and\n"
-              << "  basis-support policy. It remains unchanged during the current \n"
-              << "  optimization stage but is not the physical lattice used for the\n"
-              << "  current energy, force, or stress evaluation.\n"
+              << "  RTDB variable unita_frozen stores the reference lattice used\n"
+              << "  to establish the numerical grid and basis-support policy.\n"
+              << "  It is reset when the relative lattice change exceeds the\n"
+              << "  configured tolerance or when a new optimization stage begins.\n"
+              << "  Current energy, force, and stress evaluations use the current\n"
+              << "  physical lattice, not unita_frozen.\n"
               << '\n'
               << std::string(width, '-')
               << '\n';
@@ -272,9 +260,15 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
     * selected minimizer directly.
     */
 
-   // add unita_frozen in rtdb
-   double lattice_tolerance = 0.01;
-   if (!update_unita_frozen(rtdbstring,coutput,lattice_tolerance))
+   // Add unita_frozen in rtdb
+   /*
+    * Relative Frobenius-norm tolerance for resetting unita_frozen.
+    *
+    * For an isotropic lattice scaling, 1.0e-2 corresponds approximately
+    * to a 1% change in the lattice constant.
+    */
+   constexpr double lattice_tolerance = 1.0e-2;
+   if (!update_unita_frozen(rtdbstring,coutput,lattice_tolerance,oprint))
       return 1;
 
     
