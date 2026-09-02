@@ -148,6 +148,20 @@ Lattice::Lattice(Control2 &control)
    get_cube(punita,punitg,&pomega);
    get_ub(punita,pub);
  
+   punita_frozen[0] = control.unita_frozen(0,0);
+   punita_frozen[1] = control.unita_frozen(1,0);
+   punita_frozen[2] = control.unita_frozen(2,0);
+ 
+   punita_frozen[3] = control.unita_frozen(0,1);
+   punita_frozen[4] = control.unita_frozen(1,1);
+   punita_frozen[5] = control.unita_frozen(2,1);
+ 
+   punita_frozen[6] = control.unita_frozen(0,2);
+   punita_frozen[7] = control.unita_frozen(1,2);
+   punita_frozen[8] = control.unita_frozen(2,2);
+   get_cube(punita_frozen,punitg_frozen,&pomega_frozen);
+   get_ub(punita_frozen,pub_frozen);
+
    nx = control.ngrid(0);
    ny = control.ngrid(1);
    nz = control.ngrid(2);
@@ -178,6 +192,45 @@ Lattice::Lattice(Control2 &control)
    if (ecut0<pecut) pecut = ecut0;
    pwcut = pecut;
    if (wcut0<pwcut) pwcut = wcut0;
+
+   punita_frozen[0] = control.unita_frozen(0,0);
+   punita_frozen[1] = control.unita_frozen(1,0);
+   punita_frozen[2] = control.unita_frozen(2,0);
+ 
+   punita_frozen[3] = control.unita_frozen(0,1);
+   punita_frozen[4] = control.unita_frozen(1,1);
+   punita_frozen[5] = control.unita_frozen(2,1);
+ 
+   punita_frozen[6] = control.unita_frozen(0,2);
+   punita_frozen[7] = control.unita_frozen(1,2);
+   punita_frozen[8] = control.unita_frozen(2,2);
+   get_cube(punita_frozen,punitg_frozen,&pomega_frozen);
+   get_ub(punita_frozen,pub_frozen);
+
+   gx = punitg_frozen[0]*((double)nxh);
+   gy = punitg_frozen[1]*((double)nxh);
+   gz = punitg_frozen[2]*((double)nxh);
+   gg1 = gx*gx + gy*gy + gz*gz;
+ 
+   gx = punitg_frozen[3]*((double)nyh);
+   gy = punitg_frozen[4]*((double)nyh);
+   gz = punitg_frozen[5]*((double)nyh);
+   gg2 = gx*gx + gy*gy + gz*gz;
+ 
+   gx = punitg_frozen[6]*((double)nzh);
+   gy = punitg_frozen[7]*((double)nzh);
+   gz = punitg_frozen[8]*((double)nzh);
+   gg3 = gx*gx + gy*gy + gz*gz;
+ 
+   gg = gg1;
+   if (gg2<gg) gg = gg2;
+   if (gg3<gg) gg = gg3;
+ 
+   pecut_frozen = 0.50 * gg;
+   if (ecut0<pecut_frozen) pecut = ecut0;
+   pwcut_frozen = pecut_frozen;
+   if (wcut0<pwcut_frozen) pwcut_frozen = wcut0;
+
  
    pfast_erf = control.fast_erf();
    paperiodic = (control.version == 4);

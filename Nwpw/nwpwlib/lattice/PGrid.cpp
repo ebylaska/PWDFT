@@ -143,9 +143,9 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
         for (auto k2 = (-nyh + 1); k2 < nyh; ++k2)
           for (auto k1 = 0; k1 < nxh; ++k1) 
           {
-             auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
-             auto gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
-             auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
+             auto gx = k1*lattice->unitg_frozen(0,0) + k2*lattice->unitg_frozen(0,1) + k3*lattice->unitg_frozen(0,2);
+             auto gy = k1*lattice->unitg_frozen(1,0) + k2*lattice->unitg_frozen(1,1) + k3*lattice->unitg_frozen(1,2);
+             auto gz = k1*lattice->unitg_frozen(2,0) + k2*lattice->unitg_frozen(2,1) + k3*lattice->unitg_frozen(2,2);
              auto i = k1; if (i < 0) i += nx;
              auto j = k2; if (j < 0) j += ny;
              auto k = k3; if (k < 0) k += nz;
@@ -316,9 +316,9 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
                zrow = true;
                for (auto k3 = (-nzh+1); k3<nzh; ++k3) 
                {
-                  auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
-                  auto gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
-                  auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
+                  auto gx = k1*lattice->unitg_frozen(0,0) + k2*lattice->unitg_frozen(0,1) + k3*lattice->unitg_frozen(0,2);
+                  auto gy = k1*lattice->unitg_frozen(1,0) + k2*lattice->unitg_frozen(1,1) + k3*lattice->unitg_frozen(1,2);
+                  auto gz = k1*lattice->unitg_frozen(2,0) + k2*lattice->unitg_frozen(2,1) + k3*lattice->unitg_frozen(2,2);
                   auto gg = gx*gx + gy*gy + gz*gz;
                   gg = gg - ggcut;
                   if (gg < (-eps))
@@ -350,9 +350,9 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
             for (auto k3=(-nzh+1); k3<nzh; ++k3)
                for (auto k2=(-nyh+1); k2<nyh; ++k2) 
                {
-                  auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
-                  auto gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
-                  auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
+                  auto gx = k1*lattice->unitg_frozen(0,0) + k2*lattice->unitg_frozen(0,1) + k3*lattice->unitg_frozen(0,2);
+                  auto gy = k1*lattice->unitg_frozen(1,0) + k2*lattice->unitg_frozen(1,1) + k3*lattice->unitg_frozen(1,2);
+                  auto gz = k1*lattice->unitg_frozen(2,0) + k2*lattice->unitg_frozen(2,1) + k3*lattice->unitg_frozen(2,2);
                   auto gg = gx*gx + gy*gy + gz*gz;
                   gg = gg - ggcut;
                   if (gg < (-eps))
@@ -412,9 +412,9 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
             zrow = true;
             for (auto k3 = (-nzh + 1); k3 < nzh; ++k3) 
             {
-               auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
-               auto gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
-               auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
+               auto gx = k1*lattice->unitg_frozen(0,0) + k2*lattice->unitg_frozen(0,1) + k3*lattice->unitg_frozen(0,2);
+               auto gy = k1*lattice->unitg_frozen(1,0) + k2*lattice->unitg_frozen(1,1) + k3*lattice->unitg_frozen(1,2);
+               auto gz = k1*lattice->unitg_frozen(2,0) + k2*lattice->unitg_frozen(2,1) + k3*lattice->unitg_frozen(2,2);
                auto gg = gx*gx + gy*gy + gz*gz;
                gg = gg - ggcut;
                if (gg < (-eps))
@@ -442,9 +442,9 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
            for (auto k3=(-nzh+1); k3<nzh; ++k3)
               for (auto k2=(-nyh+1); k2<nyh; ++k2) 
               {
-                 auto gx = k1*lattice->unitg(0,0) + k2*lattice->unitg(0,1) + k3*lattice->unitg(0,2);
-                 auto gy = k1*lattice->unitg(1,0) + k2*lattice->unitg(1,1) + k3*lattice->unitg(1,2);
-                 auto gz = k1*lattice->unitg(2,0) + k2*lattice->unitg(2,1) + k3*lattice->unitg(2,2);
+                 auto gx = k1*lattice->unitg_frozen(0,0) + k2*lattice->unitg_frozen(0,1) + k3*lattice->unitg_frozen(0,2);
+                 auto gy = k1*lattice->unitg_frozen(1,0) + k2*lattice->unitg_frozen(1,1) + k3*lattice->unitg_frozen(1,2);
+                 auto gz = k1*lattice->unitg_frozen(2,0) + k2*lattice->unitg_frozen(2,1) + k3*lattice->unitg_frozen(2,2);
                  auto gg = gx*gx + gy*gy + gz*gz;
                  gg = gg - ggcut;
                  if (gg < (-eps))

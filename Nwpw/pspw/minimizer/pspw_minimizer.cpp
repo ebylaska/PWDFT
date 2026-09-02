@@ -216,7 +216,6 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
       else
          coutput << " parallel mapping         : not balanced" << std::endl;
 
-      coutput << " TASK FLAG = " << flag << std::endl;
       if (mygrid.d3db::mygdevice.has_gpu())
       {
          //coutput << " parallel mapping         : has GPU" << std::endl;

@@ -20,6 +20,7 @@ class Control2 {
 
    std::string myrtdbstring, xcstring;
    double punita[9], ptolerances[3], pscaling[2];
+   double punita_frozen[9];
    double ptime_step, pfake_mass, pscf_alpha, pscf_beta, pecut, pwcut, prcut;
    double pkerker_g0,pfractional_kT,pfractional_temperature,pfractional_alpha;
    double pfractional_gamma,pfractional_alpha_min,pfractional_alpha_max,pfractional_beta,pfractional_rmsd_threshold,pfractional_rmsd_tolerance;
@@ -35,6 +36,7 @@ class Control2 {
  
    bool pdeltae_check = true;
    bool pis_crystal = false;
+   bool punita_frozen_changed = false;
 
    bool ptwodfractional = false;
    bool pfractional = false;
@@ -227,6 +229,10 @@ public:
    double * unita_ptr() { return punita; }
    double unita(const int i, const int j) { return punita[i + j * 3]; }
    double unita1d(const int ii) { return punita[ii]; }
+   double * unita_frozen_ptr() { return punita_frozen; }
+   double unita_frozen(const int i, const int j) { return punita_frozen[i + j * 3]; }
+   double unita_frozen1d(const int ii) { return punita_frozen[ii]; }
+
    double tolerances(const int i) { return ptolerances[i]; }
  
    double scaling(const int i) { return pscaling[i]; }

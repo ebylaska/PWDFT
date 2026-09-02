@@ -793,7 +793,21 @@ Control2::Control2(const int np0, const std::string rtdbstring)
 
 
 
- 
+   // lambda: read_unita 
+   auto read_unita = [](const json& value, double unita[9]) -> bool
+   {
+      if (!value.is_array() || value.size() != 9)
+         return false;
+      for (int i = 0; i < 9; ++i)
+      {
+         if (!value[i].is_number())
+             return false;
+         unita[i] = value[i].get<double>();
+      }
+      return true;
+   };
+
+
    punita[0] = 20.0;
    punita[1] = 0.0;
    punita[2] = 0.0;
@@ -803,57 +817,123 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    punita[6] = 0.0;
    punita[7] = 0.0;
    punita[8] = 20.0;
- 
 
    std::string geomname = "geometry";
    if (rtdbjson.contains("geometry") && rtdbjson["geometry"].is_string())
-    geomname = rtdbjson["geometry"];
+     geomname = rtdbjson["geometry"];
  
    if (rtdbjson["geometries"][geomname]["is_crystal"].is_boolean())
-     pis_crystal = rtdbjson["geometries"][geomname]["is_crystal"];
+      pis_crystal = rtdbjson["geometries"][geomname]["is_crystal"];
+
+   // read unita from geometries.geomname
+   const json& tmpgeometry = rtdbjson["geometries"][geomname];
+   if (!read_unita(tmpgeometry.value("unita", json{}), punita))
+       throw std::runtime_error("Invalid geometry lattice");
+   
+   // read unita from nwpw.simulation_cell
+   double simulation_unita[9];
+   json& tmpsimulation_cell = rtdbjson["nwpw"]["simulation_cell"];
+   if (!tmpsimulation_cell.is_object())
+      tmpsimulation_cell = json::object();
+
+   if (read_unita(tmpsimulation_cell.value("unita", json{}), simulation_unita))
+      std::memcpy(punita, simulation_unita, 9*sizeof(double));
+
+   // Initialize by copying unita to unita_frozen
+   //    make sure pcell_optimize and pparrinello_rahman have already been initialized 
+   punita_frozen_changed = false;
+   std::memcpy(punita_frozen, punita, 9*sizeof(double));
+   if (pcell_optimize || pparrinello_rahman)
+   {
+      if (read_unita(tmpsimulation_cell.value("unita_frozen", json{}), punita_frozen))
+      {
+         double difference_squared = 0.0;
+         double frozen_squared = 0.0;
+         for (int i=0; i<9; ++i)
+         {
+            const double difference = punita[i] - punita_frozen[i];
+            difference_squared += difference*difference;
+            frozen_squared     += punita_frozen[i]*punita_frozen[i];
+         }
+         const double lattice_tolerance = 0.01;
+         const double relative_difference = std::sqrt(difference_squared) / std::max( 1.0, std::sqrt(frozen_squared));
+         if (relative_difference > lattice_tolerance)
+         {
+            punita_frozen_changed = true;
+            std::memcpy(punita_frozen, punita, 9*sizeof(double));
+         }
+      }
+   }
+  
+
+/*
 
    if (rtdbjson["geometries"][geomname]["unita"][0].is_number_float())
-     punita[0] = rtdbjson["geometries"][geomname]["unita"][0];
+      punita[0] = rtdbjson["geometries"][geomname]["unita"][0];
    if (rtdbjson["geometries"][geomname]["unita"][1].is_number_float())
-     punita[1] = rtdbjson["geometries"][geomname]["unita"][1];
+      punita[1] = rtdbjson["geometries"][geomname]["unita"][1];
    if (rtdbjson["geometries"][geomname]["unita"][2].is_number_float())
-     punita[2] = rtdbjson["geometries"][geomname]["unita"][2];
+      punita[2] = rtdbjson["geometries"][geomname]["unita"][2];
  
    if (rtdbjson["geometries"][geomname]["unita"][3].is_number_float())
-     punita[3] = rtdbjson["geometries"][geomname]["unita"][3];
+      punita[3] = rtdbjson["geometries"][geomname]["unita"][3];
    if (rtdbjson["geometries"][geomname]["unita"][4].is_number_float())
-     punita[4] = rtdbjson["geometries"][geomname]["unita"][4];
+      punita[4] = rtdbjson["geometries"][geomname]["unita"][4];
    if (rtdbjson["geometries"][geomname]["unita"][5].is_number_float())
-     punita[5] = rtdbjson["geometries"][geomname]["unita"][5];
+      punita[5] = rtdbjson["geometries"][geomname]["unita"][5];
  
    if (rtdbjson["geometries"][geomname]["unita"][6].is_number_float())
-     punita[6] = rtdbjson["geometries"][geomname]["unita"][6];
+      punita[6] = rtdbjson["geometries"][geomname]["unita"][6];
    if (rtdbjson["geometries"][geomname]["unita"][7].is_number_float())
-     punita[7] = rtdbjson["geometries"][geomname]["unita"][7];
+      punita[7] = rtdbjson["geometries"][geomname]["unita"][7];
    if (rtdbjson["geometries"][geomname]["unita"][8].is_number_float())
-     punita[8] = rtdbjson["geometries"][geomname]["unita"][8];
+      punita[8] = rtdbjson["geometries"][geomname]["unita"][8];
  
    if (rtdbjson["nwpw"]["simulation_cell"]["unita"][0].is_number_float())
-     punita[0] = rtdbjson["nwpw"]["simulation_cell"]["unita"][0];
+      punita[0] = rtdbjson["nwpw"]["simulation_cell"]["unita"][0];
    if (rtdbjson["nwpw"]["simulation_cell"]["unita"][1].is_number_float())
-     punita[1] = rtdbjson["nwpw"]["simulation_cell"]["unita"][1];
+      punita[1] = rtdbjson["nwpw"]["simulation_cell"]["unita"][1];
    if (rtdbjson["nwpw"]["simulation_cell"]["unita"][2].is_number_float())
-     punita[2] = rtdbjson["nwpw"]["simulation_cell"]["unita"][2];
+      punita[2] = rtdbjson["nwpw"]["simulation_cell"]["unita"][2];
  
    if (rtdbjson["nwpw"]["simulation_cell"]["unita"][3].is_number_float())
-     punita[3] = rtdbjson["nwpw"]["simulation_cell"]["unita"][3];
+      punita[3] = rtdbjson["nwpw"]["simulation_cell"]["unita"][3];
    if (rtdbjson["nwpw"]["simulation_cell"]["unita"][4].is_number_float())
-     punita[4] = rtdbjson["nwpw"]["simulation_cell"]["unita"][4];
+      punita[4] = rtdbjson["nwpw"]["simulation_cell"]["unita"][4];
    if (rtdbjson["nwpw"]["simulation_cell"]["unita"][5].is_number_float())
-     punita[5] = rtdbjson["nwpw"]["simulation_cell"]["unita"][5];
+      punita[5] = rtdbjson["nwpw"]["simulation_cell"]["unita"][5];
  
    if (rtdbjson["nwpw"]["simulation_cell"]["unita"][6].is_number_float())
-     punita[6] = rtdbjson["nwpw"]["simulation_cell"]["unita"][6];
+      punita[6] = rtdbjson["nwpw"]["simulation_cell"]["unita"][6];
    if (rtdbjson["nwpw"]["simulation_cell"]["unita"][7].is_number_float())
-     punita[7] = rtdbjson["nwpw"]["simulation_cell"]["unita"][7];
+      punita[7] = rtdbjson["nwpw"]["simulation_cell"]["unita"][7];
    if (rtdbjson["nwpw"]["simulation_cell"]["unita"][8].is_number_float())
-     punita[8] = rtdbjson["nwpw"]["simulation_cell"]["unita"][8];
+      punita[8] = rtdbjson["nwpw"]["simulation_cell"]["unita"][8];
 
+   std::memcpy(punita_frozen, punita, 9*sizeof(double));
+
+   if (rtdbjson["nwpw"]["simulation_cell"]["unita_frozen"][0].is_number_float())
+      punita_frozen[0] = rtdbjson["nwpw"]["simulation_cell"]["unita_frozen"][0];
+   if (rtdbjson["nwpw"]["simulation_cell"]["unita_frozen"][1].is_number_float())
+      punita_frozen[1] = rtdbjson["nwpw"]["simulation_cell"]["unita_frozen"][1];
+   if (rtdbjson["nwpw"]["simulation_cell"]["unita_frozen"][2].is_number_float())
+      punita_frozen[2] = rtdbjson["nwpw"]["simulation_cell"]["unita_frozen"][2];
+ 
+   if (rtdbjson["nwpw"]["simulation_cell"]["unita_frozen"][3].is_number_float())
+      punita_frozen[3] = rtdbjson["nwpw"]["simulation_cell"]["unita_frozen"][3];
+   if (rtdbjson["nwpw"]["simulation_cell"]["unita_frozen"][4].is_number_float())
+      punita_frozen[4] = rtdbjson["nwpw"]["simulation_cell"]["unita_frozen"][4];
+   if (rtdbjson["nwpw"]["simulation_cell"]["unita_frozen"][5].is_number_float())
+      punita_frozen[5] = rtdbjson["nwpw"]["simulation_cell"]["unita_frozen"][5];
+
+   if (rtdbjson["nwpw"]["simulation_cell"]["unita_frozen"][6].is_number_float())
+      punita_frozen[6] = rtdbjson["nwpw"]["simulation_cell"]["unita_frozen"][6];
+   if (rtdbjson["nwpw"]["simulation_cell"]["unita_frozen"][7].is_number_float())
+      punita_frozen[7] = rtdbjson["nwpw"]["simulation_cell"]["unita_frozen"][7];
+   if (rtdbjson["nwpw"]["simulation_cell"]["unita_frozen"][8].is_number_float())
+      punita_frozen[8] = rtdbjson["nwpw"]["simulation_cell"]["unita_frozen"][8];
+
+*/
  
    pngrid[0] = -1;
    pngrid[1] = -1;
