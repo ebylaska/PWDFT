@@ -51,7 +51,7 @@ public:
    double unitg_frozen1d(const int i) { return punitg_frozen[i]; }
    double unita_frozen(const int i, const int j) { return punita_frozen[i+j*3]; }
    double unitg_frozen(const int i, const int j) { return punitg_frozen[i+j*3]; }
-   double ub_frozen(const int i, const int j)    { return pub[i+j*3]; }
+   double ub_frozen(const int i, const int j)    { return pub_frozen[i+j*3]; }
    double ecut_frozen() { return pecut_frozen; }
    double wcut_frozen() { return pwcut_frozen; }
    double omega_frozen() { return pomega_frozen; }

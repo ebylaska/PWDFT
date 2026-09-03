@@ -134,33 +134,20 @@ Lattice::Lattice(Control2 &control)
  
    ecut0 = control.ecut();
    wcut0 = control.wcut();
-   punita[0] = control.unita(0,0);
-   punita[1] = control.unita(1,0);
-   punita[2] = control.unita(2,0);
  
-   punita[3] = control.unita(0,1);
-   punita[4] = control.unita(1,1);
-   punita[5] = control.unita(2,1);
- 
-   punita[6] = control.unita(0,2);
-   punita[7] = control.unita(1,2);
-   punita[8] = control.unita(2,2);
-   get_cube(punita,punitg,&pomega);
-   get_ub(punita,pub);
- 
-   punita_frozen[0] = control.unita_frozen(0,0);
-   punita_frozen[1] = control.unita_frozen(1,0);
-   punita_frozen[2] = control.unita_frozen(2,0);
- 
-   punita_frozen[3] = control.unita_frozen(0,1);
-   punita_frozen[4] = control.unita_frozen(1,1);
-   punita_frozen[5] = control.unita_frozen(2,1);
- 
-   punita_frozen[6] = control.unita_frozen(0,2);
-   punita_frozen[7] = control.unita_frozen(1,2);
-   punita_frozen[8] = control.unita_frozen(2,2);
-   get_cube(punita_frozen,punitg_frozen,&pomega_frozen);
-   get_ub(punita_frozen,pub_frozen);
+   // Current physical lattice.
+   for (int j=0; j<3; ++j)
+   {
+      for (int i=0; i<3; ++i)
+      {
+        punita[i+3*j]        = control.unita(i, j);
+        punita_frozen[i+3*j] = control.unita_frozen(i, j);
+      }
+   }
+   get_cube(punita, punitg, &pomega);
+   get_cube(punita_frozen, punitg_frozen, &pomega_frozen);
+   get_ub(punita, pub);
+   get_ub(punita_frozen, pub_frozen);
 
    nx = control.ngrid(0);
    ny = control.ngrid(1);
@@ -227,7 +214,7 @@ Lattice::Lattice(Control2 &control)
    if (gg3<gg) gg = gg3;
  
    pecut_frozen = 0.50 * gg;
-   if (ecut0<pecut_frozen) pecut = ecut0;
+   if (ecut0<pecut_frozen) pecut_frozen = ecut0;
    pwcut_frozen = pecut_frozen;
    if (wcut0<pwcut_frozen) pwcut_frozen = wcut0;
 
