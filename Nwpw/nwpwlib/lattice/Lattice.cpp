@@ -19,6 +19,7 @@
 #include "Lattice.hpp"
 #include "Control2.hpp"
 #include <cmath>
+#include <stdexcept>
 
 namespace pwdft {
 
@@ -129,13 +130,36 @@ static void get_ub(double *unita, double *ub)
  */
 Lattice::Lattice(Control2 &control) 
 {
-   int nx, ny, nz, nxh, nyh, nzh;
-   double gx, gy, gz, gg, gg1, gg2, gg3, ecut0, wcut0;
+   int nx, ny, nz;
+   double ecut0, wcut0;
+
+   // lambda: computing the cutoff energies
+   auto compute_cutoff = [](const double g[9], const int nx, const int ny, const int nz, const double requested_cutoff) -> double {
+      const int nxh = nx / 2;
+      const int nyh = ny / 2;
+      const int nzh = nz / 2;
+     
+      const double gx1 = g[0] * nxh;
+      const double gy1 = g[1] * nxh;
+      const double gz1 = g[2] * nxh;
+      const double gg1 = gx1*gx1 + gy1*gy1 + gz1*gz1;
+     
+      const double gx2 = g[3] * nyh;
+      const double gy2 = g[4] * nyh;
+      const double gz2 = g[5] * nyh;
+      const double gg2 = gx2*gx2 + gy2*gy2 + gz2*gz2;
+     
+      const double gx3 = g[6] * nzh;
+      const double gy3 = g[7] * nzh;
+      const double gz3 = g[8] * nzh;
+      const double gg3 = gx3*gx3 + gy3*gy3 + gz3*gz3;
+     
+      const double ggmax = std::min( gg1, std::min(gg2, gg3));
+     
+      return std::min( 0.5 * ggmax, requested_cutoff);
+   };
  
-   ecut0 = control.ecut();
-   wcut0 = control.wcut();
- 
-   // Current physical lattice.
+   // Define the current physical lattice and frozen lattice.
    for (int j=0; j<3; ++j)
    {
       for (int i=0; i<3; ++i)
@@ -149,75 +173,18 @@ Lattice::Lattice(Control2 &control)
    get_ub(punita, pub);
    get_ub(punita_frozen, pub_frozen);
 
+   ecut0 = control.ecut();
+   wcut0 = control.wcut();
+
    nx = control.ngrid(0);
    ny = control.ngrid(1);
    nz = control.ngrid(2);
-   nxh = nx/2;
-   nyh = ny/2;
-   nzh = nz/2;
- 
-   gx = punitg[0]*((double)nxh);
-   gy = punitg[1]*((double)nxh);
-   gz = punitg[2]*((double)nxh);
-   gg1 = gx*gx + gy*gy + gz*gz;
- 
-   gx = punitg[3]*((double)nyh);
-   gy = punitg[4]*((double)nyh);
-   gz = punitg[5]*((double)nyh);
-   gg2 = gx*gx + gy*gy + gz*gz;
- 
-   gx = punitg[6]*((double)nzh);
-   gy = punitg[7]*((double)nzh);
-   gz = punitg[8]*((double)nzh);
-   gg3 = gx*gx + gy*gy + gz*gz;
- 
-   gg = gg1;
-   if (gg2<gg) gg = gg2;
-   if (gg3<gg) gg = gg3;
- 
-   pecut = 0.50 * gg;
-   if (ecut0<pecut) pecut = ecut0;
-   pwcut = pecut;
-   if (wcut0<pwcut) pwcut = wcut0;
 
-   punita_frozen[0] = control.unita_frozen(0,0);
-   punita_frozen[1] = control.unita_frozen(1,0);
-   punita_frozen[2] = control.unita_frozen(2,0);
- 
-   punita_frozen[3] = control.unita_frozen(0,1);
-   punita_frozen[4] = control.unita_frozen(1,1);
-   punita_frozen[5] = control.unita_frozen(2,1);
- 
-   punita_frozen[6] = control.unita_frozen(0,2);
-   punita_frozen[7] = control.unita_frozen(1,2);
-   punita_frozen[8] = control.unita_frozen(2,2);
-   get_cube(punita_frozen,punitg_frozen,&pomega_frozen);
-   get_ub(punita_frozen,pub_frozen);
+   pecut = compute_cutoff(punitg, nx, ny, nz, ecut0);
+   pwcut = std::min(pecut, wcut0);
 
-   gx = punitg_frozen[0]*((double)nxh);
-   gy = punitg_frozen[1]*((double)nxh);
-   gz = punitg_frozen[2]*((double)nxh);
-   gg1 = gx*gx + gy*gy + gz*gz;
- 
-   gx = punitg_frozen[3]*((double)nyh);
-   gy = punitg_frozen[4]*((double)nyh);
-   gz = punitg_frozen[5]*((double)nyh);
-   gg2 = gx*gx + gy*gy + gz*gz;
- 
-   gx = punitg_frozen[6]*((double)nzh);
-   gy = punitg_frozen[7]*((double)nzh);
-   gz = punitg_frozen[8]*((double)nzh);
-   gg3 = gx*gx + gy*gy + gz*gz;
- 
-   gg = gg1;
-   if (gg2<gg) gg = gg2;
-   if (gg3<gg) gg = gg3;
- 
-   pecut_frozen = 0.50 * gg;
-   if (ecut0<pecut_frozen) pecut_frozen = ecut0;
-   pwcut_frozen = pecut_frozen;
-   if (wcut0<pwcut_frozen) pwcut_frozen = wcut0;
-
+   pecut_frozen = compute_cutoff(punitg_frozen, nx, ny, nz, ecut0);
+   pwcut_frozen = std::min(pecut_frozen, wcut0);
  
    pfast_erf = control.fast_erf();
    paperiodic = (control.version == 4);
