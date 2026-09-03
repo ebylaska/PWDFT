@@ -135,9 +135,9 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    {
       nwave[nb] = 0;
       if (nb == 0)
-         ggcut = lattice->eggcut();
+         ggcut = lattice->eggcut_frozen();
       else
-         ggcut = lattice->wggcut();
+         ggcut = lattice->wggcut_frozen();
      
       for (auto k3 = (-nzh + 1); k3 < nzh; ++k3)
         for (auto k2 = (-nyh + 1); k2 < nyh; ++k2)
@@ -295,9 +295,9 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
       for (auto nb = 0; nb <= 1; ++nb) 
       {
          if (nb == 0)
-            ggcut = lattice->eggcut();
+            ggcut = lattice->eggcut_frozen();
          else
-            ggcut = lattice->wggcut();
+            ggcut = lattice->wggcut_frozen();
         
          /* find zero_row3 - (i,j,*) rows that are zero */
          for (auto i=0; i<((nxh+1)*nq); ++i)
@@ -392,9 +392,9 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
      
       for (auto nb = 0; nb <= 1; ++nb) {
         if (nb == 0)
-          ggcut = lattice->eggcut();
+          ggcut = lattice->eggcut_frozen();
         else
-          ggcut = lattice->wggcut();
+          ggcut = lattice->wggcut_frozen();
      
         // find zero_row3 - (i,j,*) rows that are zero
         for (auto q = 0; q < nq3; ++q)
