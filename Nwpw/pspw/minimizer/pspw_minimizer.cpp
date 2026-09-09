@@ -635,7 +635,16 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
       rtdbjson["pspw"]["stress"]     = std::vector<double>(stress, stress+9);
       rtdbjson["pspw"]["stress_sym"] = std::vector<double>(stress_sym, stress_sym+9);
       rtdbjson["pspw"]["lstress"]    = std::vector<double>(lstress, lstress+6);
+
+      rtdbjson["driver"]["numerical_grid"]["nx"] = mygrid.nx;
+      rtdbjson["driver"]["numerical_grid"]["ny"] = mygrid.ny;
+      rtdbjson["driver"]["numerical_grid"]["nz"] = mygrid.nz;
+      rtdbjson["driver"]["numerical_grid"]["nwave0"] = mygrid.npack_all(0);
+      rtdbjson["driver"]["numerical_grid"]["nwave1"] = mygrid.npack_all(1);
+      rtdbjson["driver"]["numerical_grid"]["npack0"] = mygrid.npack(0);
+      rtdbjson["driver"]["numerical_grid"]["npack1"] = mygrid.npack(1);
    }
+
 
 
    // calculate excited state orbitals 

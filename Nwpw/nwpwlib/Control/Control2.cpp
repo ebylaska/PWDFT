@@ -839,11 +839,28 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    if (read_unita(tmpsimulation_cell.value("unita", json{}), simulation_unita))
       std::memcpy(punita, simulation_unita, 9*sizeof(double));
 
+   /*
    // Initialize by copying unita to unita_frozen
    //    make sure pcell_optimize and pparrinello_rahman have already been initialized 
+   // Initialize the frozen lattice from the current physical lattice.
    punita_frozen_changed = false;
    std::memcpy(punita_frozen, punita, 9*sizeof(double));
-   if (pcell_optimize || pparrinello_rahman)
+
+   // Cell optimization and variable-cell dynamics use the RTDB
+   //    unita_frozen reference lattice.
+   bool use_frozen_lattice = pcell_optimize || pparrinello_rahman;
+
+   // The driver callback changes current_task to energy, gradient,
+   // or stress. Preserve the optimization-stage state separately
+   // from current_task.
+   if (rtdbjson.contains("driver") &&
+       rtdbjson["driver"].is_object() &&
+       rtdbjson["driver"].value("use_frozen_lattice", false))
+   {
+      use_frozen_lattice = true;
+   }
+
+   if (use_frozen_lattice)
    {
       if (read_unita(tmpsimulation_cell.value("unita_frozen", json{}), punita_frozen))
       {
@@ -864,6 +881,124 @@ Control2::Control2(const int np0, const std::string rtdbstring)
          }
       }
    }
+   */
+
+   // Initialize the frozen lattice from the current physical lattice.
+   punita_frozen_changed = false;
+
+   std::memcpy( punita_frozen, punita, 9 * sizeof(double));
+
+   /*
+    * Cell optimization and variable-cell dynamics use the RTDB
+    * unita_frozen reference lattice.
+    */
+   bool use_frozen_lattice = pcell_optimize || pparrinello_rahman;
+
+   /*
+    * The driver callback changes current_task to energy, gradient,
+    * or stress. Preserve the optimization-stage state separately
+    * from current_task.
+    */
+   if (rtdbjson.contains("driver") &&
+       rtdbjson["driver"].is_object() &&
+       rtdbjson["driver"].value("use_frozen_lattice", false))
+   {
+    use_frozen_lattice = true;
+   }
+
+   if (use_frozen_lattice)
+   {
+    double rtdb_unita_frozen[9] = {};
+
+    const bool has_rtdb_frozen =
+        read_unita(
+            tmpsimulation_cell.value(
+                "unita_frozen",
+                json{}),
+            rtdb_unita_frozen);
+
+    if (has_rtdb_frozen)
+    {
+        double difference_squared = 0.0;
+        double frozen_squared = 0.0;
+
+        for (int i = 0; i < 9; ++i)
+        {
+            const double difference =
+                punita[i] -
+                rtdb_unita_frozen[i];
+
+            difference_squared +=
+                difference * difference;
+
+            frozen_squared +=
+                rtdb_unita_frozen[i] *
+                rtdb_unita_frozen[i];
+        }
+
+        constexpr double lattice_tolerance =
+            0.01;
+
+        const double relative_difference =
+            std::sqrt(difference_squared) /
+            std::max(
+                1.0,
+                std::sqrt(frozen_squared));
+
+        if (relative_difference >
+            lattice_tolerance)
+        {
+            /*
+             * Start a new numerical-grid stage.
+             */
+            std::memcpy(
+                punita_frozen,
+                punita,
+                9 * sizeof(double));
+
+            punita_frozen_changed =
+                true;
+        }
+        else
+        {
+            /*
+             * Continue using the existing frozen reference.
+             */
+            std::memcpy(
+                punita_frozen,
+                rtdb_unita_frozen,
+                9 * sizeof(double));
+        }
+    }
+    else
+    {
+        /*
+         * First cell-optimization call: use the current lattice
+         * as the initial numerical reference.
+         */
+        std::memcpy(
+            punita_frozen,
+            punita,
+            9 * sizeof(double));
+
+        punita_frozen_changed =
+            true;
+    }
+   }
+
+if (rtdbjson.contains("driver") &&
+    rtdbjson["driver"].is_object() &&
+    rtdbjson["driver"].value(
+        "use_frozen_lattice",
+        false))
+{
+    std::cout
+        << "@Control2 using RTDB frozen lattice: "
+        << punita_frozen[0] << " "
+        << punita_frozen[4] << " "
+        << punita_frozen[8]
+        << '\n';
+}
   
 
 /*

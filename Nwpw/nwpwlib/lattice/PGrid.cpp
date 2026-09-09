@@ -105,6 +105,37 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
        }
    Gmax = sqrt(ggmax);
    Gmin = sqrt(ggmin);
+
+   for (auto nb = 0; nb <= 1; ++nb) 
+   if (parall->is_master())
+   {
+    const double ggcuttmp =
+        (nb == 0)
+            ? lattice->eggcut_frozen()
+            : lattice->wggcut_frozen();
+
+    std::cout
+        << "@PGrid nb = "
+        << nb
+        << " frozen cutoff = "
+        << ggcuttmp
+        << '\n';
+
+    std::cout
+        << "@PGrid frozen unitg:\n";
+
+    for (int j = 0; j < 3; ++j)
+    {
+        std::cout
+            << "@  "
+            << lattice->unitg_frozen(0, j)
+            << " "
+            << lattice->unitg_frozen(1, j)
+            << " "
+            << lattice->unitg_frozen(2, j)
+            << '\n';
+    }
+   }
  
  
    // aligned Memory
@@ -166,6 +197,45 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
       nwave_entire[nb] = nwave[nb];
       nwave_entire[nb] = parall->ISumAll(1, nwave_entire[nb]);
    }
+
+   for (auto nb = 0; nb <= 1; ++nb) 
+if (parall->is_master())
+{
+    std::cout
+        << "@PGrid mask result nb = "
+        << nb
+        << " local waves = "
+        << nwave[nb]
+        << " global waves = "
+        << nwave_entire[nb]
+        << '\n';
+}
+
+std::uint64_t mask_hash =
+    1469598103934665603ULL;
+
+for (int nb = 0; nb < 2; ++nb)
+{
+    for (int i = 0; i < nfft3d; ++i)
+    {
+        mask_hash ^=
+            static_cast<std::uint64_t>(
+                masker[nb][i] + 2);
+
+        mask_hash *=
+            1099511628211ULL;
+    }
+}
+
+if (parall->is_master())
+{
+    std::cout
+        << "@PGrid mask hash = "
+        << mask_hash
+        << '\n';
+}
+
+
  
    /*packarray[0] = new (std::nothrow) int[2 * nfft3d]();
    packarray[1] = (int *)&(packarray[0][nfft3d]);

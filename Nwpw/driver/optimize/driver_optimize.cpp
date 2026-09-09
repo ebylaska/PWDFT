@@ -4,6 +4,7 @@
 #include <cmath>
 #include <iostream>
 #include <string>
+#include <iomanip>
 //
 //#include "iofmt.hpp"
 #include "Parallel.hpp"
@@ -22,6 +23,129 @@ using json = nlohmann::json;
 using minimizer_function = int (*)(MPI_Comm, std::string&, std::ostream&);
 
 namespace pwdft {
+
+static void print_lattice_state( const json& rtdbjson, std::ostream& coutput, const std::string& tag)
+{
+    const std::string geomname =
+        (rtdbjson.contains("geometry") &&
+         rtdbjson["geometry"].is_string())
+            ? rtdbjson["geometry"].get<std::string>()
+            : "geometry";
+
+    if (!rtdbjson.contains("geometries") ||
+        !rtdbjson["geometries"].is_object() ||
+        !rtdbjson["geometries"].contains(geomname))
+    {
+        coutput
+            << tag
+            << "Geometry '"
+            << geomname
+            << "' is missing\n";
+
+        return;
+    }
+
+    const json& geometry =
+        rtdbjson["geometries"].at(geomname);
+
+    const json* current_unita =
+        geometry.contains("unita") &&
+        geometry["unita"].is_array()
+            ? &geometry["unita"]
+            : nullptr;
+
+    const json* frozen_unita =
+        nullptr;
+
+    if (rtdbjson.contains("nwpw") &&
+        rtdbjson["nwpw"].is_object() &&
+        rtdbjson["nwpw"].contains("simulation_cell") &&
+        rtdbjson["nwpw"]["simulation_cell"].is_object())
+    {
+        const json& simulation_cell =
+            rtdbjson["nwpw"]["simulation_cell"];
+
+        if (simulation_cell.contains("unita_frozen") &&
+            simulation_cell["unita_frozen"].is_array())
+        {
+            frozen_unita =
+                &simulation_cell["unita_frozen"];
+        }
+    }
+
+    if (current_unita != nullptr &&
+        current_unita->size() == 9)
+    {
+        coutput
+            << tag
+            << "Current unita:\n";
+
+        for (int j = 0; j < 3; ++j)
+        {
+            coutput  << std::setprecision(10)
+                << tag
+                << "  "
+                << (*current_unita)[3*j + 0].get<double>()
+                << " "
+                << (*current_unita)[3*j + 1].get<double>()
+                << " "
+                << (*current_unita)[3*j + 2].get<double>()
+                << '\n';
+        }
+    }
+
+    if (frozen_unita != nullptr &&
+        frozen_unita->size() == 9)
+    {
+        coutput
+            << tag
+            << "Frozen unita_frozen:\n";
+
+        for (int j = 0; j < 3; ++j)
+        {
+            coutput  << std::setprecision(10)
+                << tag
+                << "  "
+                << (*frozen_unita)[3*j + 0].get<double>()
+                << " "
+                << (*frozen_unita)[3*j + 1].get<double>()
+                << " "
+                << (*frozen_unita)[3*j + 2].get<double>()
+                << '\n';
+        }
+    }
+
+    if (rtdbjson.contains("driver") &&
+        rtdbjson["driver"].is_object() &&
+        rtdbjson["driver"].contains("numerical_grid") &&
+        rtdbjson["driver"]["numerical_grid"].is_object())
+    {
+        const json& grid = rtdbjson["driver"]["numerical_grid"];
+
+        coutput
+            << tag
+            << "FFT grid = "
+            << grid.value("nx", -1)
+            << " x "
+            << grid.value("ny", -1)
+            << " x "
+            << grid.value("nz", -1)
+            << " waves0 = "
+            << grid.value("nwave0", -1)
+            << " waves1 = "
+            << grid.value("nwave1", -1)
+            << " npack0 = "
+            << grid.value("npack0", -1)
+            << " npack1 = "
+            << grid.value("npack1", -1)
+            << '\n';
+    }
+    else
+    {
+        coutput << tag << "Numerical grid: unavailable\n";
+    }
+
+}
 
 static bool read_unita( const json& value, std::array<double, 9>& unita)
 {
@@ -272,19 +396,27 @@ static json compute_egs_values(const int option,
 
    if (option == 1)
    {
-      request["current_task"] = "energy";
+      request["current_task"] = "task pspw energy";
       request["nwpw"]["includestress"] = false;
    }
    else if (option == 2)
    {
-      request["current_task"] = "gradient";
+      request["current_task"] = "task pspw gradient";
       request["nwpw"]["includestress"] = false;
    }
    else if (option == 3)
    {
-      request["current_task"] = "stress";
+      request["current_task"] = "task pspw stress";
       request["nwpw"]["includestress"] = true;
    }
+
+   request["driver"]["cell_optimization"] = true;
+   request["driver"]["use_frozen_lattice"] = true;
+
+   const std::string tag = "@";
+
+   print_lattice_state(request, coutput, tag);
+
 
 
    // The callback modifies this string by reference.
@@ -514,17 +646,13 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
               << tag << "dE/dgamma = " << lstress.at(5).get<double>() << '\n';
    }
 
-   /*
-    * Use the cubic lattice derivative to choose the initial
-    * isotropic scaling direction.
-    */
+
+/*
    const double dE_da = lstress.at(0).get<double>();
    const double dE_db = lstress.at(1).get<double>();
    const double dE_dc = lstress.at(2).get<double>();
 
-   /*
-    * For a cubic cell, use the average of dE/da, dE/db, and dE/dc.
-    */
+
    const double dE_dcell =
        (dE_da + dE_db + dE_dc) / 3.0;
 
@@ -537,11 +665,320 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
 
       return 0;
    }
+*/
+
+/*
+ * Finite-difference check of the isotropic lattice derivative.
+ *
+ * This evaluates:
+ *
+ *     dE/ds ≈ [E((1+delta)A) - E((1-delta)A)] / (2*delta)
+ *
+ * where A is the current direct lattice and s is an isotropic
+ * scale factor.
+ */
+constexpr double fd_delta =
+    1.0e-2;
+
+std::string plus_rtdb =
+    rtdbstring;
+
+std::string minus_rtdb =
+    rtdbstring;
+
+scale_cubic_cell(
+    plus_rtdb,
+    1.0 + fd_delta);
+
+scale_cubic_cell(
+    minus_rtdb,
+    1.0 - fd_delta);
+
+json plus_result =
+    compute_egs_values(
+        1,
+        comm_world0,
+        minimizer,
+        plus_rtdb,
+        coutput);
+
+json minus_result =
+    compute_egs_values(
+        1,
+        comm_world0,
+        minimizer,
+        minus_rtdb,
+        coutput);
+
+const double eplus =
+    plus_result.at("energy").get<double>();
+
+const double eminus =
+    minus_result.at("energy").get<double>();
+
+const double finite_difference =
+    (eplus - eminus) /
+    (2.0 * fd_delta);
+
+json current_json =
+    json::parse(rtdbstring);
+
+const std::string geomname =
+    current_json.contains("geometry") &&
+    current_json["geometry"].is_string()
+        ? current_json["geometry"].get<std::string>()
+        : "geometry";
+
+const json& current_unita =
+    current_json["geometries"]
+                [geomname]
+                ["unita"];
+
+const double a =
+    current_unita.at(0).get<double>();
+
+const double dE_da =
+    lstress.at(0).get<double>();
+
+const double dE_db =
+    lstress.at(1).get<double>();
+
+const double dE_dc =
+    lstress.at(2).get<double>();
+
+const double analytic_dE_dscale =
+    a * (dE_da + dE_db + dE_dc);
+
+if (oprint)
+{
+    coutput
+        << std::setprecision(12)
+        << tag
+        << "Finite-difference check:\n"
+        << tag
+        << "  E(+delta)          = "
+        << eplus
+        << '\n'
+        << tag
+        << "  E(-delta)          = "
+        << eminus
+        << '\n'
+        << tag
+        << "  dE/dscale FD       = "
+        << finite_difference
+        << '\n'
+        << tag
+        << "  dE/dscale lstress  = "
+        << analytic_dE_dscale
+        << '\n';
+}
 
 
 
+double step = 0.0025;
+
+constexpr double minimum_step = 1.0e-5;
+constexpr int max_steps = 20;
+
+for (int istep=0; istep<max_steps; ++istep)
+{
+    json current_result =
+        compute_egs_values(
+            3,
+            comm_world0,
+            minimizer,
+            rtdbstring,
+            coutput);
+
+    const double current_energy =
+        current_result.at("energy")
+                     .get<double>();
+
+    const json& lstress =
+        current_result.at("lstress");
+
+    const double dE_dcell =
+        (
+            lstress.at(0).get<double>() +
+            lstress.at(1).get<double>() +
+            lstress.at(2).get<double>()
+        ) / 3.0;
+
+    if (oprint)
+    {
+        coutput << std::defaultfloat << std::setprecision(10)
+            << tag
+            << "Cell step "
+            << istep
+            << " current energy = "
+            << current_energy
+            << " dE/dcell = "
+            << dE_dcell
+            << " step = "
+            << step
+            << '\n';
+    }
+
+std::string expanded_rtdb =
+    rtdbstring;
+
+std::string contracted_rtdb =
+    rtdbstring;
+
+scale_cubic_cell(
+    expanded_rtdb,
+    1.0 + step);
+
+scale_cubic_cell(
+    contracted_rtdb,
+    1.0 - step);
+
+json expanded_result =
+    compute_egs_values(
+        1,
+        comm_world0,
+        minimizer,
+        expanded_rtdb,
+        coutput);
+
+json contracted_result =
+    compute_egs_values(
+        1,
+        comm_world0,
+        minimizer,
+        contracted_rtdb,
+        coutput);
+
+const double expanded_energy =
+    expanded_result.at("energy").get<double>();
+
+const double contracted_energy =
+    contracted_result.at("energy").get<double>();
+
+if (expanded_energy < current_energy &&
+    expanded_energy <= contracted_energy)
+{
+    rtdbstring =
+        std::move(expanded_rtdb);
+
+    if (oprint)
+    {
+        coutput  << std::defaultfloat << std::setprecision(10)
+            << tag
+            << "Accepted expansion, energy = "
+            << expanded_energy
+            << '\n';
+    }
+}
+else if (contracted_energy < current_energy)
+{
+    rtdbstring =
+        std::move(contracted_rtdb);
+
+    if (oprint)
+    {
+        coutput  << std::defaultfloat << std::setprecision(10)
+            << tag
+            << "Accepted contraction, energy = "
+            << contracted_energy
+            << '\n';
+    }
+}
+else
+{
+    step *= 0.5;
+
+    if (oprint)
+    {
+        coutput  << std::defaultfloat << std::setprecision(10)
+            << tag
+            << "Rejected both directions, step = "
+            << step
+            << '\n';
+    }
+
+    if (step < minimum_step)
+        break;
+}
+
+    /*
+    const double direction =
+        (dE_dcell < 0.0)
+            ? 1.0
+            : -1.0;
+
+    const double trial_scale =
+        1.0 + direction * step;
+
+    std::string trial_rtdb =
+        rtdbstring;
+
+    scale_cubic_cell(
+        trial_rtdb,
+        trial_scale);
+
+    json trial_result =
+        compute_egs_values(
+            1,
+            comm_world0,
+            minimizer,
+            trial_rtdb,
+            coutput);
+
+    const double trial_energy =
+        trial_result.at("energy")
+                    .get<double>();
+
+    if (trial_energy < current_energy)
+    {
+        rtdbstring =
+            std::move(trial_rtdb);
+
+        if (oprint)
+        {
+            coutput << std::defaultfloat << std::setprecision(10)
+                << tag
+                << "Accepted cell step "
+                << istep
+                << " scale = "
+                << trial_scale
+                << " energy = "
+                << trial_energy
+                << '\n';
+        }
+    }
+    else
+    {
+        step *= 0.5;
+
+        if (oprint)
+        {
+            coutput << std::defaultfloat << std::setprecision(10)
+                << tag
+                << "Rejected cell step "
+                << istep
+                << ", reducing step to "
+                << step
+                << '\n';
+        }
+
+        if (step < minimum_step)
+        {
+            if (oprint)
+                coutput
+                    << tag
+                    << "Minimum cell step reached.\n";
+
+            break;
+        }
+    }
+
+   */
+}
 
 
+
+/*
 //double step = 0.005;
 double step = 0.0025;
 
@@ -565,21 +1002,17 @@ for (int istep = 0; istep < max_steps; ++istep)
     const json& lstress =
         current_result.at("lstress");
 
-    const double dE_da =
-        lstress.at(0).get<double>();
+    const double dE_da = lstress.at(0).get<double>();
 
-    const double dE_db =
-        lstress.at(1).get<double>();
+    const double dE_db = lstress.at(1).get<double>();
 
-    const double dE_dc =
-        lstress.at(2).get<double>();
+    const double dE_dc = lstress.at(2).get<double>();
 
-    const double dE_dcell =
-        (dE_da + dE_db + dE_dc) / 3.0;
+    const double dE_dcell = (dE_da + dE_db + dE_dc) / 3.0;
 
     if (oprint)
     {
-        coutput  << std::fixed << std::setprecision(10)
+        coutput  << std::defaultfloat << std::setprecision(10)
             << "@Cell step "
             << istep
             << " current energy = "
@@ -637,10 +1070,6 @@ for (int istep = 0; istep < max_steps; ++istep)
 
     if (trial_energy < current_energy)
     {
-        /*
-         * Accept the complete trial RTDB, including its updated
-         * geometry, current lattice, and backend results.
-         */
         rtdbstring =
             std::move(trial_rtdb);
 
@@ -652,9 +1081,6 @@ for (int istep = 0; istep < max_steps; ++istep)
     }
     else
     {
-        /*
-         * Reject the trial. The accepted rtdbstring remains unchanged.
-         */
         step *= 0.5;
 
         if (oprint)
@@ -676,6 +1102,7 @@ for (int istep = 0; istep < max_steps; ++istep)
     }
 }
 
+*/
 
 
 
