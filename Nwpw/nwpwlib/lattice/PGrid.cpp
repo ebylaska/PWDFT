@@ -109,32 +109,32 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    for (auto nb = 0; nb <= 1; ++nb) 
    if (parall->is_master())
    {
-    const double ggcuttmp =
-        (nb == 0)
-            ? lattice->eggcut_frozen()
-            : lattice->wggcut_frozen();
-
-    std::cout
-        << "@PGrid nb = "
-        << nb
-        << " frozen cutoff = "
-        << ggcuttmp
-        << '\n';
-
-    std::cout
-        << "@PGrid frozen unitg:\n";
-
-    for (int j = 0; j < 3; ++j)
-    {
-        std::cout
-            << "@  "
-            << lattice->unitg_frozen(0, j)
-            << " "
-            << lattice->unitg_frozen(1, j)
-            << " "
-            << lattice->unitg_frozen(2, j)
-            << '\n';
-    }
+      const double ggcuttmp =
+          (nb == 0)
+              ? lattice->eggcut_frozen()
+              : lattice->wggcut_frozen();
+     
+      std::cout << "@PGrid nb = "
+          << nb
+          << " frozen cutoff = "
+          << ggcuttmp
+          << '\n';
+      std::cout << "@PGrid unitg:\n";
+      for (int j = 0; j < 3; ++j)
+      {
+         std::cout << "@  "
+             << lattice->unitg(0, j) << " "
+             << lattice->unitg(1, j) << " "
+             << lattice->unitg(2, j) << '\n';
+      }
+      std::cout << "@PGrid frozen unitg:\n";
+      for (int j = 0; j < 3; ++j)
+      {
+         std::cout << "@  "
+             << lattice->unitg_frozen(0, j) << " "
+             << lattice->unitg_frozen(1, j) << " "
+             << lattice->unitg_frozen(2, j) << '\n';
+      }
    }
  
  

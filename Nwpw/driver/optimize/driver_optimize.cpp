@@ -677,51 +677,23 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
  * where A is the current direct lattice and s is an isotropic
  * scale factor.
  */
-constexpr double fd_delta =
-    1.0e-2;
+constexpr double fd_delta = 1.0e-2;
 
-std::string plus_rtdb =
-    rtdbstring;
+std::string plus_rtdb = rtdbstring;
+std::string minus_rtdb = rtdbstring;
 
-std::string minus_rtdb =
-    rtdbstring;
+scale_cubic_cell(plus_rtdb, 1.0 + fd_delta);
+scale_cubic_cell(minus_rtdb, 1.0 - fd_delta);
 
-scale_cubic_cell(
-    plus_rtdb,
-    1.0 + fd_delta);
+json plus_result  = compute_egs_values(1, comm_world0, minimizer, plus_rtdb, coutput);
+json minus_result = compute_egs_values(1, comm_world0, minimizer, minus_rtdb, coutput);
 
-scale_cubic_cell(
-    minus_rtdb,
-    1.0 - fd_delta);
+const double eplus = plus_result.at("energy").get<double>();
+const double eminus = minus_result.at("energy").get<double>();
 
-json plus_result =
-    compute_egs_values(
-        1,
-        comm_world0,
-        minimizer,
-        plus_rtdb,
-        coutput);
+const double finite_difference = (eplus - eminus) / (2.0 * fd_delta);
 
-json minus_result =
-    compute_egs_values(
-        1,
-        comm_world0,
-        minimizer,
-        minus_rtdb,
-        coutput);
-
-const double eplus =
-    plus_result.at("energy").get<double>();
-
-const double eminus =
-    minus_result.at("energy").get<double>();
-
-const double finite_difference =
-    (eplus - eminus) /
-    (2.0 * fd_delta);
-
-json current_json =
-    json::parse(rtdbstring);
+json current_json = json::parse(rtdbstring);
 
 const std::string geomname =
     current_json.contains("geometry") &&
@@ -729,25 +701,15 @@ const std::string geomname =
         ? current_json["geometry"].get<std::string>()
         : "geometry";
 
-const json& current_unita =
-    current_json["geometries"]
-                [geomname]
-                ["unita"];
+const json& current_unita = current_json["geometries"][geomname]["unita"];
 
-const double a =
-    current_unita.at(0).get<double>();
+const double a = current_unita.at(0).get<double>();
 
-const double dE_da =
-    lstress.at(0).get<double>();
+const double dE_da = lstress.at(0).get<double>();
+const double dE_db = lstress.at(1).get<double>();
+const double dE_dc = lstress.at(2).get<double>();
 
-const double dE_db =
-    lstress.at(1).get<double>();
-
-const double dE_dc =
-    lstress.at(2).get<double>();
-
-const double analytic_dE_dscale =
-    a * (dE_da + dE_db + dE_dc);
+const double analytic_dE_dscale = a * (dE_da + dE_db + dE_dc);
 
 if (oprint)
 {
@@ -770,7 +732,13 @@ if (oprint)
         << tag
         << "  dE/dscale lstress  = "
         << analytic_dE_dscale
+        << '\n'
+        << tag 
+        << "  dE_da = "
+        << dE_da
         << '\n';
+     coutput << tag << "\n";
+     coutput << tag << "\n";
 }
 
 
@@ -778,7 +746,7 @@ if (oprint)
 double step = 0.0025;
 
 constexpr double minimum_step = 1.0e-5;
-constexpr int max_steps = 20;
+constexpr int max_steps = 1;
 
 for (int istep=0; istep<max_steps; ++istep)
 {
@@ -865,7 +833,9 @@ if (expanded_energy < current_energy &&
     {
         coutput  << std::defaultfloat << std::setprecision(10)
             << tag
-            << "Accepted expansion, energy = "
+            << "Accepted expansion, step = " 
+            << istep
+            << ", energy = "
             << expanded_energy
             << '\n';
     }
@@ -879,7 +849,9 @@ else if (contracted_energy < current_energy)
     {
         coutput  << std::defaultfloat << std::setprecision(10)
             << tag
-            << "Accepted contraction, energy = "
+            << "Accepted contraction, step = "  
+            << istep
+            << ", energy = "
             << contracted_energy
             << '\n';
     }
@@ -893,7 +865,7 @@ else
         coutput  << std::defaultfloat << std::setprecision(10)
             << tag
             << "Rejected both directions, step = "
-            << step
+            << istep
             << '\n';
     }
 
@@ -901,208 +873,10 @@ else
         break;
 }
 
-    /*
-    const double direction =
-        (dE_dcell < 0.0)
-            ? 1.0
-            : -1.0;
-
-    const double trial_scale =
-        1.0 + direction * step;
-
-    std::string trial_rtdb =
-        rtdbstring;
-
-    scale_cubic_cell(
-        trial_rtdb,
-        trial_scale);
-
-    json trial_result =
-        compute_egs_values(
-            1,
-            comm_world0,
-            minimizer,
-            trial_rtdb,
-            coutput);
-
-    const double trial_energy =
-        trial_result.at("energy")
-                    .get<double>();
-
-    if (trial_energy < current_energy)
-    {
-        rtdbstring =
-            std::move(trial_rtdb);
-
-        if (oprint)
-        {
-            coutput << std::defaultfloat << std::setprecision(10)
-                << tag
-                << "Accepted cell step "
-                << istep
-                << " scale = "
-                << trial_scale
-                << " energy = "
-                << trial_energy
-                << '\n';
-        }
-    }
-    else
-    {
-        step *= 0.5;
-
-        if (oprint)
-        {
-            coutput << std::defaultfloat << std::setprecision(10)
-                << tag
-                << "Rejected cell step "
-                << istep
-                << ", reducing step to "
-                << step
-                << '\n';
-        }
-
-        if (step < minimum_step)
-        {
-            if (oprint)
-                coutput
-                    << tag
-                    << "Minimum cell step reached.\n";
-
-            break;
-        }
-    }
-
-   */
 }
 
 
 
-/*
-//double step = 0.005;
-double step = 0.0025;
-
-constexpr double stress_tolerance = 1.0e-5;
-constexpr double minimum_step = 1.0e-5;
-constexpr int max_steps = 20;
-
-for (int istep = 0; istep < max_steps; ++istep)
-{
-    json current_result =
-        compute_egs_values(
-            3,
-            comm_world0,
-            minimizer,
-            rtdbstring,
-            coutput);
-
-    const double current_energy =
-        current_result.at("energy").get<double>();
-
-    const json& lstress =
-        current_result.at("lstress");
-
-    const double dE_da = lstress.at(0).get<double>();
-
-    const double dE_db = lstress.at(1).get<double>();
-
-    const double dE_dc = lstress.at(2).get<double>();
-
-    const double dE_dcell = (dE_da + dE_db + dE_dc) / 3.0;
-
-    if (oprint)
-    {
-        coutput  << std::defaultfloat << std::setprecision(10)
-            << "@Cell step "
-            << istep
-            << " current energy = "
-            << current_energy
-            << " dE/dcell = "
-            << dE_dcell
-            << " step = "
-            << step
-            << '\n';
-    }
-
-    if (std::abs(dE_dcell) < stress_tolerance)
-    {
-        if (oprint)
-            coutput << "@Cell optimization converged.\n";
-
-        break;
-    }
-
-    const double direction =
-        (dE_dcell < 0.0)
-            ? 1.0
-            : -1.0;
-
-    const double trial_scale =
-        1.0 + direction * step;
-
-    std::string trial_rtdb =
-        rtdbstring;
-
-    scale_cubic_cell(
-        trial_rtdb,
-        trial_scale);
-
-    json trial_result =
-        compute_egs_values(
-            1,
-            comm_world0,
-            minimizer,
-            trial_rtdb,
-            coutput);
-
-    const double trial_energy =
-        trial_result.at("energy").get<double>();
-
-    if (oprint)
-    {
-        coutput  << std::fixed << std::setprecision(10)
-            << "@Trial scale = "
-            << trial_scale
-            << " trial energy = "
-            << trial_energy
-            << '\n';
-    }
-
-    if (trial_energy < current_energy)
-    {
-        rtdbstring =
-            std::move(trial_rtdb);
-
-        if (oprint)
-            coutput
-                << "@Accepted cell step "
-                << istep
-                << '\n';
-    }
-    else
-    {
-        step *= 0.5;
-
-        if (oprint)
-            coutput  << std::fixed << std::setprecision(10)
-                << "@Rejected cell step "
-                << istep
-                << ", reducing step to "
-                << step
-                << '\n';
-
-        if (step < minimum_step)
-        {
-            if (oprint)
-                coutput
-                    << "@Minimum cell step reached.\n";
-
-            break;
-        }
-    }
-}
-
-*/
 
 
 
