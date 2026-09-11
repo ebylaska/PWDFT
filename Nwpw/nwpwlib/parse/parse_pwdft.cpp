@@ -3235,7 +3235,7 @@ int parse_task(std::string rtdbstring) {
   auto rtdb = json::parse(rtdbstring);
   int task = 0;
   if (rtdb["foundtask"]) {
-     // Look for pspw jobs
+     // Look for pspw jobs: 1-20
      if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "pspw")) {
         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "energy"))           task = 1;
         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "gradient"))         task = 2;
@@ -3247,26 +3247,31 @@ int parse_task(std::string rtdbstring) {
         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "born-oppenheimer")) task = 8;
         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "dplot"))            task = 9;
         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "stress"))           task = 10;
-        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "relax"))            task = 20; 
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "relax"))            task = 11; 
      }
-     // Look for band jobs
+
+     // Look for band jobs: 21-40
      if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "band")) {
-        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "energy"))           task = 11;
-        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "gradient"))         task = 12;
-        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "optimize"))         task = 13;
-        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "freq"))             task = 14;
-        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "steepest_descent")) task = 15;
-        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "stress"))           task = 16;
-        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "relax"))            task = 21; 
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "energy"))           task = 21;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "gradient"))         task = 22;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "optimize"))         task = 23;
 
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "freq"))             task = 25;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "steepest_descent")) task = 26;
+
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "born-oppenheimer")) task = 28;
+
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "stress"))           task = 30;
+        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "relax"))            task = 31; 
      }
 
-     // Look for file jobs
-     if (mystring_contains(mystring_lowercase(rtdb["current_task"]),"file")) { task=30; }
+     // Look for file jobs: 50-
+     if (mystring_contains(mystring_lowercase(rtdb["current_task"]),"file")) { task=50; }
   }
 
   return task;
 }
+
 
 /**************************************************
  *                                                *

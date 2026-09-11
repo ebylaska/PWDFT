@@ -955,7 +955,7 @@ int main(int argc, char *argv[]) {
               dum_rtdbstr = parse_initialize_wvfnc_set(dum_rtdbstr, true);
               wvfnc_initialize = false;
            }
-           if (task<10)
+           if (task<=20)
            {
               if (oprint)
                  std::cout << std::endl
@@ -977,6 +977,7 @@ int main(int argc, char *argv[]) {
      }
   }
 
+  std::cout << "TASK=" << task << std::endl;
 
   // Tasks
   while (task > 0) 
@@ -1043,19 +1044,23 @@ int main(int argc, char *argv[]) {
         ierr += pwdft::pspw_dplot(MPI_COMM_WORLD, rtdbstr, std::cout);
      }
 
-    
-     /* file generate task */
-     if (task == 30) {
+     /* relax task */
+     if (task == 11)
+     {
         if (oprint)
-        {
            std::cout << std::endl
-                     << "Running file generate - rtdbstr = " << rtdbstr << std::endl;
-           ierr += pwdft::file_generate(rtdbstr);
-        }
+                     << "Running pspw relax - rtdbstr = "
+                     << rtdbstr << std::endl
+                     << std::endl;
+        MPI_Barrier(MPI_COMM_WORLD);
+        ierr += pwdft::driver_optimizer(MPI_COMM_WORLD, rtdbstr, std::cout, pwdft::pspw_minimizer);
      }
 
-     /* Energy or Gradient task */
-     if ((task == 11) || (task ==12))
+
+    
+
+     /* Energy or Gradient or stress task */
+     if ((task == 21) || (task ==22) || task==30)
      {
         if (oprint)
            std::cout << std::endl
@@ -1066,8 +1071,8 @@ int main(int argc, char *argv[]) {
         ierr += pwdft::band_minimizer(MPI_COMM_WORLD, rtdbstr, std::cout);
      }
 
-     /* Optimize task */
-     if (task == 13)
+     /* Optimize, geovib, or freq  task */
+     if (task == 23)
      {
         if (oprint)
            std::cout << std::endl
@@ -1079,7 +1084,7 @@ int main(int argc, char *argv[]) {
      }
 
      /* Frequency task */
-     if (task == 14)
+     if (task == 25)
      {
         if (oprint)
            std::cout << std::endl
@@ -1089,7 +1094,7 @@ int main(int argc, char *argv[]) {
      }
     
      /* band steepest descent task */
-     if (task == 15) 
+     if (task == 26) 
      {
         if (oprint)
            std::cout << "Running band Steepest Descent " << std::endl;
@@ -1098,7 +1103,7 @@ int main(int argc, char *argv[]) {
      }
 
      /* Born-Oppenheimer task */
-     if (task == 17)
+     if (task == 28)
      {
         if (oprint)
            std::cout << std::endl
@@ -1109,18 +1114,8 @@ int main(int argc, char *argv[]) {
         ierr += pwdft::band_bomd(MPI_COMM_WORLD, rtdbstr, std::cout);
      }
 
-     if (task == 20)
-     {
-        if (oprint)
-           std::cout << std::endl
-                     << "Running pspw relax - rtdbstr = "
-                     << rtdbstr << std::endl
-                     << std::endl;
-        MPI_Barrier(MPI_COMM_WORLD);
-        ierr += pwdft::driver_optimizer(MPI_COMM_WORLD, rtdbstr, std::cout, pwdft::pspw_minimizer);
-     }
-
-     if (task == 21)
+     /* relax task */
+     if (task == 31)
      {
         if (oprint)
            std::cout << std::endl
@@ -1131,6 +1126,16 @@ int main(int argc, char *argv[]) {
         ierr += pwdft::driver_optimizer(MPI_COMM_WORLD, rtdbstr, std::cout, pwdft::band_minimizer);
      }
 
+
+     /* file generate task */
+     if (task == 50) {
+        if (oprint)
+        {
+           std::cout << std::endl
+                     << "Running file generate - rtdbstr = " << rtdbstr << std::endl;
+           ierr += pwdft::file_generate(rtdbstr);
+        }
+     }
 
 
     
