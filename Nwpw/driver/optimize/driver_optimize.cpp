@@ -610,8 +610,8 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
       symmetry_info.ita_number = effective_symmetry.value("ita_number", -1);
      
       // Simple cubic detection, expand as needed
-      symmetry_info.is_cubic = (symmetry_info.space_group_name.find("Fd-3m") != std::string::npos) ||
-                               (symmetry_info.group_order == 192);
+     // symmetry_info.is_cubic = (symmetry_info.space_group_name.find("Fd-3m") != std::string::npos) ||
+     //                          (symmetry_info.group_order == 192);
 
       int sgnum = symmetry_info.ita_number;
       if      (sgnum >= 1   && sgnum <= 2)   symmetry_info.system = "triclinic";
