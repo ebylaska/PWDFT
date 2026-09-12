@@ -1,0 +1,43 @@
+title "diamond unit cell optimization"
+
+echo
+
+start C1a
+
+memory 1900 mb
+
+permanent_dir ./perm6aa
+scratch_dir   ./perm6aa
+
+charge 0
+
+geometry noautoz nocenter noautosym 
+   system crystal
+      lat_a  3.638
+      lat_b  3.638
+      lat_c  3.638
+      alpha 90.0000
+      beta  90.0000
+      gamma 90.0000
+   end
+
+   C     0.00000    0.000000    0.000000
+
+symmetry Fd-3m setting 1 conventional
+end
+
+nwpw
+  cutoff 50.0
+  mult 1
+  xc pbe96
+  lmbfgs grassman
+  2d-hcurve
+  includestress
+  ewald_ncut 8
+  ewald_rcut 3.0
+  
+end
+task pspw stress
+
+  
+

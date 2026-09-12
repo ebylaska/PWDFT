@@ -1,0 +1,55 @@
+title "diamond unit cell optimization"
+
+echo
+
+start C1b
+
+memory 1900 mb
+
+permanent_dir ./perm9
+scratch_dir   ./perm9
+
+charge 0
+
+geometry noautoz nocenter noautosym 
+   system crystal
+      lat_a  3.638
+      lat_b  3.638
+      lat_c  3.638
+      alpha 90.0000
+      beta  90.0000
+      gamma 90.0000
+   end
+
+   C     0.00000    0.000000    0.000000
+
+symmetry Fd-3m setting 1 conventional
+end
+
+nwpw
+  cutoff 50.0
+  mult 1
+  xc pbe96
+  lmbfgs grassman
+  2d-hcurve
+end
+#task pspw energy
+
+#set nwpw:cif_filename  C1
+set nwpw:kbpp_ray    .true.
+set nwpw:kbpp_filter .true.
+set includestress  .true.
+set includelattice .true.
+#set nwpw:frozen_lattice:thresh 999.0
+#set nwpw:zero_forces .true.
+
+driver
+   clear
+   maxiter 50
+end
+#task band optimize ignore
+
+#nwpw
+#   includestress
+#end
+task pspw stress

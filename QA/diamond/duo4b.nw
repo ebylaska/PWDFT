@@ -1,0 +1,69 @@
+title "diamond unit cell optimization"
+
+echo
+
+start C1a
+
+memory 1900 mb
+
+permanent_dir ./perm4a
+scratch_dir   ./perm4a
+
+charge 0
+
+geometry noautoz nocenter noautosym 
+   system crystal
+      lat_a  3.638575
+      lat_b  3.638575
+      lat_c  3.638575
+      alpha 90.0000
+      beta  90.0000
+      gamma 90.0000
+   end
+
+   C     0.00000    0.000000    0.000000
+
+symmetry Fd-3m setting 1 conventional
+end
+
+nwpw
+  cutoff 50.0
+  mult 1
+  xc pbe96
+  lmbfgs grassman
+  #scf
+  2d-hcurve
+end
+task pspw energy
+
+#set nwpw:cif_filename  C1
+set nwpw:kbpp_ray    .true.
+set nwpw:kbpp_filter .true.
+set includestress  .true.
+set includelattice .true.
+#set nwpw:frozen_lattice:thresh 999.0
+#set nwpw:zero_forces .true.
+
+task pspw stress
+
+nwpw
+   dplot
+   orbital 1 orb01.cube
+   orbital 2 orb02.cube
+   orbital 3 orb03.cube
+   orbital 4 orb04.cube
+   orbital 5 orb05.cube
+   orbital 6 orb06.cube
+   orbital 7 orb07.cube
+   orbital 8 orb08.cube
+   orbital 9 orb09.cube
+   orbital 10 orb10.cube
+   orbital 11 orb11.cube
+   orbital 12 orb12.cube
+   orbital 13 orb13.cube
+   orbital 14 orb14.cube
+   orbital 15 orb15.cube
+   orbital 16 orb16.cube
+   end
+end
+task pspw pspw_dplot
