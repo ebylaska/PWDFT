@@ -314,6 +314,7 @@ Symmetry Symmetry::from_json(const nlohmann::json& j)
     // Otherwise build directly from operators
     s.type_ = Type::SpaceGroup;
     s.name_ = j.value("name", "custom");
+    s.ita_number_ = j.value("group_number", -1);
     s.ops_.clear();
 
     for (const auto& jop : j.at("ops"))
@@ -376,6 +377,16 @@ const std::string& Symmetry::true_name() const
 {
     return true_name_;
 }
+
+/*******************************************
+ *                                         *
+ *            Symmetry::ita_number         *
+ *                                         *
+ *******************************************/
+const int Symmetry::ita_number() const
+{   
+    return ita_number_;
+}    
 
 /*******************************************
  *                                         *

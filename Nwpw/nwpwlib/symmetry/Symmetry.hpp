@@ -53,6 +53,8 @@ public:
     const std::string& name() const;
     const std::string& true_name() const;
 
+    const int ita_number() const;
+
     /** True if this is a space group. */
     bool is_space_group() const;
 

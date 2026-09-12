@@ -363,7 +363,7 @@ static std::string symmetry_fingerprint(const pwdft::Symmetry& sym,
    // If you already have a hash util, use it.
    std::ostringstream oss;
    oss.setf(std::ios::fixed); oss<<std::setprecision(12);
-   oss << sym.name() << "|" << sym.order()
+   oss << sym.name() << "|" << sym.ita_number() << "|" << sym.order()
        << "|prim=" << (primitive_requested?1:0)
        << "|tt=" << translation_type << "|unita=";
    for (int i=0;i<9;++i) oss << unita[i] << ",";
@@ -1325,6 +1325,7 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
    es["primitive"] = symmetry_primitive_requested;
    es["name"]      = sym.name();
    es["true_name"] = sym.true_name();
+   es["ita_number"] = sym.ita_number();
    es["order"]     = sym.order();
    es["tolerance"] = symmetry_tolerance;
    es["enabled"] = (symmetry_specified || autosym || autospace);
