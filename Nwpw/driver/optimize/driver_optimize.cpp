@@ -17,6 +17,25 @@
 //#include "gdevice.hpp"
 
 
+struct SymmetryInfo {
+    std::string space_group_name = "unknown";
+    std::string type = "unknown";
+    int group_order = -1;
+    bool is_primitive = false;
+    bool is_cubic = false;
+
+    std::string system = "unknown"; // now 'system' defines your symmetry constraints!
+
+    // Add more fields if needed
+
+    // Helper for test
+    bool has_symmetry() const {
+        return (space_group_name != "unknown" && group_order > 0);
+    }
+};
+
+
+
 #include "json.hpp"
 using json = nlohmann::json;
 
@@ -456,6 +475,11 @@ static json compute_egs_values(const int option,
 }
 
 
+/******************************************
+ *                                        *
+ *          scale_cubic_cell              *
+ *                                        *
+ ******************************************/
 static void scale_cubic_cell(std::string& rtdbstring, const double scale)
 {
     json rtdbjson = json::parse(rtdbstring);
@@ -570,9 +594,35 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
 
    /* reset Parallel base_stdio_print = lprint */
    myparallel.base_stdio_print = lprint;
-   std::string tag  = "@";
+   std::string tag  = "@@";
 
- 
+   // Fetch the space groupd symmetry if it exists
+   SymmetryInfo symmetry_info;
+   json parse_json = json::parse(rtdbstring);
+   if (parse_json.contains("effective_symmetry"))
+   {    
+      const json& effective_symmetry = parse_json.at("effective_symmetry");
+      symmetry_info.space_group_name = effective_symmetry.value("name", "unknown");
+      symmetry_info.type = effective_symmetry.value("type", "unknown");
+      symmetry_info.group_order = effective_symmetry.value("order", -1);
+      symmetry_info.is_primitive = effective_symmetry.value("primitive", false);
+     
+      // Simple cubic detection, expand as needed
+      symmetry_info.is_cubic = (symmetry_info.space_group_name.find("Fd-3m") != std::string::npos) ||
+                               (symmetry_info.group_order == 192);
+
+      int sgnum = symmetry_info.group_order;
+      if      (sgnum >= 1   && sgnum <= 2)   symmetry_info.system = "triclinic";
+      else if (sgnum >= 3   && sgnum <= 15)  symmetry_info.system = "monoclinic";
+      else if (sgnum >= 16  && sgnum <= 74)  symmetry_info.system = "orthorhombic";
+      else if (sgnum >= 75  && sgnum <= 142) symmetry_info.system = "tetragonal";
+      else if (sgnum >= 143 && sgnum <= 167) symmetry_info.system = "trigonal";
+      else if (sgnum >= 168 && sgnum <= 194) symmetry_info.system = "hexagonal";
+      else if (sgnum >= 195 && sgnum <= 230) symmetry_info.system = "cubic";
+      if (symmetry_info.space_group_name.find("Fd-3m") != std::string::npos)
+         symmetry_info.system = "cubic";
+   }
+   
 
    if (oprint) 
    {
@@ -588,7 +638,23 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
        << tag << "  Role                   : top-level orchestration layer\n"
        << tag << "  Backend                : PSPW or band minimizer callback\n"
        << tag << "  Implementation         : NorthwestEx C++ driver\n"
-       << tag << "  Method                 : Grassmann/Stiefel manifold\n"
+       << tag << "  Method                 : Grassmann/Stiefel manifold\n";
+      if (symmetry_info.has_symmetry())
+      {
+         coutput << tag << "  Symmetry information:" << std::endl;
+         coutput << tag << "    Space group name:   " << symmetry_info.space_group_name << std::endl;
+         coutput << tag << "    Symmetry type:      " << symmetry_info.type << std::endl;
+         coutput << tag << "    Group order:        " << symmetry_info.group_order << std::endl;
+         coutput << tag << "    Primitive cell:     " << (symmetry_info.is_primitive ? "true" : "false") << std::endl;
+         coutput << tag << "    Crystal system:     " << symmetry_info.system <<std::endl;
+         // Add more fields if needed
+      } 
+      else 
+      {
+         coutput << tag << "  No symmetry information detected." << std::endl;
+      }
+       
+      coutput 
        << tag << "  Cell optimization      : RTDB unita_frozen reference lattice\n"
        << tag << "  Numerical grid         : fixed during optimization stage\n"
        << tag << "  Lattice tolerance      : " << lattice_tolerance << '\n' 
@@ -605,29 +671,79 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
        << tag << std::string(width, '-') << '\n';
    }
 
-   //Lattice mylattice(control);
-   //Ion myion(rtdbstring,control);
- 
   
-   /*
-    * Common driver-level work goes here.
-    *
-    * For now, if the driver is only dispatching, call the
-    * selected minimizer directly.
-    */
+   // Common driver-level work goes here.
+   //  - For now, if the driver is only dispatching, call the
+   //  - selected minimizer directly.
 
    // Add unita_frozen in rtdb
-   /*
-    * Relative Frobenius-norm tolerance for resetting unita_frozen.
-    *
-    * For an isotropic lattice scaling, 1.0e-2 corresponds approximately
-    * to a 1% change in the lattice constant.
-    */
-   if (oprint) coutput << tag <<  "start calcultions!" << std::endl;
-   //auto result1 = compute_egs_values(1,comm_world0,minimizer,rtdbstring,coutput);
-   //auto result2 = compute_egs_values(2,comm_world0,minimizer,rtdbstring,coutput);
-   //auto result3 = compute_egs_values(3,comm_world0,minimizer,rtdbstring,coutput);
+
+   // Relative Frobenius-norm tolerance for resetting unita_frozen.
+   //  - For an isotropic lattice scaling, 1.0e-2 corresponds approximately
+   //  - to a 1% change in the lattice constant.
+    
+   if (oprint) coutput << tag <<  "Initial Stress Calcultions" << std::endl;
    json result = compute_egs_values(3,comm_world0,minimizer,rtdbstring, coutput);
+
+
+   /*
+   const json& effective_symmetry = json::parse(rtdbstring).at("effective_symmetry");
+   if (oprint) {
+      coutput << tag << "Symmetry information:" << std::endl;
+      if (effective_symmetry.contains("name"))
+          coutput << tag << "  Space group name:  " << effective_symmetry.at("name").get<std::string>() << std::endl;
+      if (effective_symmetry.contains("type"))
+          coutput << tag << "  Symmetry type:     " << effective_symmetry.at("type").get<std::string>() << std::endl;
+      if (effective_symmetry.contains("order"))
+          coutput << tag << "  Group order:       " << effective_symmetry.at("order").get<int>() << std::endl;
+      if (effective_symmetry.contains("num_centering"))
+          coutput << tag << "  Centerings:        " << effective_symmetry.at("num_centering").get<int>() << std::endl;
+      if (effective_symmetry.contains("tolerance"))
+          coutput << tag << "  Tolerance:         " << effective_symmetry.at("tolerance").get<double>() << std::endl;
+      if (effective_symmetry.contains("primitive"))
+          coutput << tag << "  Primitive cell:    " << (effective_symmetry.at("primitive").get<bool>() ? "true" : "false") << std::endl;
+      if (effective_symmetry.contains("coords_type"))
+          coutput << tag << "  Coordinates:       " << effective_symmetry.at("coords_type").get<std::string>() << std::endl;
+      if (effective_symmetry.contains("translation_type"))
+          coutput << tag << "  Translation type:  " << effective_symmetry.at("translation_type").get<std::string>() << std::endl;
+     
+      // Print how many symmetry operations (ops)
+      if (effective_symmetry.contains("ops"))
+          coutput << tag << "  Symmetry operations: " << effective_symmetry.at("ops").size() << std::endl;
+     
+      // If you want, print first few symmetry operations (rotation/translation)
+      if (effective_symmetry.contains("ops")) {
+          int nprint = std::min(3, static_cast<int>(effective_symmetry.at("ops").size()));
+          coutput << tag << "  First " << nprint << " symmetry operations:" << std::endl;
+          for (int i = 0; i < nprint; ++i) {
+              const auto& op = effective_symmetry.at("ops").at(i);
+              coutput << tag << "    R = [";
+              for (int r = 0; r < 3; ++r) {
+                  for (int c = 0; c < 3; ++c) {
+                      coutput << op.at("R").at(r).at(c).get<double>();
+                      if (c < 2) coutput << ", ";
+                  }
+                  if (r < 2) coutput << " | ";
+              }
+              coutput << "]  ";
+              coutput << "t = [";
+              for (int t = 0; t < 3; ++t) {
+                  coutput << op.at("t").at(t).get<double>();
+                  if (t < 2) coutput << ", ";
+              }
+              coutput << "]" << std::endl;
+          }
+      }
+     
+      // Print fingerprint if present
+      if (effective_symmetry.contains("sym_fingerprint"))
+          coutput << tag << "  Symmetry fingerprint: " << effective_symmetry.at("sym_fingerprint").get<std::string>() << std::endl;
+     
+      if (effective_symmetry.contains("source"))
+          coutput << tag << "  Symmetry source:      " << effective_symmetry.at("source").get<std::string>() << std::endl;
+   }
+   */
+  
 
    const double energy = result.at("energy").get<double>();
    const json& lstress = result.at("lstress");
@@ -647,123 +763,94 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
    }
 
 
-/*
+
+   // Finite-difference check of the isotropic lattice derivative.
+   //  - This evaluates: - dE/ds ≈ [E((1+delta)A) - E((1-delta)A)] / (2*delta)
+   //  - where A is the current direct lattice and s is an isotropic scale factor.
+
+   constexpr double fd_delta = 1.0e-2;
+
+   std::string plus_rtdb = rtdbstring;
+   std::string minus_rtdb = rtdbstring;
+
+   scale_cubic_cell(plus_rtdb, 1.0 + fd_delta);
+   scale_cubic_cell(minus_rtdb, 1.0 - fd_delta);
+
+   json plus_result  = compute_egs_values(1, comm_world0, minimizer, plus_rtdb, coutput);
+   json minus_result = compute_egs_values(1, comm_world0, minimizer, minus_rtdb, coutput);
+
+   const double eplus = plus_result.at("energy").get<double>();
+   const double eminus = minus_result.at("energy").get<double>();
+
+   const double finite_difference = (eplus - eminus) / (2.0 * fd_delta);
+
+   json current_json = json::parse(rtdbstring);
+
+   const std::string geomname =
+       current_json.contains("geometry") &&
+       current_json["geometry"].is_string()
+           ? current_json["geometry"].get<std::string>()
+           : "geometry";
+
+
+   const json& current_unita = current_json["geometries"][geomname]["unita"];
+
+   const double a = current_unita.at(0).get<double>();
    const double dE_da = lstress.at(0).get<double>();
    const double dE_db = lstress.at(1).get<double>();
    const double dE_dc = lstress.at(2).get<double>();
 
+   const double analytic_dE_dscale = a * (dE_da + dE_db + dE_dc);
 
-   const double dE_dcell =
-       (dE_da + dE_db + dE_dc) / 3.0;
-
-   if (std::abs(dE_dcell) < 1.0e-8)
+   if (oprint)
    {
-      if (oprint)
-      {
-         coutput << tag << "Cubic lattice derivative is near zero; " "no trial cell generated.\n";
-      }
-
-      return 0;
+      coutput << std::setprecision(12)
+              << tag
+              << "Finite-difference check:\n"
+              << tag
+              << "  E(+delta)          = "
+              << eplus
+              << '\n'
+              << tag
+              << "  E(-delta)          = "
+              << eminus
+              << '\n'
+              << tag
+              << "  dE/dscale FD       = "
+              << finite_difference
+              << '\n'
+              << tag
+              << "  dE/dscale lstress  = "
+              << analytic_dE_dscale
+              << '\n'
+              << tag 
+              << "  dE_da = "
+              << dE_da
+              << '\n';
+      coutput << tag << "\n";
+      coutput << tag << "\n";
    }
-*/
-
-/*
- * Finite-difference check of the isotropic lattice derivative.
- *
- * This evaluates:
- *
- *     dE/ds ≈ [E((1+delta)A) - E((1-delta)A)] / (2*delta)
- *
- * where A is the current direct lattice and s is an isotropic
- * scale factor.
- */
-constexpr double fd_delta = 1.0e-2;
-
-std::string plus_rtdb = rtdbstring;
-std::string minus_rtdb = rtdbstring;
-
-scale_cubic_cell(plus_rtdb, 1.0 + fd_delta);
-scale_cubic_cell(minus_rtdb, 1.0 - fd_delta);
-
-json plus_result  = compute_egs_values(1, comm_world0, minimizer, plus_rtdb, coutput);
-json minus_result = compute_egs_values(1, comm_world0, minimizer, minus_rtdb, coutput);
-
-const double eplus = plus_result.at("energy").get<double>();
-const double eminus = minus_result.at("energy").get<double>();
-
-const double finite_difference = (eplus - eminus) / (2.0 * fd_delta);
-
-json current_json = json::parse(rtdbstring);
-
-const std::string geomname =
-    current_json.contains("geometry") &&
-    current_json["geometry"].is_string()
-        ? current_json["geometry"].get<std::string>()
-        : "geometry";
-
-const json& current_unita = current_json["geometries"][geomname]["unita"];
-
-const double a = current_unita.at(0).get<double>();
-
-const double dE_da = lstress.at(0).get<double>();
-const double dE_db = lstress.at(1).get<double>();
-const double dE_dc = lstress.at(2).get<double>();
-
-const double analytic_dE_dscale = a * (dE_da + dE_db + dE_dc);
-
-if (oprint)
-{
-    coutput
-        << std::setprecision(12)
-        << tag
-        << "Finite-difference check:\n"
-        << tag
-        << "  E(+delta)          = "
-        << eplus
-        << '\n'
-        << tag
-        << "  E(-delta)          = "
-        << eminus
-        << '\n'
-        << tag
-        << "  dE/dscale FD       = "
-        << finite_difference
-        << '\n'
-        << tag
-        << "  dE/dscale lstress  = "
-        << analytic_dE_dscale
-        << '\n'
-        << tag 
-        << "  dE_da = "
-        << dE_da
-        << '\n';
-     coutput << tag << "\n";
-     coutput << tag << "\n";
-}
 
 
+   // Start optimization Here!!!!
+   int lstep = 0;
+   double lenergy = 0.0;
 
-double step = 0.0025;
+   double step    = 0.0025;
+  
+   constexpr double minimum_step = 1.0e-5;
+   constexpr double minimum_gradient = 1.0e-4;
+   bool converged = false;
 
-constexpr double minimum_step = 1.0e-5;
-constexpr int max_steps = 1;
+   //constexpr double minimum_step = 1.0e-5; // control stuff
+   constexpr int max_steps = 25;
 
-for (int istep=0; istep<max_steps; ++istep)
-{
-    json current_result =
-        compute_egs_values(
-            3,
-            comm_world0,
-            minimizer,
-            rtdbstring,
-            coutput);
+   for (int istep=0; istep<max_steps; ++istep)
+   {
+      json current_result = compute_egs_values(3, comm_world0, minimizer, rtdbstring, coutput);
 
-    const double current_energy =
-        current_result.at("energy")
-                     .get<double>();
-
-    const json& lstress =
-        current_result.at("lstress");
+      const double current_energy = current_result.at("energy").get<double>();
+      const json& lstress = current_result.at("lstress");
 
     const double dE_dcell =
         (
@@ -787,47 +874,58 @@ for (int istep=0; istep<max_steps; ++istep)
             << '\n';
     }
 
-std::string expanded_rtdb =
-    rtdbstring;
+   std::string expanded_rtdb = rtdbstring;
+   std::string contracted_rtdb = rtdbstring;
 
-std::string contracted_rtdb =
-    rtdbstring;
+   scale_cubic_cell(expanded_rtdb,   1.0 + step);
+   scale_cubic_cell(contracted_rtdb, 1.0 - step);
 
-scale_cubic_cell(
-    expanded_rtdb,
-    1.0 + step);
+   json expanded_result = compute_egs_values(1,comm_world0, minimizer, expanded_rtdb, coutput);
+   json contracted_result = compute_egs_values(1, comm_world0, minimizer, contracted_rtdb, coutput);
 
-scale_cubic_cell(
-    contracted_rtdb,
-    1.0 - step);
+   const double expanded_energy = expanded_result.at("energy").get<double>();
+   const double contracted_energy = contracted_result.at("energy").get<double>();
 
-json expanded_result =
-    compute_egs_values(
-        1,
-        comm_world0,
-        minimizer,
-        expanded_rtdb,
-        coutput);
+   if (oprint) {
+      coutput << "\n"
+              << tag << "----------------------------------------------\n"
+              << tag << " PWDFT Lattice Optimization                   \n"
+              << tag << "----------------------------------------------\n"
+              << tag << " Step        : " << istep << '\n'
+              << tag << " Energy      : " << std::fixed << std::setprecision(10) << current_energy << " Hartree\n"
+              << tag << " Lattice a   : " << std::fixed << std::setprecision(6) << a << " Bohr"
+              << " (" << std::fixed << std::setprecision(3) << a * 0.529177 << " Å)\n"
+              << tag << " dE/da       : " << lstress.at(0).get<double>() << '\n'
+              << tag << " dE/db       : " << lstress.at(1).get<double>() << '\n'
+              << tag << " dE/dc       : " << lstress.at(2).get<double>() << '\n'
+              << tag << " Step size   : " << step << '\n';
+     
+      // Show action taken
+      if (expanded_energy < current_energy && expanded_energy <= contracted_energy) {
+          coutput << tag << " Action      : Expanded lattice, accepted.\n";
+      } else if (contracted_energy < current_energy) {
+          coutput << tag << " Action      : Contracted lattice, accepted.\n";
+      } else {
+          coutput << tag << " Action      : No improvement, step rejected (minimal lattice change).\n";
+      }
+      coutput << tag << "----------------------------------------------\n";
+   }
 
-json contracted_result =
-    compute_egs_values(
-        1,
-        comm_world0,
-        minimizer,
-        contracted_rtdb,
-        coutput);
 
-const double expanded_energy =
-    expanded_result.at("energy").get<double>();
+   double grad_norm = std::sqrt(std::pow(lstress.at(0).get<double>(), 2) +
+                                std::pow(lstress.at(1).get<double>(), 2) +
+                                std::pow(lstress.at(2).get<double>(), 2));
 
-const double contracted_energy =
-    contracted_result.at("energy").get<double>();
+   // Convergence check
+   if ((step < minimum_step) && (grad_norm < minimum_gradient))
+   {
+      converged = true;
+      break;
+   }
 
-if (expanded_energy < current_energy &&
-    expanded_energy <= contracted_energy)
+if (expanded_energy < current_energy && expanded_energy <= contracted_energy)
 {
-    rtdbstring =
-        std::move(expanded_rtdb);
+    rtdbstring = std::move(expanded_rtdb);
 
     if (oprint)
     {
@@ -854,6 +952,10 @@ else if (contracted_energy < current_energy)
             << ", energy = "
             << contracted_energy
             << '\n';
+       coutput << std::defaultfloat << std::setprecision(10)
+            << tag
+            << "curent_unita = "  
+            << current_unita << '\n';
     }
 }
 else
@@ -870,15 +972,56 @@ else
     }
 
     if (step < minimum_step)
-        break;
+    {
+       break;
+    }
 }
 
+   lstep = istep;
+   lenergy = current_energy;
 }
 
 
+// After the optimization loop (use the final geometry and its energy/stress)
+json final_result = compute_egs_values(3, comm_world0, minimizer, rtdbstring, coutput);
+// Use 'rtdbstring' as possibly updated in the last step
+
+const double final_energy = final_result.at("energy").get<double>();
+const json& final_lstress = final_result.at("lstress");
+
+// Extract the geometry from rtdbstring itself (not initial current_unita!)
+json final_json = json::parse(rtdbstring);
+const json& final_unita = final_json["geometries"][geomname]["unita"];
+const double final_a = final_unita.at(0).get<double>();
 
 
 
+// After the optimization loop:
+if (oprint)
+{
+    coutput << "\n";
+    coutput << tag << "==============================================\n";
+    coutput << tag << " PWDFT Lattice Optimization COMPLETE\n";
+    coutput << tag << "==============================================\n";
+
+    coutput << tag << " Final lattice parameter (a): "
+            << std::fixed << std::setprecision(6) << final_a
+            << " Bohr = "
+            << std::fixed << std::setprecision(3) << final_a * 0.529177
+            << " Å\n";
+    coutput << tag << " Minimum energy (total): "
+            << std::fixed << std::setprecision(8) << final_energy
+            << " Hartree\n";
+    coutput << tag << " Gradients at minimum: "
+            << "dE/da = " << std::fixed << std::setprecision(5) << final_lstress.at(0).get<double>()
+            << ", dE/db = " << final_lstress.at(1).get<double>()
+            << ", dE/dc = " << final_lstress.at(2).get<double>() << '\n';
+    coutput << tag << " Optimization steps taken: " << lstep+1 << '\n';
+
+    std::string status = (step < minimum_step) ? "Converged" : "Stopped (max steps reached)";
+    coutput << tag << " Status: " << status << '\n';
+    coutput << tag << "==============================================\n";
+}
 
 
    return 0;
