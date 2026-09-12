@@ -20,6 +20,7 @@
 struct SymmetryInfo {
     std::string space_group_name = "unknown";
     std::string type = "unknown";
+    int ita_number = -1;
     int group_order = -1;
     bool is_primitive = false;
     bool is_cubic = false;
@@ -606,12 +607,13 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
       symmetry_info.type = effective_symmetry.value("type", "unknown");
       symmetry_info.group_order = effective_symmetry.value("order", -1);
       symmetry_info.is_primitive = effective_symmetry.value("primitive", false);
+      symmetry_info.ita_number = effective_symmetry.value("ita_number", -1);
      
       // Simple cubic detection, expand as needed
       symmetry_info.is_cubic = (symmetry_info.space_group_name.find("Fd-3m") != std::string::npos) ||
                                (symmetry_info.group_order == 192);
 
-      int sgnum = symmetry_info.group_order;
+      int sgnum = symmetry_info.ita_number;
       if      (sgnum >= 1   && sgnum <= 2)   symmetry_info.system = "triclinic";
       else if (sgnum >= 3   && sgnum <= 15)  symmetry_info.system = "monoclinic";
       else if (sgnum >= 16  && sgnum <= 74)  symmetry_info.system = "orthorhombic";
@@ -619,8 +621,7 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
       else if (sgnum >= 143 && sgnum <= 167) symmetry_info.system = "trigonal";
       else if (sgnum >= 168 && sgnum <= 194) symmetry_info.system = "hexagonal";
       else if (sgnum >= 195 && sgnum <= 230) symmetry_info.system = "cubic";
-      if (symmetry_info.space_group_name.find("Fd-3m") != std::string::npos)
-         symmetry_info.system = "cubic";
+      else  symmetry_info.system = "unknown";
    }
    
 
@@ -642,11 +643,12 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
       if (symmetry_info.has_symmetry())
       {
          coutput << tag << "  Symmetry information:" << std::endl;
-         coutput << tag << "    Space group name:   " << symmetry_info.space_group_name << std::endl;
-         coutput << tag << "    Symmetry type:      " << symmetry_info.type << std::endl;
-         coutput << tag << "    Group order:        " << symmetry_info.group_order << std::endl;
-         coutput << tag << "    Primitive cell:     " << (symmetry_info.is_primitive ? "true" : "false") << std::endl;
-         coutput << tag << "    Crystal system:     " << symmetry_info.system <<std::endl;
+         coutput << tag << "    Space group name:         " << symmetry_info.space_group_name << std::endl;
+         coutput << tag << "    Space group number (ITC): " << symmetry_info.ita_number << std::endl;
+         coutput << tag << "    Symmetry type:            " << symmetry_info.type << std::endl;
+         coutput << tag << "    Group order:              " << symmetry_info.group_order << std::endl;
+         coutput << tag << "    Primitive cell:           " << (symmetry_info.is_primitive ? "true" : "false") << std::endl;
+         coutput << tag << "    Crystal system:           " << symmetry_info.system <<std::endl;
          // Add more fields if needed
       } 
       else 
