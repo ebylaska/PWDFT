@@ -14,197 +14,23 @@
 #include "util_date.hpp"
 #include "mpi.h"
 
+//#include "lattice_minimizer.hpp"
+#include "lattice_common.hpp"
+
+
 //#include "gdevice.hpp"
 
-
-struct SymmetryInfo {
-    std::string space_group_name = "unknown";
-    std::string type = "unknown";
-    int ita_number = -1;
-    int group_order = -1;
-    bool is_primitive = false;
-    bool is_cubic = false;
-
-    std::string system = "unknown"; // now 'system' defines your symmetry constraints!
-
-    // Add more fields if needed
-
-    // Helper for test
-    bool has_symmetry() const {
-        return (space_group_name != "unknown" && group_order > 0);
-    }
-};
 
 
 
 #include "json.hpp"
 using json = nlohmann::json;
 
-using minimizer_function = int (*)(MPI_Comm, std::string&, std::ostream&);
 
 namespace pwdft {
 
-static void print_lattice_state( const json& rtdbjson, std::ostream& coutput, const std::string& tag)
-{
-    const std::string geomname =
-        (rtdbjson.contains("geometry") &&
-         rtdbjson["geometry"].is_string())
-            ? rtdbjson["geometry"].get<std::string>()
-            : "geometry";
 
-    if (!rtdbjson.contains("geometries") ||
-        !rtdbjson["geometries"].is_object() ||
-        !rtdbjson["geometries"].contains(geomname))
-    {
-        coutput
-            << tag
-            << "Geometry '"
-            << geomname
-            << "' is missing\n";
-
-        return;
-    }
-
-    const json& geometry =
-        rtdbjson["geometries"].at(geomname);
-
-    const json* current_unita =
-        geometry.contains("unita") &&
-        geometry["unita"].is_array()
-            ? &geometry["unita"]
-            : nullptr;
-
-    const json* frozen_unita =
-        nullptr;
-
-    if (rtdbjson.contains("nwpw") &&
-        rtdbjson["nwpw"].is_object() &&
-        rtdbjson["nwpw"].contains("simulation_cell") &&
-        rtdbjson["nwpw"]["simulation_cell"].is_object())
-    {
-        const json& simulation_cell =
-            rtdbjson["nwpw"]["simulation_cell"];
-
-        if (simulation_cell.contains("unita_frozen") &&
-            simulation_cell["unita_frozen"].is_array())
-        {
-            frozen_unita =
-                &simulation_cell["unita_frozen"];
-        }
-    }
-
-    if (current_unita != nullptr &&
-        current_unita->size() == 9)
-    {
-        coutput
-            << tag
-            << "Current unita:\n";
-
-        for (int j = 0; j < 3; ++j)
-        {
-            coutput  << std::setprecision(10)
-                << tag
-                << "  "
-                << (*current_unita)[3*j + 0].get<double>()
-                << " "
-                << (*current_unita)[3*j + 1].get<double>()
-                << " "
-                << (*current_unita)[3*j + 2].get<double>()
-                << '\n';
-        }
-    }
-
-    if (frozen_unita != nullptr &&
-        frozen_unita->size() == 9)
-    {
-        coutput
-            << tag
-            << "Frozen unita_frozen:\n";
-
-        for (int j = 0; j < 3; ++j)
-        {
-            coutput  << std::setprecision(10)
-                << tag
-                << "  "
-                << (*frozen_unita)[3*j + 0].get<double>()
-                << " "
-                << (*frozen_unita)[3*j + 1].get<double>()
-                << " "
-                << (*frozen_unita)[3*j + 2].get<double>()
-                << '\n';
-        }
-    }
-
-    if (rtdbjson.contains("driver") &&
-        rtdbjson["driver"].is_object() &&
-        rtdbjson["driver"].contains("numerical_grid") &&
-        rtdbjson["driver"]["numerical_grid"].is_object())
-    {
-        const json& grid = rtdbjson["driver"]["numerical_grid"];
-
-        coutput
-            << tag
-            << "FFT grid = "
-            << grid.value("nx", -1)
-            << " x "
-            << grid.value("ny", -1)
-            << " x "
-            << grid.value("nz", -1)
-            << " waves0 = "
-            << grid.value("nwave0", -1)
-            << " waves1 = "
-            << grid.value("nwave1", -1)
-            << " npack0 = "
-            << grid.value("npack0", -1)
-            << " npack1 = "
-            << grid.value("npack1", -1)
-            << '\n';
-    }
-    else
-    {
-        coutput << tag << "Numerical grid: unavailable\n";
-    }
-
-}
-
-static bool read_unita( const json& value, std::array<double, 9>& unita)
-{
-   if (!value.is_array() || value.size() != 9)
-       return false;
-
-   for (int i = 0; i < 9; ++i)
-   {
-      if (!value[i].is_number())
-          return false;
-      unita[i] = value[i].get<double>();
-   }
-
-   return true;
-}
-
-static void write_unita(json& value, const std::array<double, 9>& unita)
-{
-   value = json::array();
-
-   for (double x : unita)
-      value.push_back(x);
-}
-
-static double unita_relative_difference(const std::array<double, 9>& current, const std::array<double, 9>& frozen)
-{
-   double difference_squared = 0.0;
-   double frozen_squared = 0.0;
-
-   for (int i = 0; i < 9; ++i)
-   {
-      const double difference = current[i] - frozen[i];
-      difference_squared += difference*difference;
-      frozen_squared     += frozen[i]*frozen[i];
-   }
-
-   const double denominator = std::max(1.0, std::sqrt(frozen_squared));
-   return std::sqrt(difference_squared)/denominator;
-}
+using minimizer_function = electronic_minimizer;
 
 
 static bool update_unita_frozen(std::string& rtdbstring, std::ostream& coutput, const double lattice_tolerance, const bool oprint)
@@ -332,215 +158,7 @@ static bool update_unita_frozen(std::string& rtdbstring, std::ostream& coutput, 
 }
 
 
-/******************************************
- *                                        *
- *            compute_egs_values          *
- *                                        *
- ******************************************/
-/**
- * @brief Compute and collect energy, gradient, and stress data.
- *
- * Prepares an RTDB request for the selected calculation type, invokes the
- * supplied PSPW or band minimizer callback, and extracts the resulting
- * quantities from the backend-specific RTDB section.
- *
- * The calculation selected by @p option is:
- *
- *   - @c 1: energy
- *   - @c 2: gradient
- *   - @c 3: stress
- *
- * For stress calculations, the NWPW `includestress` option is enabled before
- * invoking the minimizer. The callback updates its RTDB string argument with
- * the calculation results. The updated RTDB string is copied back into
- * @p rtdbstring before this function returns.
- *
- * The returned JSON object contains the following fields when provided by
- * the selected backend:
- *
- *   - @c energy
- *   - @c gradient
- *   - @c stress
- *   - @c stress_sym
- *   - @c lstress
- *
- * The backend is selected from the returned RTDB. A `pspw` section is checked
- * first, followed by a `band` section.
- *
- * @param[in] option
- *     Calculation type: 1 for energy, 2 for gradient, or 3 for stress.
- *
- * @param[in] comm_world0
- *     MPI communicator used by the minimizer.
- *
- * @param[in] minimizer
- *     Callback function for the PSPW or band minimizer. The callback must
- *     have the signature:
- *
- *         int(MPI_Comm, std::string&, std::ostream&)
- *
- * @param[in,out] rtdbstring
- *     RTDB JSON string containing the input state. It is replaced with the
- *     updated RTDB returned by the minimizer.
- *
- * @param[in] coutput
- *     Output stream used by the minimizer and diagnostic messages.
- *
- * @return
- *     A JSON object containing the extracted energy, gradient, and stress
- *     results. Missing backend fields are returned as null JSON values.
- *
- * @throws std::invalid_argument
- *     If @p minimizer is null or @p option is not in the range 1--3.
- *
- * @throws nlohmann::json::exception
- *     If the input or returned RTDB string is not valid JSON.
- *
- * @throws std::runtime_error
- *     If the minimizer fails or neither PSPW nor band results are present
- *     in the returned RTDB.
- */
-static json compute_egs_values(const int option, 
-                               MPI_Comm comm_world0, 
-                               minimizer_function minimizer, 
-                               std::string& rtdbstring, 
-                               std::ostream& coutput)
-{
-   if (minimizer == nullptr)
-      throw std::invalid_argument("compute_egs_values: null minimizer");
-   if (option < 1 || option > 3)
-      throw std::invalid_argument("compute_egs_values: invalid option");
 
-   // Prepare the input RTDB for this evaluation.
-   json request = json::parse(rtdbstring);
-
-   if (option == 1)
-   {
-      request["current_task"] = "task pspw energy";
-      request["nwpw"]["includestress"] = false;
-   }
-   else if (option == 2)
-   {
-      request["current_task"] = "task pspw gradient";
-      request["nwpw"]["includestress"] = false;
-   }
-   else if (option == 3)
-   {
-      request["current_task"] = "task pspw stress";
-      request["nwpw"]["includestress"] = true;
-   }
-
-   request["driver"]["cell_optimization"] = true;
-   request["driver"]["use_frozen_lattice"] = true;
-
-   const std::string tag = "@";
-
-   print_lattice_state(request, coutput, tag);
-
-
-
-   // The callback modifies this string by reference.
-   std::string rtdbstring1 = request.dump();
-
-   const int ierr = minimizer(comm_world0, rtdbstring1, coutput);
-
-   if (ierr != 0)
-      throw std::runtime_error("compute_egs_values: minimizer failed with error " + std::to_string(ierr));
-
-
-   // Parse the UPDATED RTDB returned by the minimizer.
-   const json output = json::parse(rtdbstring1);
-
-   const json* backend = nullptr;
-
-   if (output.contains("pspw") && output["pspw"].is_object())
-      backend = &output["pspw"];
-   else if (output.contains("band") && output["band"].is_object())
-      backend = &output["band"];
-   else
-      throw std::runtime_error("compute_egs_values: neither pspw nor band results found");
-
-   const json& backend_result = *backend;
-   json result = json::object();
-
-   result["energy"]     = backend_result.value("energy", json{});
-   result["gradient"]   = backend_result.value("gradient", json{});
-   result["stress"]     = backend_result.value("stress", json{});
-   result["stress_sym"] = backend_result.value("stress_sym", json{});
-   result["lstress"] = backend_result.value("lstress", json{});
-
-   // Preserve the most recent backend RTDB for the caller.
-   rtdbstring = std::move(rtdbstring1);
-
-   return result;
-}
-
-
-/******************************************
- *                                        *
- *          scale_cubic_cell              *
- *                                        *
- ******************************************/
-static void scale_cubic_cell(std::string& rtdbstring, const double scale)
-{
-    json rtdbjson = json::parse(rtdbstring);
-
-    const std::string geomname =
-        rtdbjson.contains("geometry") &&
-        rtdbjson["geometry"].is_string()
-            ? rtdbjson["geometry"].get<std::string>()
-            : "geometry";
-
-    json& geometry =
-        rtdbjson["geometries"][geomname];
-
-    for (int i = 0; i < 9; ++i)
-    {
-        geometry["unita"][i] =
-            geometry["unita"][i].get<double>() *
-            scale;
-    }
-
-    if (geometry.contains("coords") &&
-        geometry["coords"].is_array())
-    {
-        for (std::size_t i = 0;
-             i < geometry["coords"].size();
-             ++i)
-        {
-            geometry["coords"][i] =
-                geometry["coords"][i].get<double>() *
-                scale;
-        }
-    }
-
-    /*
-     * If a separate current simulation-cell lattice exists,
-     * keep it consistent with geometry.unita.
-     */
-    if (rtdbjson.contains("nwpw") &&
-        rtdbjson["nwpw"].is_object() &&
-        rtdbjson["nwpw"].contains("simulation_cell") &&
-        rtdbjson["nwpw"]["simulation_cell"].is_object())
-    {
-        json& cell =
-            rtdbjson["nwpw"]["simulation_cell"];
-
-        if (cell.contains("unita") &&
-            cell["unita"].is_array() &&
-            cell["unita"].size() == 9)
-        {
-            for (int i = 0; i < 9; ++i)
-            {
-                cell["unita"][i] =
-                    cell["unita"][i].get<double>() *
-                    scale;
-            }
-        }
-    }
-
-    rtdbstring = rtdbjson.dump();
-}
 
 /******************************************
  *                                        *
@@ -623,6 +241,7 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
       else if (sgnum >= 195 && sgnum <= 230) symmetry_info.system = "cubic";
       else  symmetry_info.system = "unknown";
    }
+
    
 
    if (oprint) 
@@ -684,67 +303,10 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
    //  - For an isotropic lattice scaling, 1.0e-2 corresponds approximately
    //  - to a 1% change in the lattice constant.
     
-   if (oprint) coutput << tag <<  "Initial Stress Calcultions" << std::endl;
+   if (oprint) coutput << tag <<  "Initial Stress Calculations" << std::endl;
    json result = compute_egs_values(3,comm_world0,minimizer,rtdbstring, coutput);
 
 
-   /*
-   const json& effective_symmetry = json::parse(rtdbstring).at("effective_symmetry");
-   if (oprint) {
-      coutput << tag << "Symmetry information:" << std::endl;
-      if (effective_symmetry.contains("name"))
-          coutput << tag << "  Space group name:  " << effective_symmetry.at("name").get<std::string>() << std::endl;
-      if (effective_symmetry.contains("type"))
-          coutput << tag << "  Symmetry type:     " << effective_symmetry.at("type").get<std::string>() << std::endl;
-      if (effective_symmetry.contains("order"))
-          coutput << tag << "  Group order:       " << effective_symmetry.at("order").get<int>() << std::endl;
-      if (effective_symmetry.contains("num_centering"))
-          coutput << tag << "  Centerings:        " << effective_symmetry.at("num_centering").get<int>() << std::endl;
-      if (effective_symmetry.contains("tolerance"))
-          coutput << tag << "  Tolerance:         " << effective_symmetry.at("tolerance").get<double>() << std::endl;
-      if (effective_symmetry.contains("primitive"))
-          coutput << tag << "  Primitive cell:    " << (effective_symmetry.at("primitive").get<bool>() ? "true" : "false") << std::endl;
-      if (effective_symmetry.contains("coords_type"))
-          coutput << tag << "  Coordinates:       " << effective_symmetry.at("coords_type").get<std::string>() << std::endl;
-      if (effective_symmetry.contains("translation_type"))
-          coutput << tag << "  Translation type:  " << effective_symmetry.at("translation_type").get<std::string>() << std::endl;
-     
-      // Print how many symmetry operations (ops)
-      if (effective_symmetry.contains("ops"))
-          coutput << tag << "  Symmetry operations: " << effective_symmetry.at("ops").size() << std::endl;
-     
-      // If you want, print first few symmetry operations (rotation/translation)
-      if (effective_symmetry.contains("ops")) {
-          int nprint = std::min(3, static_cast<int>(effective_symmetry.at("ops").size()));
-          coutput << tag << "  First " << nprint << " symmetry operations:" << std::endl;
-          for (int i = 0; i < nprint; ++i) {
-              const auto& op = effective_symmetry.at("ops").at(i);
-              coutput << tag << "    R = [";
-              for (int r = 0; r < 3; ++r) {
-                  for (int c = 0; c < 3; ++c) {
-                      coutput << op.at("R").at(r).at(c).get<double>();
-                      if (c < 2) coutput << ", ";
-                  }
-                  if (r < 2) coutput << " | ";
-              }
-              coutput << "]  ";
-              coutput << "t = [";
-              for (int t = 0; t < 3; ++t) {
-                  coutput << op.at("t").at(t).get<double>();
-                  if (t < 2) coutput << ", ";
-              }
-              coutput << "]" << std::endl;
-          }
-      }
-     
-      // Print fingerprint if present
-      if (effective_symmetry.contains("sym_fingerprint"))
-          coutput << tag << "  Symmetry fingerprint: " << effective_symmetry.at("sym_fingerprint").get<std::string>() << std::endl;
-     
-      if (effective_symmetry.contains("source"))
-          coutput << tag << "  Symmetry source:      " << effective_symmetry.at("source").get<std::string>() << std::endl;
-   }
-   */
   
 
    const double energy = result.at("energy").get<double>();
@@ -834,197 +396,21 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
    }
 
 
-   // Start optimization Here!!!!
-   int lstep = 0;
-   double lenergy = 0.0;
+   // ---------------------------------------------------------------
+   // Dispatch to the crystal-system-specific lattice minimizer.
+   //
+   // pick_lattice_minimizer never returns nullptr: unknown systems fall
+   // back to general_lattice_minimizer, which currently evaluates once
+   // and returns without modifying the lattice.
+   // ---------------------------------------------------------------
+   lattice_minimizer lm = pick_lattice_minimizer(symmetry_info.system);
 
-   double step    = 0.0025;
-  
-   constexpr double minimum_step = 1.0e-5;
-   constexpr double minimum_gradient = 1.0e-4;
-   bool converged = false;
-
-   //constexpr double minimum_step = 1.0e-5; // control stuff
-   constexpr int max_steps = 25;
-
-   for (int istep=0; istep<max_steps; ++istep)
+   const int ierr = lm(comm_world0, rtdbstring, coutput, minimizer);
+   if (ierr != 0)
    {
-      json current_result = compute_egs_values(3, comm_world0, minimizer, rtdbstring, coutput);
-
-      const double current_energy = current_result.at("energy").get<double>();
-      const json& lstress = current_result.at("lstress");
-
-    const double dE_dcell =
-        (
-            lstress.at(0).get<double>() +
-            lstress.at(1).get<double>() +
-            lstress.at(2).get<double>()
-        ) / 3.0;
-
-    if (oprint)
-    {
-        coutput << std::defaultfloat << std::setprecision(10)
-            << tag
-            << "Cell step "
-            << istep
-            << " current energy = "
-            << current_energy
-            << " dE/dcell = "
-            << dE_dcell
-            << " step = "
-            << step
-            << '\n';
-    }
-
-   std::string expanded_rtdb = rtdbstring;
-   std::string contracted_rtdb = rtdbstring;
-
-   scale_cubic_cell(expanded_rtdb,   1.0 + step);
-   scale_cubic_cell(contracted_rtdb, 1.0 - step);
-
-   json expanded_result = compute_egs_values(1,comm_world0, minimizer, expanded_rtdb, coutput);
-   json contracted_result = compute_egs_values(1, comm_world0, minimizer, contracted_rtdb, coutput);
-
-   const double expanded_energy = expanded_result.at("energy").get<double>();
-   const double contracted_energy = contracted_result.at("energy").get<double>();
-
-   if (oprint) {
-      coutput << "\n"
-              << tag << "----------------------------------------------\n"
-              << tag << " PWDFT Lattice Optimization                   \n"
-              << tag << "----------------------------------------------\n"
-              << tag << " Step        : " << istep << '\n'
-              << tag << " Energy      : " << std::fixed << std::setprecision(10) << current_energy << " Hartree\n"
-              << tag << " Lattice a   : " << std::fixed << std::setprecision(6) << a << " Bohr"
-              << " (" << std::fixed << std::setprecision(3) << a * 0.529177 << " Å)\n"
-              << tag << " dE/da       : " << lstress.at(0).get<double>() << '\n'
-              << tag << " dE/db       : " << lstress.at(1).get<double>() << '\n'
-              << tag << " dE/dc       : " << lstress.at(2).get<double>() << '\n'
-              << tag << " Step size   : " << step << '\n';
-     
-      // Show action taken
-      if (expanded_energy < current_energy && expanded_energy <= contracted_energy) {
-          coutput << tag << " Action      : Expanded lattice, accepted.\n";
-      } else if (contracted_energy < current_energy) {
-          coutput << tag << " Action      : Contracted lattice, accepted.\n";
-      } else {
-          coutput << tag << " Action      : No improvement, step rejected (minimal lattice change).\n";
-      }
-      coutput << tag << "----------------------------------------------\n";
+      coutput << tag << "lattice minimizer returned " << ierr << '\n';
+      return ierr;
    }
-
-
-   double grad_norm = std::sqrt(std::pow(lstress.at(0).get<double>(), 2) +
-                                std::pow(lstress.at(1).get<double>(), 2) +
-                                std::pow(lstress.at(2).get<double>(), 2));
-
-   // Convergence check
-   if ((step < minimum_step) && (grad_norm < minimum_gradient))
-   {
-      converged = true;
-      break;
-   }
-
-if (expanded_energy < current_energy && expanded_energy <= contracted_energy)
-{
-    rtdbstring = std::move(expanded_rtdb);
-
-    if (oprint)
-    {
-        coutput  << std::defaultfloat << std::setprecision(10)
-            << tag
-            << "Accepted expansion, step = " 
-            << istep
-            << ", energy = "
-            << expanded_energy
-            << '\n';
-    }
-}
-else if (contracted_energy < current_energy)
-{
-    rtdbstring =
-        std::move(contracted_rtdb);
-
-    if (oprint)
-    {
-        coutput  << std::defaultfloat << std::setprecision(10)
-            << tag
-            << "Accepted contraction, step = "  
-            << istep
-            << ", energy = "
-            << contracted_energy
-            << '\n';
-       coutput << std::defaultfloat << std::setprecision(10)
-            << tag
-            << "curent_unita = "  
-            << current_unita << '\n';
-    }
-}
-else
-{
-    step *= 0.5;
-
-    if (oprint)
-    {
-        coutput  << std::defaultfloat << std::setprecision(10)
-            << tag
-            << "Rejected both directions, step = "
-            << istep
-            << '\n';
-    }
-
-    if (step < minimum_step)
-    {
-       break;
-    }
-}
-
-   lstep = istep;
-   lenergy = current_energy;
-}
-
-
-// After the optimization loop (use the final geometry and its energy/stress)
-json final_result = compute_egs_values(3, comm_world0, minimizer, rtdbstring, coutput);
-// Use 'rtdbstring' as possibly updated in the last step
-
-const double final_energy = final_result.at("energy").get<double>();
-const json& final_lstress = final_result.at("lstress");
-
-// Extract the geometry from rtdbstring itself (not initial current_unita!)
-json final_json = json::parse(rtdbstring);
-const json& final_unita = final_json["geometries"][geomname]["unita"];
-const double final_a = final_unita.at(0).get<double>();
-
-
-
-// After the optimization loop:
-if (oprint)
-{
-    coutput << "\n";
-    coutput << tag << "==============================================\n";
-    coutput << tag << " PWDFT Lattice Optimization COMPLETE\n";
-    coutput << tag << "==============================================\n";
-
-    coutput << tag << " Final lattice parameter (a): "
-            << std::fixed << std::setprecision(6) << final_a
-            << " Bohr = "
-            << std::fixed << std::setprecision(3) << final_a * 0.529177
-            << " Å\n";
-    coutput << tag << " Minimum energy (total): "
-            << std::fixed << std::setprecision(8) << final_energy
-            << " Hartree\n";
-    coutput << tag << " Gradients at minimum: "
-            << "dE/da = " << std::fixed << std::setprecision(5) << final_lstress.at(0).get<double>()
-            << ", dE/db = " << final_lstress.at(1).get<double>()
-            << ", dE/dc = " << final_lstress.at(2).get<double>() << '\n';
-    coutput << tag << " Optimization steps taken: " << lstep+1 << '\n';
-
-    std::string status = (step < minimum_step) ? "Converged" : "Stopped (max steps reached)";
-    coutput << tag << " Status: " << status << '\n';
-    coutput << tag << "==============================================\n";
-}
-
 
    return 0;
 
