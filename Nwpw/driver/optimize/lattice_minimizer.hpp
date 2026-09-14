@@ -24,10 +24,31 @@ namespace pwdft {
 
 using electronic_minimizer = int (*)(MPI_Comm, std::string&, std::ostream&);
 
+
+// ---------------------------------------------------------------------------
+// LatticeContext
+//
+// Per-call context passed from the driver to whichever lattice minimizer
+// pick_lattice_minimizer selects. Must be defined before the lattice_minimizer
+// typedef below, since the typedef names it.
+// ---------------------------------------------------------------------------
+
+struct LatticeContext {
+    bool        oprint = false;
+    std::string tag    = "@@";
+
+    int         max_steps        = 25;
+    double      initial_step     = 0.0025;
+    double      minimum_step     = 1.0e-5;
+    double      minimum_gradient = 1.0e-4;
+};
+
 using lattice_minimizer    = int (*)(MPI_Comm,
                                      std::string&,
                                      std::ostream&,
-                                     electronic_minimizer);
+                                     electronic_minimizer,
+                                     const LatticeContext&);
+
 
 // ---------------------------------------------------------------------------
 // SymmetryInfo
@@ -61,6 +82,7 @@ struct SymmetryInfo {
     }
 };
 
+
 // ---------------------------------------------------------------------------
 // Per-system lattice minimizer entry points
 //
@@ -73,12 +95,14 @@ struct SymmetryInfo {
 int general_lattice_minimizer(MPI_Comm,
                               std::string&,
                               std::ostream&,
-                              electronic_minimizer);
+                              electronic_minimizer,
+                              const LatticeContext&);
 
 int cubic_lattice_minimizer(MPI_Comm,
                             std::string&,
                             std::ostream&,
-                            electronic_minimizer);
+                            electronic_minimizer,
+                            const LatticeContext&);
 
 // Declare these as you implement them:
 // int tetragonal_lattice_minimizer(...);

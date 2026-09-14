@@ -24,10 +24,11 @@
 
 namespace pwdft {
 
-int general_lattice_minimizer(MPI_Comm /*comm*/,
-                              std::string& /*rtdbstring*/,
+int general_lattice_minimizer(MPI_Comm comm,
+                              std::string& rtdbstring,
                               std::ostream& coutput,
-                              electronic_minimizer /*minimizer*/)
+                              electronic_minimizer minimizer,
+                              const LatticeContext& ctx)
 {
     coutput << "@@ general_lattice_minimizer: no crystal-system-specific "
                "optimizer available; skipping lattice optimization.\n";

@@ -24,6 +24,8 @@
 #include <ostream>
 #include <string>
 
+//#include "Parallel.hpp"
+//#include "Control2.hpp"
 #include <mpi.h>
 
 #include "json.hpp"
@@ -35,21 +37,24 @@ using json = nlohmann::json;
 int cubic_lattice_minimizer(MPI_Comm comm,
                             std::string& rtdbstring,
                             std::ostream& coutput,
-                            electronic_minimizer minimizer)
+                            electronic_minimizer minimizer,
+                            const LatticeContext& ctx)
 {
     // -- Local diagnostics settings -----------------------------------------
     //
     // We do not have Control2 here, so decide verbosity locally. For now:
     // print the per-step summary. When the driver starts passing an oprint
     // flag (or a Control2 reference), thread it through instead.
-    constexpr bool oprint = true;
-    const std::string tag = "@@";
+    const bool oprint      = ctx.oprint;
+    const std::string& tag = ctx.tag;
 
     // -- Line-search parameters ---------------------------------------------
-    double step = 0.0025;
-    constexpr double minimum_step     = 1.0e-5;
-    constexpr double minimum_gradient = 1.0e-4;   // used only for reporting
-    constexpr int    max_steps        = 25;
+        // -- Line-search parameters ---------------------------------------------
+    double         step              = ctx.initial_step;
+    const double   minimum_step      = ctx.minimum_step;
+    const double   minimum_gradient  = ctx.minimum_gradient;
+    const int      max_steps         = ctx.max_steps;
+
 
     // -- Initial evaluation --------------------------------------------------
     json current_result = compute_egs_values(3, comm, minimizer,

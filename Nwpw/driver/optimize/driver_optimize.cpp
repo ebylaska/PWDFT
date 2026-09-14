@@ -405,7 +405,10 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
    // ---------------------------------------------------------------
    lattice_minimizer lm = pick_lattice_minimizer(symmetry_info.system);
 
-   const int ierr = lm(comm_world0, rtdbstring, coutput, minimizer);
+   LatticeContext ctx;
+   ctx.oprint = oprint;
+
+   const int ierr = lm(comm_world0, rtdbstring, coutput, minimizer, ctx);
    if (ierr != 0)
    {
       coutput << tag << "lattice minimizer returned " << ierr << '\n';
