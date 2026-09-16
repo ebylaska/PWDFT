@@ -104,6 +104,12 @@ int cubic_lattice_minimizer(MPI_Comm,
                             electronic_minimizer,
                             const LatticeContext&);
 
+int tetragonal_lattice_minimizer(MPI_Comm,        // <-- add this
+                                 std::string&,
+                                 std::ostream&,
+                                 electronic_minimizer,
+                                 const LatticeContext&);
+
 // Declare these as you implement them:
 // int tetragonal_lattice_minimizer(...);
 // int orthorhombic_lattice_minimizer(...);

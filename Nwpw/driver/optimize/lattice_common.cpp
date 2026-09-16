@@ -15,6 +15,7 @@
 #include <iomanip>
 #include <stdexcept>
 #include <string>
+#include <utility>
 
 namespace pwdft {
 
@@ -327,6 +328,99 @@ json compute_egs_values(const int option,
     rtdbstring = std::move(rtdbstring1);
 
     return result;
+}
+
+
+// lattice_common.cpp (additions)
+
+/*************************************
+ *                                   *
+ *        read_tetragonal_lattice    *
+ *                                   *
+ *************************************/
+
+std::pair<double, double> read_tetragonal_lattice(const std::string& rtdbstring)
+{
+    const json rtdb = json::parse(rtdbstring);
+    const std::string geomname =
+        (rtdb.contains("geometry") && rtdb["geometry"].is_string())
+            ? rtdb["geometry"].get<std::string>()
+            : "geometry";
+
+    const auto& unita = rtdb.at("geometries").at(geomname).at("unita");
+
+    const double a = unita.at(0).get<double>();
+    const double c = unita.at(8).get<double>();
+
+    return { a, c };
+}
+
+
+/*************************************
+ *                                   *
+ *        set_tetragonal_cell        *
+ *                                   *
+ *************************************/
+void set_tetragonal_cell(std::string& rtdbstring, double a_new, double c_new)
+{
+    if (!(a_new > 0.0) || !(c_new > 0.0))
+        throw std::runtime_error("set_tetragonal_cell: non-positive lattice parameter");
+
+    json rtdb = json::parse(rtdbstring);
+
+    const std::string geomname =
+        (rtdb.contains("geometry") && rtdb["geometry"].is_string())
+            ? rtdb["geometry"].get<std::string>()
+            : "geometry";
+
+    json& geometry = rtdb["geometries"][geomname];
+
+    const double a_old = geometry["unita"].at(0).get<double>();
+    const double c_old = geometry["unita"].at(8).get<double>();
+
+    if (!(a_old > 0.0) || !(c_old > 0.0))
+        throw std::runtime_error("set_tetragonal_cell: invalid current lattice");
+
+    const double scale_a = a_new / a_old;
+    const double scale_c = c_new / c_old;
+
+    // Diagonal-only update. Assumes an axis-aligned tetragonal cell:
+    //   unita = [a, 0, 0, 0, a, 0, 0, 0, c]
+    geometry["unita"][0] = a_new;
+    geometry["unita"][4] = a_new;
+    geometry["unita"][8] = c_new;
+
+    // Cartesian coords: x,y scale with a; z scales with c
+    if (geometry.contains("coords") && geometry["coords"].is_array())
+    {
+        auto& coords = geometry["coords"];
+        for (std::size_t i = 0; i + 2 < coords.size(); i += 3)
+        {
+            coords[i + 0] = coords[i + 0].get<double>() * scale_a;
+            coords[i + 1] = coords[i + 1].get<double>() * scale_a;
+            coords[i + 2] = coords[i + 2].get<double>() * scale_c;
+        }
+    }
+
+    // Keep nwpw.simulation_cell.unita in sync if present
+    if (rtdb.contains("nwpw") &&
+        rtdb["nwpw"].is_object() &&
+        rtdb["nwpw"].contains("simulation_cell") &&
+        rtdb["nwpw"]["simulation_cell"].is_object())
+    {
+        json& cell = rtdb["nwpw"]["simulation_cell"];
+
+        if (cell.contains("unita") &&
+            cell["unita"].is_array() &&
+            cell["unita"].size() == 9)
+        {
+            cell["unita"][0] = cell["unita"][0].get<double>() * scale_a;
+            cell["unita"][4] = cell["unita"][4].get<double>() * scale_a;
+            cell["unita"][8] = cell["unita"][8].get<double>() * scale_c;
+        }
+    }
+
+    rtdbstring = rtdb.dump();
 }
 
 } // namespace pwdft

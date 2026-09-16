@@ -28,4 +28,8 @@ nlohmann::json compute_egs_values(int option,
                                   std::string& rtdbstring,
                                   std::ostream& coutput);
 
+// lattice_common.hpp (additions)
+std::pair<double, double> read_tetragonal_lattice(const std::string& rtdbstring);
+void set_tetragonal_cell(std::string& rtdbstring, double a_new, double c_new);
+
 } // namespace pwdft
