@@ -1333,6 +1333,11 @@ if (rtdbjson.contains("driver") &&
    get("xrms", pdriver_xrms);
    get("trust", pdriver_trust);
 
+   get("lattice_maxiter", pdriver_lattice_maxiter);
+   get("lattice_gmax", pdriver_lattice_gmax);
+   get("lattice_step", pdriver_lattice_step);
+   get("lattice_xmin", pdriver_lattice_xmin);
+
    phessian_print = driver_json.value("hessian_print", phessian_print);
 
 

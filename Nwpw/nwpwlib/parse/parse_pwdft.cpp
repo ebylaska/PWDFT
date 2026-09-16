@@ -2581,7 +2581,23 @@ static json parse_driver(json driverjson, int *curptr,
   while (endcount > 0) {
     line = mystring_lowercase(lines[cur]);
 
-    if (mystring_contains(line, "maxiter")) {
+    if (mystring_contains(line, "lattice_maxiter")) {
+      ss = mystring_split0(line);
+      if (ss.size() > 1)
+        driverjson["lattice_maxiter"] = std::stoi(ss[1]);
+    } else if (mystring_contains(line, "lattice_gmax")) {
+      ss = mystring_split0(line);
+      if (ss.size() == 2)
+        driverjson["lattice_gmax"] = std::stod(ss[1]);
+    } else if (mystring_contains(line, "lattice_step")) {
+      ss = mystring_split0(line);
+      if (ss.size() == 2)
+        driverjson["lattice_step"] = std::stod(ss[1]);
+    } else if (mystring_contains(line, "lattice_xmin")) {
+      ss = mystring_split0(line);
+      if (ss.size() == 2)
+        driverjson["lattice_xmin"] = std::stod(ss[1]);
+    } else if (mystring_contains(line, "maxiter")) {
       ss = mystring_split0(line);
       if (ss.size() > 1)
         driverjson["maxiter"] = std::stoi(ss[1]);

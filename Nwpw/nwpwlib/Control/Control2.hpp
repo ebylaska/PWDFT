@@ -70,6 +70,12 @@ class Control2 {
    double pdriver_xrms = 0.00120;
    double pdriver_xmax = 0.00180;
    double pdriver_trust = 0.3;
+
+   int pdriver_lattice_maxiter = 30;
+   double pdriver_lattice_gmax    = 1.0e-4;
+   double pdriver_lattice_step    = 0.0025;
+   double pdriver_lattice_xmin    = 1.0e-5;
+
  
    bool pgeometry_optimize;
  
@@ -335,6 +341,11 @@ public:
    double driver_xmax() { return pdriver_xmax; }
    double driver_xrms() { return pdriver_xrms; }
    double driver_trust() { return pdriver_trust; }
+
+   int driver_lattice_maxiter() const { return pdriver_lattice_maxiter; }
+   double driver_lattice_gmax() const { return pdriver_lattice_gmax; }
+   double driver_lattice_step() const { return pdriver_lattice_step; }
+   double driver_lattice_xmin() const { return pdriver_lattice_xmin; }
  
    bool input_movecs_initialize() { return pinput_movecs_initialize; }
    char *input_movecs_filename() { return pinput_movecs_filename; }

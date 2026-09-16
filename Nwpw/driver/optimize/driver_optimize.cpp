@@ -32,25 +32,72 @@ namespace pwdft {
 
 using minimizer_function = electronic_minimizer;
 
-
+/*******************************************
+ *                                         *
+ *          update_unita_frozen            *
+ *                                         *
+ *******************************************/
+/**
+ * Initialize or refresh the frozen reference lattice used by NWPW.
+ *
+ * The routine parses the serialized RTDB, locates the active geometry, and
+ * determines the current physical lattice. The geometry lattice is used by
+ * default; a valid `nwpw.simulation_cell.unita` takes precedence when present.
+ *
+ * The current lattice is stored in
+ *
+ *     nwpw.simulation_cell.unita_frozen
+ *
+ * if no valid frozen lattice exists. Also, if a frozen lattice is already present,
+ * it is replaced only when its relative difference from the current lattice
+ * is strictly greater than `lattice_tolerance`. The modified RTDB is then
+ * serialized back into `rtdbstring`, including cases where no reset was
+ * required.
+ *
+ * Diagnostic messages are written to `coutput` only when `oprint` is true.
+ *
+ * @param[in,out] rtdbstring
+ *     Serialized RTDB JSON. On successful return, it contains the initialized
+ *     or checked `unita_frozen` reference lattice.
+ *
+ * @param[out] coutput
+ *     Stream used for validation errors and lattice-update diagnostics.
+ *
+ * @param[in] lattice_tolerance
+ *     Maximum permitted relative change between the current and frozen
+ *     lattices. A negative value is invalid.
+ *
+ * @param[in] oprint
+ *     Enables diagnostic output when true.
+ *
+ * @return
+ *     `true` if the RTDB was parsed and processed successfully; `false` if
+ *     the tolerance is invalid, the JSON cannot be parsed, the active
+ *     geometry is missing, or the current geometry lattice is invalid.
+ *
+ * @note
+ *     A return value of `true` does not necessarily mean that
+ *     `unita_frozen` changed; it also indicates a successful check for which
+ *     the existing frozen lattice remained within tolerance.
+ */
 static bool update_unita_frozen(std::string& rtdbstring, std::ostream& coutput, const double lattice_tolerance, const bool oprint)
 {
    if (lattice_tolerance < 0.0)
    {
-        if (oprint) coutput << "driver_optimizer: negative lattice tolerance\n";
-       return false;
+      if (oprint) coutput << "driver_optimizer: negative lattice tolerance\n";
+      return false;
    }
 
    json rtdbjson;
 
    try
    {
-       rtdbjson = json::parse(rtdbstring);
+      rtdbjson = json::parse(rtdbstring);
    }
    catch (const json::exception& ex)
    {
-       if (oprint) coutput << "driver_optimizer: invalid RTDB JSON: " << ex.what() << '\n';
-       return false;
+      if (oprint) coutput << "driver_optimizer: invalid RTDB JSON: " << ex.what() << '\n';
+      return false;
    }
 
    const std::string geomname =
@@ -63,95 +110,71 @@ static bool update_unita_frozen(std::string& rtdbstring, std::ostream& coutput, 
        !rtdbjson["geometries"].is_object() ||
        !rtdbjson["geometries"].contains(geomname))
    {
-       if (oprint) coutput << "driver_optimizer: geometry '" << geomname << "' not found\n";
-       return false;
+      if (oprint) coutput << "driver_optimizer: geometry '" << geomname << "' not found\n";
+      return false;
    }
 
-   const json& geometry =
-       rtdbjson["geometries"][geomname];
+   const json& geometry = rtdbjson["geometries"][geomname];
 
    std::array<double, 9> current_unita{};
 
-   if (!read_unita(
-           geometry.value("unita", json{}),
-           current_unita))
+   if (!read_unita( geometry.value("unita", json{}), current_unita))
    {
-       if (oprint) coutput << "driver_optimizer: invalid current geometry lattice\n";
-
-       return false;
+      if (oprint) coutput << "driver_optimizer: invalid current geometry lattice\n";
+      return false;
    }
 
-   /*
-    * If the NWPW simulation-cell lattice exists, use it as the
-    * current physical lattice. This preserves the intended precedence.
-    */
+   // If the NWPW simulation-cell lattice exists, use it as the
+   //    current physical lattice. This preserves the intended precedence.
    if (rtdbjson.contains("nwpw") &&
        rtdbjson["nwpw"].is_object() &&
        rtdbjson["nwpw"].contains("simulation_cell") &&
        rtdbjson["nwpw"]["simulation_cell"].is_object())
    {
-       const json& simulation_cell =
-           rtdbjson["nwpw"]["simulation_cell"];
+      const json& simulation_cell = rtdbjson["nwpw"]["simulation_cell"];
 
-       std::array<double, 9> simulation_unita{};
+      std::array<double, 9> simulation_unita{};
 
-       if (read_unita(
-               simulation_cell.value("unita", json{}),
-               simulation_unita))
-       {
-           current_unita = simulation_unita;
-       }
+      if (read_unita( simulation_cell.value("unita", json{}), simulation_unita))
+      {
+         current_unita = simulation_unita;
+      }
    }
 
-   json& simulation_cell =
-       rtdbjson["nwpw"]["simulation_cell"];
+   json& simulation_cell = rtdbjson["nwpw"]["simulation_cell"];
 
    if (!simulation_cell.is_object())
-       simulation_cell = json::object();
+      simulation_cell = json::object();
 
    std::array<double, 9> frozen_unita{};
 
-   const bool has_frozen_unita =
-       read_unita(
-           simulation_cell.value(
-               "unita_frozen",
-               json{}),
-           frozen_unita);
+   const bool has_frozen_unita = read_unita(simulation_cell.value( "unita_frozen", json{}), frozen_unita);
 
    if (!has_frozen_unita)
    {
-       write_unita(
-           simulation_cell["unita_frozen"],
-           current_unita);
-
-       if (oprint) coutput << "driver_optimizer: initialized unita_frozen\n";
+      write_unita(simulation_cell["unita_frozen"], current_unita);
+      if (oprint) coutput << "driver_optimizer: initialized unita_frozen\n";
    }
    else
    {
-       const double difference =
-           unita_relative_difference(
-               current_unita,
-               frozen_unita);
+      const double difference = unita_relative_difference(current_unita, frozen_unita);
 
-       if (difference > lattice_tolerance)
-       {
-           write_unita(
-               simulation_cell["unita_frozen"],
-               current_unita);
+      if (difference > lattice_tolerance)
+      {
+         write_unita(simulation_cell["unita_frozen"], current_unita);
 
-           if (oprint) coutput << "driver_optimizer: resetting unita_frozen\n"
-                               << "  relative lattice change = "
-                               << difference
-                               << "\n"
-                               << "  tolerance               = "
-                               << lattice_tolerance
-                               << '\n';
-       }
+         if (oprint) 
+            coutput << "driver_optimizer: resetting unita_frozen\n"
+                    << "  relative lattice change = "
+                    << difference
+                    << "\n"
+                    << "  tolerance               = "
+                    << lattice_tolerance
+                    << '\n';
+      }
    }
 
-   /*
-    * Critical: pass the modified RTDB back to the caller/minimizer.
-    */
+   // Critical: pass the modified RTDB back to the caller/minimizer.
    rtdbstring = rtdbjson.dump();
 
    return true;
@@ -196,9 +219,8 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
    const bool master = myparallel.is_master();
 
    // Add unita_frozen in rtdb
-   // This driver is the unit-cell/geometry optimization path,
-   // so establish or validate unita_frozen before Control2 reads the RTDB.
-   //constexpr double lattice_tolerance = 1.0e-2;
+   //  - This driver is the unit-cell/geometry optimization path,
+   //  - so establish or validate unita_frozen before Control2 reads the RTDB.
    constexpr double lattice_tolerance = 0.05;
 
    if (!update_unita_frozen(rtdbstring, coutput, lattice_tolerance, master))
@@ -227,10 +249,6 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
       symmetry_info.is_primitive = effective_symmetry.value("primitive", false);
       symmetry_info.ita_number = effective_symmetry.value("ita_number", -1);
      
-      // Simple cubic detection, expand as needed
-     // symmetry_info.is_cubic = (symmetry_info.space_group_name.find("Fd-3m") != std::string::npos) ||
-     //                          (symmetry_info.group_order == 192);
-
       int sgnum = symmetry_info.ita_number;
       if      (sgnum >= 1   && sgnum <= 2)   symmetry_info.system = "triclinic";
       else if (sgnum >= 3   && sgnum <= 15)  symmetry_info.system = "monoclinic";
@@ -242,7 +260,6 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
       else  symmetry_info.system = "unknown";
    }
 
-   
 
    if (oprint) 
    {
@@ -250,15 +267,15 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
       constexpr int width = 78;
 
       coutput << '\n'
-       << tag << std::string(width, '=') << '\n'
-       << tag << "                         PWDFT OPTIMIZATION DRIVER\n"
-       << tag << std::string(width, '=') << '\n'
-       << tag << '\n'
-       << tag << "  Architecture           : NWChem-style driver dispatch\n"
-       << tag << "  Role                   : top-level orchestration layer\n"
-       << tag << "  Backend                : PSPW or band minimizer callback\n"
-       << tag << "  Implementation         : NorthwestEx C++ driver\n"
-       << tag << "  Method                 : Grassmann/Stiefel manifold\n";
+              << tag << std::string(width, '=') << '\n'
+              << tag << "                         PWDFT OPTIMIZATION DRIVER\n"
+              << tag << std::string(width, '=') << '\n'
+              << tag << '\n'
+              << tag << "  Architecture           : NWChem-style driver dispatch\n"
+              << tag << "  Role                   : top-level orchestration layer\n"
+              << tag << "  Backend                : PSPW or band minimizer callback\n"
+              << tag << "  Implementation         : NorthwestEx C++ driver\n"
+              << tag << "  Method                 : Grassmann/Stiefel manifold\n";
       if (symmetry_info.has_symmetry())
       {
          coutput << tag << "  Symmetry information:" << std::endl;
@@ -275,44 +292,35 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
          coutput << tag << "  No symmetry information detected." << std::endl;
       }
        
-      coutput 
-       << tag << "  Cell optimization      : RTDB unita_frozen reference lattice\n"
-       << tag << "  Numerical grid         : fixed during optimization stage\n"
-       << tag << "  Lattice tolerance      : " << lattice_tolerance << '\n' 
-       << tag << "  Date                   : " << util_date() << '\n'
-       << tag << '\n'
-       << tag << "  The current lattice may change during unit-cell optimization.\n"
-       << tag << "  RTDB variable unita_frozen stores the reference lattice used\n"
-       << tag << "  to establish the numerical grid and basis-support policy.\n"
-       << tag << "  It is reset when the relative lattice change exceeds the\n"
-       << tag << "  configured tolerance or when a new optimization stage begins.\n"
-       << tag << "  Current energy, force, and stress evaluations use the current\n"
-       << tag << "  physical lattice, not unita_frozen.\n"
-       << tag << '\n'
-       << tag << std::string(width, '-') << '\n';
+      coutput << tag << "  Cell optimization      : RTDB unita_frozen reference lattice\n"
+              << tag << "  Numerical grid         : fixed during optimization stage\n"
+              << tag << "  Lattice tolerance      : " << lattice_tolerance << '\n' 
+              << tag << "  Date                   : " << util_date() << '\n'
+              << tag << '\n'
+              << tag << "  The current lattice may change during unit-cell optimization.\n"
+              << tag << "  RTDB variable unita_frozen stores the reference lattice used\n"
+              << tag << "  to establish the numerical grid and basis-support policy.\n"
+              << tag << "  It is reset when the relative lattice change exceeds the\n"
+              << tag << "  configured tolerance or when a new optimization stage begins.\n"
+              << tag << "  Current energy, force, and stress evaluations use the current\n"
+              << tag << "  physical lattice, not unita_frozen.\n"
+              << tag << '\n'
+              << tag << std::string(width, '-') << '\n';
    }
 
   
+   /*
    // Common driver-level work goes here.
    //  - For now, if the driver is only dispatching, call the
    //  - selected minimizer directly.
-
    // Add unita_frozen in rtdb
-
    // Relative Frobenius-norm tolerance for resetting unita_frozen.
    //  - For an isotropic lattice scaling, 1.0e-2 corresponds approximately
    //  - to a 1% change in the lattice constant.
-    
    if (oprint) coutput << tag <<  "Initial Stress Calculations" << std::endl;
-   json result = compute_egs_values(3,comm_world0,minimizer,rtdbstring, coutput);
-
-
-  
-
+   json result         = compute_egs_values(3,comm_world0,minimizer,rtdbstring, coutput);
    const double energy = result.at("energy").get<double>();
    const json& lstress = result.at("lstress");
-
-   // can you implement a simple lattice optimization first using lstress
 
    if (oprint)
    {
@@ -325,7 +333,6 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
               << tag << "dE/dbeta  = " << lstress.at(4).get<double>() << '\n'
               << tag << "dE/dgamma = " << lstress.at(5).get<double>() << '\n';
    }
-
 
 
    // Finite-difference check of the isotropic lattice derivative.
@@ -394,6 +401,7 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
       coutput << tag << "\n";
       coutput << tag << "\n";
    }
+   */
 
 
    // ---------------------------------------------------------------
@@ -405,8 +413,13 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
    // ---------------------------------------------------------------
    lattice_minimizer lm = pick_lattice_minimizer(symmetry_info.system);
 
+   // define ctx lattice optimization controls
    LatticeContext ctx;
-   ctx.oprint = oprint;
+   ctx.oprint           = oprint;
+   ctx.max_steps        = control.driver_lattice_maxiter();
+   ctx.minimum_gradient = control.driver_lattice_gmax();
+   ctx.initial_step     = control.driver_lattice_step();
+   ctx.minimum_step     = control.driver_lattice_xmin();
 
    const int ierr = lm(comm_world0, rtdbstring, coutput, minimizer, ctx);
    if (ierr != 0)
