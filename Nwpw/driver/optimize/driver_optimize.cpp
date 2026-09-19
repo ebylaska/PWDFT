@@ -278,13 +278,13 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
               << tag << "  Method                 : Grassmann/Stiefel manifold\n";
       if (symmetry_info.has_symmetry())
       {
-         coutput << tag << "  Symmetry information:" << std::endl;
-         coutput << tag << "    Space group name:         " << symmetry_info.space_group_name << std::endl;
-         coutput << tag << "    Space group number (ITC): " << symmetry_info.ita_number << std::endl;
-         coutput << tag << "    Symmetry type:            " << symmetry_info.type << std::endl;
-         coutput << tag << "    Group order:              " << symmetry_info.group_order << std::endl;
-         coutput << tag << "    Primitive cell:           " << (symmetry_info.is_primitive ? "true" : "false") << std::endl;
-         coutput << tag << "    Crystal system:           " << symmetry_info.system <<std::endl;
+         coutput << tag << "  Symmetry information   :" << std::endl;
+         coutput << tag << "      Space group name        : " << symmetry_info.space_group_name << std::endl;
+         coutput << tag << "      Space group number (ITC): " << symmetry_info.ita_number << std::endl;
+         coutput << tag << "      Symmetry type           : " << symmetry_info.type << std::endl;
+         coutput << tag << "      Group order             : " << symmetry_info.group_order << std::endl;
+         coutput << tag << "      Primitive cell          : " << (symmetry_info.is_primitive ? "true" : "false") << std::endl;
+         coutput << tag << "      Crystal system          : " << symmetry_info.system <<std::endl;
          // Add more fields if needed
       } 
       else 
