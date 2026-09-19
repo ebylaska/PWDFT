@@ -500,6 +500,10 @@ static void vpp_read(PGrid *mygrid, char *fname, char *comment, int *psp_type, i
      mygrid->t_read(5, tmp2, -1);
      mygrid->t_pack(0, tmp2);
      mygrid->tt_pack_copy(0, tmp2, prj);
+
+     mygrid->t_read(5, tmp2, -1);
+     mygrid->t_pack(0, tmp2);
+     mygrid->tt_pack_copy(0, tmp2, &prj[1 * mygrid->npack(0)]);
  
      mygrid->t_read(5, tmp2, -1);
      mygrid->t_pack(0, tmp2);
@@ -714,6 +718,10 @@ static void vpp_write(PGrid *mygrid, char *fname, char *comment, int psp_type, i
       mygrid->tt_pack_copy(0, prj, tmp2);
       mygrid->t_unpack(0, tmp2);
       mygrid->t_write_buffer(6, tmp2, 0);
+
+      mygrid->tt_pack_copy(0, &prj[1 * mygrid->npack(0)], tmp2);
+      mygrid->t_unpack(0, tmp2);
+      mygrid->t_write_buffer(6, tmp2, 0);
      
       mygrid->tt_pack_copy(0, &prj[2 * mygrid->npack(0)], tmp2);
       mygrid->t_unpack(0, tmp2);
@@ -754,37 +762,41 @@ static void vpp_write(PGrid *mygrid, char *fname, char *comment, int psp_type, i
  * @param ncore A double array containing core density data.
  * @return The calculated quantity related to the semicore pseudopotential.
  */
-static double semicore_check(PGrid *mygrid, bool semicore, double rcore,
-                             double *ncore) {
-  double sum = 0.0;
-  if (semicore) {
-    double omega = mygrid->lattice->omega();
-    double scal1 = 1.0 / ((double)((mygrid->nx) * (mygrid->ny) * (mygrid->nz)));
-    // double scal2 = 1.0/lattice_omega();
-    // double dv    = lattice_omega()*scal1;
-    double scal2 = 1.0 / omega;
-    double dv = omega * scal1;
-    double *tmp = mygrid->r_alloc();
-
-    /* put sqrt(core-density) at atom position */
-    mygrid->tc_pack_copy(0, ncore, tmp);
-    mygrid->c_pack_SMul(0, scal2, tmp);
-
-    /* Put put tmp into real space */
-    mygrid->c_unpack(0, tmp);
-    mygrid->cr_fft3d(tmp);
-    mygrid->r_zero_ends(tmp);
-
-    /*  square it  */
-    mygrid->r_sqr(tmp);
-
-    /* integrate it */
-    sum = mygrid->r_dsum(tmp) * dv;
-
-    mygrid->r_dealloc(tmp);
-  }
-  return sum;
+static double semicore_check(PGrid *mygrid, bool semicore, double rcore, double *ncore) 
+{
+   double sum = 0.0;
+   if (semicore) 
+   {
+      double omega = mygrid->lattice->omega();
+      double scal1 = 1.0 / ((double)((mygrid->nx) * (mygrid->ny) * (mygrid->nz)));
+      // double scal2 = 1.0/lattice_omega();
+      // double dv    = lattice_omega()*scal1;
+      double scal2 = 1.0 / omega;
+      double dv = omega * scal1;
+      double *tmp = mygrid->r_alloc();
+     
+      /* put sqrt(core-density) at atom position */
+      mygrid->tc_pack_copy(0, ncore, tmp);
+      mygrid->c_pack_SMul(0, scal2, tmp);
+     
+      /* Put put tmp into real space */
+      mygrid->c_unpack(0, tmp);
+      mygrid->cr_fft3d(tmp);
+      mygrid->r_zero_ends(tmp);
+     
+      /*  square it  */
+      mygrid->r_sqr(tmp);
+     
+      /* integrate it */
+      sum = mygrid->r_dsum(tmp) * dv;
+     
+      mygrid->r_dealloc(tmp);
+   }
+   return sum;
 }
+
+
+
 
 
 /*******************************************
@@ -1059,7 +1071,7 @@ static void vpp_generate(PGrid *mygrid, char *pspname, char *fname, char *commen
    } 
    else if (*psp_type == 2) 
    {
-      std::cout << "im here kbppv3e psp_version_in=" << psp_version_in <<  std::endl;
+      //std::cout << "im here kbppv3e psp_version_in=" << psp_version_in <<  std::endl;
       int nray = mygrid->n_ray();
       Psp1d_Hamann psp1d(myparall,pspname,psp_version_in);
 
@@ -2178,7 +2190,7 @@ Pseudopotential::Pseudopotential(Ion *myionin, Pneb *mypnebin,
 
          if (vpp_formatter_check(mypneb, fname2, psp_version)) 
          {
-   std::cout << " into vpp2_generate" << std::endl;
+   //std::cout << " into vpp2_generate" << std::endl;
             strcpy(pspname, myion->atom(ia));
             strcat(pspname, ".psp");
             control.add_permanent_dir(pspname);
@@ -3482,21 +3494,23 @@ void Pseudopotential::semicore_density_update()
    double *tmp = mypneb->r_alloc();
  
    mypneb->r_zero(semicore_density);
-   for (ii = 0; ii < (myion->nion); ++ii) {
-     ia = myion->katm[ii];
-     if (semicore[ia]) {
-       mystrfac->strfac_pack(0, ii, exi);
-       mypneb->tcc_pack_Mul(0, ncore_atom[ia], exi, tmp);
- 
-       /* Put put tmp into real space */
-       mypneb->c_unpack(0, tmp);
-       mypneb->cr_fft3d(tmp);
-       mypneb->r_zero_ends(tmp);
- 
-       /*  square it  */
-       mypneb->r_sqr(tmp);
-       mypneb->rr_Sum(tmp, semicore_density);
-     }
+   for (ii = 0; ii < (myion->nion); ++ii) 
+   {
+      ia = myion->katm[ii];
+      if (semicore[ia]) 
+      {
+         mystrfac->strfac_pack(0, ii, exi);
+         mypneb->tcc_pack_Mul(0, ncore_atom[ia], exi, tmp);
+        
+         /* Put put tmp into real space */
+         mypneb->c_unpack(0, tmp);
+         mypneb->cr_fft3d(tmp);
+         mypneb->r_zero_ends(tmp);
+        
+         /*  square it  */
+         mypneb->r_sqr(tmp);
+         mypneb->rr_Sum(tmp, semicore_density);
+      }
    }
    mypneb->r_SMul(scal2 * scal2, semicore_density);
  
@@ -3597,6 +3611,258 @@ void Pseudopotential::semicore_xc_fion(double *vxc, double *fion)
    // delete [] Gx;
    // delete [] Gy;
    // delete [] Gz;
+}
+
+
+/*******************************************
+ *                                         *
+ *           semicore_gen_Aus              *
+ *                                         *
+ *******************************************/
+/*
+ * Generate the semicore/NLCC auxiliary field A_us(r):
+ *
+ *   A_us(r) =
+ *     sum_I phi_I(r) F^-1[(G_u G_s / |G|) (d phi_I(G) / d|G|) exp(-i G.R_I) ]
+ *
+ * The returned real-space field includes the two FFT normalization
+ * factors, 1/omega^2, used by the legacy Fortran implementation.
+ *
+ * @param u   First Cartesian direction, in [0,2].
+ * @param s   Second Cartesian direction, in [0,2].
+ * @param Aus Output real-space array of length n2ft3d.
+ */
+void Pseudopotential::semicore_gen_Aus(const int u, const int s, double *Aus)
+{
+   if (u < 0 || u >= 3 || s < 0 || s >= 3) 
+   {
+      throw std::out_of_range("semicore_gen_Aus: Cartesian index out of range");
+   }
+
+   if (Aus == nullptr) 
+   {
+      throw std::invalid_argument("semicore_gen_Aus: null output array");
+   }
+
+   const int npack0  = mypneb->npack(0);
+   const int n2ft3d  = mypneb->n2ft3d;
+   const double omega = mypneb->lattice->omega();
+   const double scale = 1.0/(omega*omega);
+
+   // Gpackxyz returns packed reciprocal-space Cartesian
+   // components. These arrays are owned by mygrid.
+   double* Gu = mypneb->Gpackxyz(0, u);
+   double* Gs = mypneb->Gpackxyz(0, s);
+   double* Gx = mypneb->Gpackxyz(0, 0);
+   double* Gy = mypneb->Gpackxyz(0, 1);
+   double* Gz = mypneb->Gpackxyz(0, 2);
+
+   double* GuGs_over_G  = mypneb->t_pack_allocate(0);
+   double* exi          = mypneb->c_pack_allocate(0);
+
+   double* phi          = mypneb->r_alloc();
+   double* dphi         = mypneb->r_alloc();
+   double* weighted     = mypneb->r_alloc();
+
+
+   mypneb->r_zero(Aus);
+   //mypneb->r_zero(GuGs_over_G);
+
+   // Construct G_u G_s / |G| explicitly. In particular, force
+   // the G=0 component to zero rather than obtaining 0/0.
+   for (int k=0; k<npack0; ++k) 
+   {
+      const double gx = Gx[k];
+      const double gy = Gy[k];
+      const double gz = Gz[k];
+      const double g2 = gx*gx + gy*gy + gz*gz;
+
+      GuGs_over_G[k] = (g2 > 0.0) ? Gu[k]*Gs[k]/std::sqrt(g2) : 0.0;
+   }
+
+
+   for (int ii=0; ii<myion->nion; ++ii) 
+   {
+      const int ia = myion->katm[ii];
+
+      if (!semicore[ia])
+          continue;
+
+      mystrfac->strfac_pack(0, ii, exi);
+
+      // ncore_atom[ia] is assumed to contain consecutive packed
+      // radial arrays:
+      //
+      //   block 0: phi(G) = sqrt(rho_core)(G)
+      //   block 1: d phi(G) / d|G|
+      //
+      // This matches the old Fortran offsets ncore and
+      // ncore+npack0. Verify this layout when reading the PSP.
+      //const double* phi_G  = ncore_atom[ia];
+      //const double* dphi_G = ncore_atom[ia] + npack0;
+      double* phi_G  = ncore_atom[ia];
+      double* dphi_G = dncore_atom[ia];
+
+
+      // phi_I(G) = phi(G) exp(-i G.R_I)  
+      mypneb->tcc_pack_Mul(0, phi_G, exi, phi);
+
+      // dphi_I(G) = (G_u G_s / |G|) dphi(G)/d|G| exp(-i G.R_I).
+      mypneb->tcc_pack_Mul(0, dphi_G, exi, dphi);
+      mypneb->tcc_pack_Mul(0, GuGs_over_G, dphi, weighted);
+
+      /* Transform both fields into real space. */
+      mypneb->c_unpack(0, phi);
+      mypneb->c_unpack(0, weighted);
+
+      mypneb->cr_fft3d(phi);
+      mypneb->cr_fft3d(weighted);
+
+      mypneb->r_zero_ends(phi);
+      mypneb->r_zero_ends(weighted);
+
+      // The PGrid two-argument convention used elsewhere is:
+      //
+      //   rr_Mul(source, destination): destination *= source
+      //   rr_Sum(source, destination): destination += source
+      mypneb->rr_Mul(phi, weighted);
+      mypneb->rr_Sum(weighted, Aus);
+   }
+
+   mypneb->r_zero_ends(Aus);
+   mypneb->r_SMul(scale, Aus);
+
+   mypneb->r_dealloc(weighted);
+   mypneb->r_dealloc(dphi);
+   mypneb->r_dealloc(phi);
+   mypneb->c_pack_deallocate(exi);
+   mypneb->t_pack_deallocate(GuGs_over_G);
+}
+
+
+
+/********************************************
+ *                                          *
+ *    Pseudopotential::semicore_xc_euv      *
+ *                                          *
+ ********************************************/
+/**
+ * @brief Computes the semicore exchange-correlation (XC) contribution to the stress tensor.
+ *
+ * This function calculates the derivative of the semicore XC energy with respect to 
+ * lattice strain using a metric tensor-based approach. It evaluates the energy 
+ * response by integrating the semicore density and the XC potential over the 
+ * grid, accounting for the geometric deformation of the cell.
+ *
+ * @details 
+ * ### Mathematical Formulation
+ * The components of the stress tensor \f[ \sigma_{uv} \f] are computed as:
+ * \f[ \sigma_{uv} = V \cdot hm_{uv} + \sum_{s=1}^{3} W_{us} \cdot hm_{sv} \f]
+ *
+ * Where:
+ * - \f[ hm \f] is the scaled metric tensor (scaled lattice vectors).
+ * - \f[ V \f] is the potential energy term:
+ *   \f[ V = - \int \rho_{sc}(\mathbf{r}) V_{xc}(\mathbf{r}) d\mathbf{r} \f]
+ * - \f[ W_{us} \f] is the strain response term for strain component \f[ (u, s) \f]:
+ *   \f[ W_{us} = - \int \rho_{sc}(\mathbf{r}, \epsilon_{us}) V_{xc}(\mathbf{r}) d\mathbf{r} \f]
+ *   where \f[ \rho_{sc}(\mathbf{r}, \epsilon_{us}) \f] is the semicore density under strain.
+ *
+ * ### Spin Handling
+ * The implementation handles spin polarization via the `ispin` variable:
+ * - **Non-polarized (\f$ ispin=1 \f$):** The integral is scaled by a factor of 2 
+ *   to account for both spin channels occupying the same spatial density.
+ * - **Spin-polarized (\f$ ispin=2 \f$):** The function sums the individual integrals 
+ *   for the spin-up and spin-down components:
+ *   \f[ V = - \left( \int \rho_{\uparrow} V_{xc,\uparrow} d\mathbf{r} + \int \rho_{\downarrow} V_{xc,\downarrow} d\mathbf{r} \right) \f]
+ *
+ * @param[in]  xcp    Pointer to the exchange-correlation potential array. 
+ *                  For \f$ ispin=2 \f$, the array must have a size of at least 
+ *                  \f$ 2 \times n2ft3d \f$, where the second half contains the 
+ *                  spin-down potential.
+ * @param[out] stress Pointer to a flattened 3x3 array (9 elements) where the 
+ *                  resulting stress tensor \f[ \sigma \f] is stored.
+ * 
+ * @note This function assumes the grid is defined by `mypneb->nx`, `mypneb->ny`, 
+ *       and `mypneb->nz` and that the volume element `dv` is correctly pre-calculated.
+ */
+void Pseudopotential::semicore_xc_euv(const double *xcp, double *stress)
+{
+   //Initialize the master stress array to zero safely
+   std::fill(stress, stress + 9, 0.0);
+
+   if (this->has_semicore())
+   {
+      constexpr double pi     = units::PI;
+      constexpr double scal   = 1.0/(2.0*pi);
+ 
+      const int ispin       = mypneb->ispin;
+      const int ispinscale  = (3-ispin); // If ispin=1, scale is 2. If ispin=2, scale is 1.
+      //const int ispinscale  = 1;
+ 
+      const int n2ft3d  = mypneb->n2ft3d;
+      const double omega = mypneb->lattice->omega();
+      const double scal1 = 1.0 / ((double)((mypneb->nx) * (mypneb->ny) * (mypneb->nz)));
+      const double dv = omega * scal1; 
+  
+ 
+      // define hm
+      double hm[9];
+      for (size_t i=0; i<3; ++i)
+      for (size_t j=0; j<3; ++j)
+         hm[i+3*j] = scal*mypneb->lattice->unitg(i,j);
+ 
+      //  Compute VV (Potential Energy term) ---
+      // In Fortran: VV = -semicore_pxc_rho(ispin, n2ft3d, density, xcp)
+      // Assuming the C++ equivalent is the integral of (density * xcp)
+      // We use the logic from your first snippet for VV calculation:
+      double VV =  ispinscale* dv * mypneb->rr_dot(semicore_density, xcp);
+       
+      // Assuming ispin=2 is spin-polarized (magnetic)
+      if (ispin == 2) 
+         VV += dv * mypneb->rr_dot(semicore_density, xcp + n2ft3d);
+ 
+      VV = -VV;
+ 
+      // Compute WW (Strain response term) ---
+      double WW[9] = {0.0}; // Symmetric 3x3 matrix
+      std::vector<double> Aus_buffer(n2ft3d);
+ 
+      for (int u=0; u<3; ++u) 
+      {
+         for (int s=u; s<3; ++s) 
+         {
+            this->semicore_gen_Aus(s, u, Aus_buffer.data());
+
+ 
+            // Compute the integral: wus = -semicore_pxc_rho(ispin, n2ft3d, Aus, xcp)
+            double wus = -ispinscale * dv * mypneb->rr_dot(Aus_buffer.data(), xcp);
+               
+            // Handle spin for wus if polarized
+            if (ispin == 2) 
+               wus -= dv * mypneb->rr_dot(Aus_buffer.data(), xcp + n2ft3d);
+
+            WW[u+3*s] = wus;
+            WW[s+3*u] = wus; // Enforce symmetry
+         }
+      }
+ 
+      // Compute final stress(u, v) ---
+      // Formula: stress(u,v) = VV * hm(u,v) + Sum_{s=1..3} [ WW(u,s) * hm(s,v) ]
+      for (int u = 0; u < 3; ++u) 
+      {
+         for (int v = 0; v < 3; ++v) 
+         {
+            double val = VV * hm[u+3*v];
+            for (int s=0; s<3; ++s) 
+               val += WW[u+3*s]*hm[s+3*v];
+               
+            // stress is passed as a pointer, assume 3x3 flattened array
+            stress[u+3*v] = val;
+         }
+      }
+ 
+   }
+
 }
 
 

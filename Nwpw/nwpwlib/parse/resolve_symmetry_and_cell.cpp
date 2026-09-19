@@ -1243,6 +1243,7 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
       std::vector<std::string> expanded_symbols;
       std::vector<double> expanded_coords_xyz;
 
+      int input_nion = symbols.size();
       std::vector<double> input_masses = geomjson.value("masses", std::vector<double>{});
       std::vector<double> input_charges = geomjson.value("charges", std::vector<double>{});
       std::vector<double> input_velocities = geomjson.value("velocities", std::vector<double>{});
@@ -1260,53 +1261,46 @@ std::string resolve_symmetry_and_cell(std::string rtdbstring)
                 << expanded_symbols.size()
                 << std::endl;
 
+      const std::size_t expanded_nion = expanded_symbols.size();
+      std::vector<double> expanded_masses;
+      std::vector<double> expanded_charges;
+      expanded_masses.reserve(expanded_nion);
+      expanded_charges.reserve(expanded_nion);
+
+      for (const std::string& expanded_symbol : expanded_symbols) 
+      {
+         bool found = false;
+
+         for (std::size_t jj=0; jj<input_nion; ++jj)
+         {
+            if (expanded_symbol == symbols[jj]) 
+            {
+               expanded_masses.push_back(input_masses[jj]);
+               expanded_charges.push_back(input_charges[jj]);
+               found = true;
+               break;
+            }
+         }
+         if (!found) 
+         {
+            throw std::runtime_error( "symmetry expansion: no source properties found for " "element " + expanded_symbol);
+         }
+      }
+
       symbols.swap(expanded_symbols);
       coords_xyz.swap(expanded_coords_xyz);
-      write_symbols_and_coords_flat( geomjson, symbols, coords_xyz);
-
-      geomjson["nion"] = static_cast<int>(symbols.size());
+      write_symbols_and_coords_flat(geomjson, symbols, coords_xyz);
 
       // The expansion routine generated Cartesian coordinates.
+      geomjson["nion"]       = static_cast<int>(expanded_nion);
       geomjson["fractional"] = false;
 
-      geomjson["masses"] = std::vector<double>(symbols.size(), 12.0);
-      geomjson["charges"] = std::vector<double>(symbols.size(), 6.0);
-      geomjson["velocities"] = std::vector<double>(3 * symbols.size(), 0.0);
+      geomjson["masses"]  = std::move(expanded_masses);
+      geomjson["charges"] = std::move(expanded_charges);
 
-      /*
-      const std::size_t n_input = input_symbols.size();
-
-      const std::size_t n_effective = symbols.size();
-
-      auto expand_scalar_field =
-          [&](const std::vector<double>& input, const std::string& field) -> std::vector<double>
-      {
-         if (input.empty())
-             return {};
-       
-         if (input.size() == n_effective)
-             return input;
-       
-         if (input.size() == 1)
-             return std::vector<double>(
-                 n_effective, input.front());
-       
-         if (input.size() != n_input)
-         {
-             throw std::runtime_error(field + " does not match input atom count");
-         }
-       
-         std::vector<double> output;
-         output.reserve(n_effective);
-       
-         // The expansion routine should also return the source
-         // input-atom index for each generated atom.
-         for (std::size_t i = 0; i < n_effective; ++i)
-             output.push_back(input[0]);
-       
-         return output;
-      };
-      */
+      // Safe for static calculations. Nonzero velocities require
+      // symmetry-operation mapping and rotation.
+      geomjson["velocities"] = std::vector<double>(3 * expanded_nion, 0.0);
    }
 
 

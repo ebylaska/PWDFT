@@ -474,7 +474,7 @@ int cubic_lattice_minimizer(MPI_Comm comm,
                      << final_a << " Bohr = "
                      << std::fixed << std::setprecision(3)
                      << final_a * bohr_to_angstrom << " A\n"
-              << tag << " Minimum energy (total): "
+              << tag << " Final accepted energy (total): "
                      << std::fixed << std::setprecision(8)
                      << final_energy << " Hartree\n"
               << tag << " Gradients at minimum: "

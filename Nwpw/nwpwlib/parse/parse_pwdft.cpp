@@ -500,6 +500,9 @@ static json parse_geometry(json geom, int *curptr,
       velocities.push_back(vz);
 
       mm = periodic_table_mass[mystring_capitalize(ss[0])];
+
+      std::cout << "MASS mm=" << mm << std::endl;
+
       if (mystring_contains(mystring_lowercase(line), "mass"))
         mm = std::stod(mystring_split0(mystring_split(line, "mass")[1])[0]);
       masses.push_back(mm);

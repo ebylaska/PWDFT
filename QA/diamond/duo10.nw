@@ -35,6 +35,7 @@ nwpw
   lmbfgs grassman
   2d-hcurve
   includestress
+  tolerances 1.0e-9 1.0e-9
 end
 task pspw stress
  

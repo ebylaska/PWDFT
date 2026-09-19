@@ -232,13 +232,9 @@ public:
   void semicore_xc_fion(double *, double *);
 
   void v_nonlocal(double *psi, double *Hpsi);
-  
   void v_nonlocal_fion(double *psi, double *Hpsi,
                        const bool move, double *fion, double *occ= nullptr);
-
   void f_nonlocal_fion(double *psi, double *fion, double *occ = nullptr);
-
-
   void v_nonlocal_orb(double *, double *);
 
   //void apply_pspspin_scaling(double *, int, int, int, int);
@@ -254,6 +250,8 @@ public:
 
   bool has_stress() const { return stressexist; }
 
+  void semicore_gen_Aus(const int, const int, double *);
+  void semicore_xc_euv(const double *, double *);
   void v_local_euv(const double *, const double *,  double *);
   void v_nonlocal_euv(const double *psi, double *stress, double *occ = nullptr);
  

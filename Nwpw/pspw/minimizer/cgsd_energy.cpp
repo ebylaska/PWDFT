@@ -781,9 +781,10 @@ void cgsd_energy_stress(Molecule &mymolecule, double *stress, bool doprint, std:
    if (oprint) print_stress_array("    xc stress (au)      ", tstress);
    accumulate(tstress);
 
-   //**** Core-correction Coulomb energy component : dE_core/dhuv ****
-   //mymolecule.rho_1semicore_stress(tstress);
-   //accumulate(tstress);
+   //**** Core-correction xcb energy component : dE_core/dhuv ****
+   mymolecule.rho_1semicore_stress(tstress);
+   if (oprint) print_stress_array("   semicore stress (au) ", tstress);
+   accumulate(tstress);
 
    //**** Ewald energy component : dE_ewald/dhuv ****
    mymolecule.ewald_stress(tstress);

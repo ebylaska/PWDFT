@@ -81,6 +81,10 @@ public:
    void gen_scf_potentials(double *, double *, double *);
    void gen_vl_potential();
    void semicore_density_update();
+   void semicore_xc_stress(double *tstress) {  
+      if (mypsp->has_semicore()) 
+         mypsp->semicore_xc_euv(xcp,tstress);
+   }
    void gen_vall();
    void get_vall(double *);
    void set_vall(const double *);

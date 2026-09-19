@@ -588,6 +588,12 @@ public:
          tstress[uv] += tstress2[uv];
    }
 
+
+   void rho_1semicore_stress(double *tstress)
+   {
+      myelectron->semicore_xc_stress(tstress);
+   }
+
    void ewald_stress(double *tstress)
    {
        myewald->stress(tstress);
