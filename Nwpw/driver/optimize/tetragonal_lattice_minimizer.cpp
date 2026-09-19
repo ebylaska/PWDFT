@@ -178,10 +178,12 @@ int tetragonal_lattice_minimizer(MPI_Comm comm,
         const double xc = std::log(c);
 
         // -- Evaluate energy and gradient at current cell -----------------
-        const json   current_result   = compute_egs_values(3, comm, minimizer,
-                                                           rtdbstring, coutput);
+        const json   current_result   = compute_egs_values(3, comm, minimizer, rtdbstring, coutput);
         const double current_energy   = current_result.at("energy").get<double>();
         const json&  lstress          = current_result.at("lstress");
+
+        const json rtdbjson     = json::parse(rtdbstring);
+        const json& numerical_grid  = rtdbjson["driver"].at("numerical_grid"); 
 
         const double dE_da_a  = lstress.at(0).get<double>();
         const double dE_da_b  = lstress.at(1).get<double>();
@@ -198,35 +200,36 @@ int tetragonal_lattice_minimizer(MPI_Comm comm,
         {
             coutput << '\n'
                     << tag << "----------------------------------------------\n"
-                    << tag << " Step        : " << istep << '\n'
-                    << tag << " Energy      : "
+                    << tag << " Step          : " << istep << '\n'
+                    << tag << " numerical_grid:" << numerical_grid << '\n' 
+                    << tag << " Energy        : "
                            << std::fixed << std::setprecision(10)
                            << current_energy << " Hartree\n"
-                    << tag << " Lattice a   : "
+                    << tag << " Lattice a     : "
                            << std::fixed << std::setprecision(6)
                            << a << " Bohr ("
                            << std::fixed << std::setprecision(3)
                            << a * bohr_to_angstrom << " A)\n"
-                    << tag << " Lattice c   : "
+                    << tag << " Lattice c     : "
                            << std::fixed << std::setprecision(6)
                            << c << " Bohr ("
                            << std::fixed << std::setprecision(3)
                            << c * bohr_to_angstrom << " A)\n"
-                    << tag << " dE/da|tet   : "
+                    << tag << " dE/da|tet     : "
                            << std::defaultfloat << std::setprecision(10)
                            << gradient_a << '\n'
-                    << tag << " dE/dc|tet   : "
+                    << tag << " dE/dc|tet     : "
                            << gradient_c << '\n'
-                    << tag << " dE/dlog(a)  : " << ga << '\n'
-                    << tag << " dE/dlog(c)  : " << gc << '\n'
-                    << tag << " Trust radius: " << trust_radius << '\n';
+                    << tag << " dE/dlog(a)    : " << ga << '\n'
+                    << tag << " dE/dlog(c)    : " << gc << '\n'
+                    << tag << " Trust radius  : " << trust_radius << '\n';
         }
 
         if (!std::isfinite(current_energy) ||
             !std::isfinite(ga) || !std::isfinite(gc))
         {
             if (oprint)
-                coutput << tag << " Action      : non-finite energy or gradient; stop.\n"
+                coutput << tag << " Action        : non-finite energy or gradient; stop.\n"
                         << tag << "----------------------------------------------\n";
             break;
         }
@@ -237,7 +240,7 @@ int tetragonal_lattice_minimizer(MPI_Comm comm,
         {
             converged = true;
             if (oprint)
-                coutput << tag << " Action      : gradient converged.\n"
+                coutput << tag << " Action        : gradient converged.\n"
                         << tag << "----------------------------------------------\n";
             break;
         }
@@ -295,7 +298,7 @@ int tetragonal_lattice_minimizer(MPI_Comm comm,
                 std::numeric_limits<double>::epsilon())
         {
             if (oprint)
-                coutput << tag << " Action      : zero step; stop.\n"
+                coutput << tag << " Action        : zero step; stop.\n"
                         << tag << "----------------------------------------------\n";
             break;
         }
@@ -385,17 +388,17 @@ int tetragonal_lattice_minimizer(MPI_Comm comm,
 
             if (oprint)
             {
-                coutput << tag << " Method      : "
+                coutput << tag << " Method        : "
                         << (used_bfgs ? "BFGS/quasi-Newton" : "gradient fallback")
                         << '\n'
-                        << tag << " Action      : accepted\n"
-                        << tag << " Delta log(a): "
+                        << tag << " Action        : accepted\n"
+                        << tag << " Delta log(a)  : "
                         << std::defaultfloat << std::setprecision(10)
                         << accepted_dx_a << '\n'
-                        << tag << " Delta log(c): " << accepted_dx_c << '\n'
-                        << tag << " Scale a     : " << std::exp(accepted_dx_a) << '\n'
-                        << tag << " Scale c     : " << std::exp(accepted_dx_c) << '\n'
-                        << tag << " New energy  : "
+                        << tag << " Delta log(c)  : " << accepted_dx_c << '\n'
+                        << tag << " Scale a       : " << std::exp(accepted_dx_a) << '\n'
+                        << tag << " Scale c       : " << std::exp(accepted_dx_c) << '\n'
+                        << tag << " New energy    : "
                         << std::fixed << std::setprecision(10)
                         << accepted_energy << " Hartree\n"
                         << tag << "----------------------------------------------\n";
@@ -409,11 +412,11 @@ int tetragonal_lattice_minimizer(MPI_Comm comm,
 
             if (oprint)
             {
-                coutput << tag << " Method      : "
+                coutput << tag << " Method        : "
                         << (used_bfgs ? "BFGS/quasi-Newton" : "gradient fallback")
                         << '\n'
-                        << tag << " Action      : rejected; halve trust radius.\n"
-                        << tag << " New radius  : "
+                        << tag << " Action        : rejected; halve trust radius.\n"
+                        << tag << " New radius    : "
                         << std::defaultfloat << std::setprecision(10)
                         << trust_radius << '\n'
                         << tag << "----------------------------------------------\n";
@@ -425,8 +428,7 @@ int tetragonal_lattice_minimizer(MPI_Comm comm,
     }
 
     // -- Final report -----------------------------------------------------
-    const json   final_result   = compute_egs_values(3, comm, minimizer,
-                                                     rtdbstring, coutput);
+    const json   final_result   = compute_egs_values(3, comm, minimizer, rtdbstring, coutput);
     const double final_energy   = final_result.at("energy").get<double>();
     const json&  final_lstress  = final_result.at("lstress");
 
@@ -436,6 +438,9 @@ int tetragonal_lattice_minimizer(MPI_Comm comm,
 
     const double final_gradient_a = final_dE_da_a + final_dE_da_b;
     const double final_gradient_c = final_dE_dc_c;
+
+    const json rtdbjson = json::parse(rtdbstring);
+    const json& final_grid  = rtdbjson["driver"].at("numerical_grid");
 
     const auto [final_a, final_c] = read_tetragonal_lattice(rtdbstring);
 
@@ -453,6 +458,7 @@ int tetragonal_lattice_minimizer(MPI_Comm comm,
                 << tag << "==============================================\n"
                 << tag << " PWDFT tetragonal lattice optimization COMPLETE\n"
                 << tag << "==============================================\n"
+                << tag << " numerical_grid:" << final_grid << "\n"
                 << tag << " Final lattice a: "
                        << std::fixed << std::setprecision(6) << final_a
                        << " Bohr = "
