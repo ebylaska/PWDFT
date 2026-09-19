@@ -423,4 +423,125 @@ void set_tetragonal_cell(std::string& rtdbstring, double a_new, double c_new)
     rtdbstring = rtdb.dump();
 }
 
+
+/*************************************
+ *                                   *
+ *       read_hexagonal_lattice      *
+ *                                   *
+ *************************************/
+
+std::pair<double, double> read_hexagonal_lattice(const std::string& rtdbstring)
+{
+    const json rtdb = json::parse(rtdbstring);
+    const std::string geomname =
+        (rtdb.contains("geometry") && rtdb["geometry"].is_string())
+            ? rtdb["geometry"].get<std::string>()
+            : "geometry";
+
+    const auto& unita = rtdb.at("geometries").at(geomname).at("unita");
+
+    const double u0 = unita.at(0).get<double>();
+    const double u1 = unita.at(1).get<double>();
+    const double u2 = unita.at(2).get<double>();
+    const double a  = std::sqrt(u0*u0 + u1*u1 + u2*u2);
+
+    const double u6 = unita.at(6).get<double>();
+    const double u7 = unita.at(7).get<double>();
+    const double u8 = unita.at(8).get<double>();
+    const double c  = std::sqrt(u6*u6 + u7*u7 + u8*u8);
+
+    return { a, c };
+}
+
+/*************************************
+ *                                   *
+ *        set_hexagonal_cell         *
+ *                                   *
+ *************************************/
+void set_hexagonal_cell(std::string& rtdbstring, double a_new, double c_new)
+{
+    if (!(a_new > 0.0) || !(c_new > 0.0))
+        throw std::runtime_error(
+            "set_hexagonal_cell: non-positive lattice parameter");
+
+    json rtdb = json::parse(rtdbstring);
+
+    const std::string geomname =
+        (rtdb.contains("geometry") && rtdb["geometry"].is_string())
+            ? rtdb["geometry"].get<std::string>()
+            : "geometry";
+
+    json& geometry = rtdb["geometries"][geomname];
+
+    const double u0 = geometry["unita"].at(0).get<double>();
+    const double u1 = geometry["unita"].at(1).get<double>();
+    const double u2 = geometry["unita"].at(2).get<double>();
+    const double u6 = geometry["unita"].at(6).get<double>();
+    const double u7 = geometry["unita"].at(7).get<double>();
+    const double u8 = geometry["unita"].at(8).get<double>();
+
+    const double a_old = std::sqrt(u0*u0 + u1*u1 + u2*u2);
+    const double c_old = std::sqrt(u6*u6 + u7*u7 + u8*u8);
+
+    if (!(a_old > 0.0) || !(c_old > 0.0))
+        throw std::runtime_error(
+            "set_hexagonal_cell: invalid current lattice");
+
+    const double scale_a = a_new / a_old;
+    const double scale_c = c_new / c_old;
+
+    // Scale a1 and a2 by scale_a; a3 by scale_c.
+    // Assumes the standard hexagonal orientation: a1 along x, a2 in the
+    // xy-plane at 120 degrees, a3 along z.
+    for (int i = 0; i < 3; ++i)
+        geometry["unita"][i] =
+            geometry["unita"][i].get<double>() * scale_a;
+    for (int i = 3; i < 6; ++i)
+        geometry["unita"][i] =
+            geometry["unita"][i].get<double>() * scale_a;
+    for (int i = 6; i < 9; ++i)
+        geometry["unita"][i] =
+            geometry["unita"][i].get<double>() * scale_c;
+
+    // Cartesian coords: in-plane (x, y) by scale_a; z by scale_c.
+    if (geometry.contains("coords") && geometry["coords"].is_array())
+    {
+        auto& coords = geometry["coords"];
+        for (std::size_t i = 0; i + 2 < coords.size(); i += 3)
+        {
+            coords[i + 0] = coords[i + 0].get<double>() * scale_a;
+            coords[i + 1] = coords[i + 1].get<double>() * scale_a;
+            coords[i + 2] = coords[i + 2].get<double>() * scale_c;
+        }
+    }
+
+    // Keep nwpw.simulation_cell.unita in sync if present.
+    if (rtdb.contains("nwpw") &&
+        rtdb["nwpw"].is_object() &&
+        rtdb["nwpw"].contains("simulation_cell") &&
+        rtdb["nwpw"]["simulation_cell"].is_object())
+    {
+        json& cell = rtdb["nwpw"]["simulation_cell"];
+
+        if (cell.contains("unita") &&
+            cell["unita"].is_array() &&
+            cell["unita"].size() == 9)
+        {
+            for (int i = 0; i < 3; ++i)
+                cell["unita"][i] =
+                    cell["unita"][i].get<double>() * scale_a;
+            for (int i = 3; i < 6; ++i)
+                cell["unita"][i] =
+                    cell["unita"][i].get<double>() * scale_a;
+            for (int i = 6; i < 9; ++i)
+                cell["unita"][i] =
+                    cell["unita"][i].get<double>() * scale_c;
+        }
+    }
+
+    rtdbstring = rtdb.dump();
+}
+
+
+
 } // namespace pwdft

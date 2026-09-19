@@ -32,4 +32,7 @@ nlohmann::json compute_egs_values(int option,
 std::pair<double, double> read_tetragonal_lattice(const std::string& rtdbstring);
 void set_tetragonal_cell(std::string& rtdbstring, double a_new, double c_new);
 
+std::pair<double, double> read_hexagonal_lattice(const std::string& rtdbstring);
+void set_hexagonal_cell(std::string& rtdbstring, double a_new, double c_new);
+
 } // namespace pwdft

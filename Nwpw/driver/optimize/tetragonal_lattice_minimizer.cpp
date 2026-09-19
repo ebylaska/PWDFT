@@ -108,6 +108,19 @@ struct Hessian2 {
         B11 = u11;                 //  for symmetric B and our construction)
         B01 = u01;
 
+        // Enforce a positive floor on the diagonal. This prevents B from
+        // collapsing toward zero when successive small steps produce
+        // unreliable curvature information.
+        constexpr double B_min = 1.0e-2;
+        if (B00 < B_min) B00 = B_min;
+        if (B11 < B_min) B11 = B_min;
+
+        // Keep B positive-definite: clamp the off-diagonal to the
+        // geometric mean of the diagonal.
+        const double B01_max = std::sqrt(B00 * B11) * 0.95;
+        if (B01 >  B01_max) B01 =  B01_max;
+        if (B01 < -B01_max) B01 = -B01_max;
+
         return true;
     }
 };
@@ -116,11 +129,6 @@ struct Hessian2 {
 // Small helpers
 // ---------------------------------------------------------------------------
 
-static double active_cubic_or_tetragonal_gradient_a(const json& lstress)
-{
-    // For both cubic and tetragonal, the a/b direction moves both a and b.
-    return lstress.at(0).get<double>() + lstress.at(1).get<double>();
-}
 
 } // namespace
 
@@ -149,6 +157,7 @@ int tetragonal_lattice_minimizer(MPI_Comm comm,
     double previous_ga = 0.0, previous_gc = 0.0;
 
     Hessian2 B;
+    B.B00 = B.B11 = 0.1;
 
     bool converged = false;
     int  steps_taken = 0;
@@ -247,14 +256,28 @@ int tetragonal_lattice_minimizer(MPI_Comm comm,
 
         // -- BFGS update from the previous accepted step ------------------
         bool updated_hessian = false;
+
         if (have_previous_point)
         {
             const double s_a = xa - previous_xa;
             const double s_c = xc - previous_xc;
             const double y_a = ga - previous_ga;
             const double y_c = gc - previous_gc;
-
-            updated_hessian = B.bfgs_update(s_a, s_c, y_a, y_c);
+         
+            const double s_norm = std::hypot(s_a, s_c);
+            const double y_norm = std::hypot(y_a, y_c);
+            const double g_norm = std::hypot(ga, gc);
+         
+            // A pair is worth using if the step was non-negligible AND the
+            // gradient changed by a meaningful fraction of the current gradient.
+            // The old criterion (s_norm > 0.1 * trust_radius) rejected the small
+            // steps that naturally arise near a minimum, which starved BFGS.
+            const bool usable_pair =
+                (s_norm > 1.0e-6) &&
+                (y_norm > 1.0e-3 * g_norm);
+         
+            if (usable_pair)
+                updated_hessian = B.bfgs_update(s_a, s_c, y_a, y_c);
         }
 
         // -- Proposed step ------------------------------------------------
@@ -347,9 +370,16 @@ int tetragonal_lattice_minimizer(MPI_Comm comm,
                 continue;
             }
 
-            const json trial_result =
-                compute_egs_values(1, comm, minimizer, trial_rtdb, coutput);
+            const json trial_result   = compute_egs_values(1, comm, minimizer, trial_rtdb, coutput);
             const double trial_energy = trial_result.at("energy").get<double>();
+            
+            if (oprint)
+               coutput << tag << "  trial_dx = ("
+                       << std::setprecision(6) << trial_dx_a << ", " << trial_dx_c
+                       << ")  trial_E = " << std::setprecision(12) << trial_energy
+                       << "  current_E = " << current_energy
+                       << "  delta = " << (trial_energy - current_energy)
+                       << '\n';
 
             if (std::isfinite(trial_energy) && trial_energy < current_energy)
             {
@@ -377,14 +407,52 @@ int tetragonal_lattice_minimizer(MPI_Comm comm,
             rtdbstring = std::move(accepted_rtdb);
             ++steps_taken;
 
-            const double accepted_norm = std::hypot(accepted_dx_a, accepted_dx_c);
+            // -- Trust-region update ----------------------------------------
+            //
+            // Compute rho = (actual energy reduction) / (predicted reduction).
+            // The model is  m(s) = E + g·s + 0.5 s·H·s,  with H = B^{-1},
+            // so the predicted reduction is
+            //
+            //     Δ_pred = -(g·s) - 0.5 s·H·s
+            //
+            // We evaluate s·H·s using the 2x2 inverse of B directly.
+            // det(B) = B00*B11 - B01^2
+            //
+            //     sHs = s^T B^{-1} s
+            //         = ( B11*s0^2 - 2*B01*s0*s1 + B00*s1^2 ) / det(B)
 
-            if (accepted_norm < 0.5 * trust_radius)
-                trust_radius = std::max(minimum_step, 2.0 * accepted_norm);
-            else
-                trust_radius = std::min(1.5 * trust_radius,
-                                        std::max(std::abs(ctx.initial_step),
-                                                 minimum_step));
+            const double det_B = B.B00 * B.B11 - B.B01 * B.B01;
+
+            double sHs = 0.0;
+            if (std::abs(det_B) > 1.0e-14)
+            {
+                sHs = ( B.B11 * accepted_dx_a * accepted_dx_a
+                      - 2.0 * B.B01 * accepted_dx_a * accepted_dx_c
+                      + B.B00 * accepted_dx_c * accepted_dx_c ) / det_B;
+            }
+
+            double predicted_reduction    = -(ga * accepted_dx_a + gc * accepted_dx_c) - 0.5 * sHs;
+            const double actual_reduction = current_energy - accepted_energy;
+
+            double rho = 0.0;
+            if (predicted_reduction > 1.0e-14)
+                rho = actual_reduction / predicted_reduction;
+
+            const double accepted_norm     = std::hypot(accepted_dx_a, accepted_dx_c);
+            const double trust_upper_bound = std::max(10.0 * std::abs(ctx.initial_step), minimum_step);
+
+            if (rho < 0.25)
+            {
+                // Model over-predicted; shrink.
+                trust_radius *= 0.5;
+            }
+            else if (rho > 0.75 && accepted_norm > 0.9 * trust_radius)
+            {
+                // Model accurate and radius was binding; expand.
+                trust_radius = std::min(2.0 * trust_radius, trust_upper_bound);
+            }
+            // else: keep unchanged
+
 
             if (oprint)
             {
@@ -396,6 +464,7 @@ int tetragonal_lattice_minimizer(MPI_Comm comm,
                         << std::defaultfloat << std::setprecision(10)
                         << accepted_dx_a << '\n'
                         << tag << " Delta log(c)  : " << accepted_dx_c << '\n'
+                        << tag << " rho           : " << rho << '\n'
                         << tag << " Scale a       : " << std::exp(accepted_dx_a) << '\n'
                         << tag << " Scale c       : " << std::exp(accepted_dx_c) << '\n'
                         << tag << " New energy    : "
@@ -406,8 +475,8 @@ int tetragonal_lattice_minimizer(MPI_Comm comm,
         }
         else
         {
-            have_previous_point = false;
-            B.reset_to_identity();
+            //have_previous_point = false;
+            //B.reset_to_identity();
             trust_radius *= 0.5;
 
             if (oprint)
