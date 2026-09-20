@@ -1,6 +1,6 @@
-// tetragonal_lattice_minimizer.cpp
+// hexagonal_lattice_minimizer.cpp
 //
-// Tetragonal cells (a = b, alpha = beta = gamma = 90; c independent).
+// Hexagonal cells (a = b, gamma = 120, alpha = beta = 90; c independent).
 // Free parameters: a and c.
 //
 // Coordinates x = (log a, log c). Gradients:
@@ -12,20 +12,20 @@
 
 namespace pwdft {
 
-int tetragonal_lattice_minimizer(MPI_Comm comm,
-                                 std::string& rtdbstring,
-                                 std::ostream& coutput,
-                                 electronic_minimizer minimizer,
-                                 const LatticeContext& ctx)
+int hexagonal_lattice_minimizer(MPI_Comm comm,
+                                std::string& rtdbstring,
+                                std::ostream& coutput,
+                                electronic_minimizer minimizer,
+                                const LatticeContext& ctx)
 {
     auto read_x = [](const std::string& rtdb) {
-        const auto ac = read_tetragonal_lattice(rtdb);
+        const auto ac = read_hexagonal_lattice(rtdb);
         return std::array<double, 2>{ std::log(ac.first),
                                       std::log(ac.second) };
     };
 
     auto write_x = [](std::string& rtdb, const std::array<double, 2>& x) {
-        set_tetragonal_cell(rtdb, std::exp(x[0]), std::exp(x[1]));
+        set_hexagonal_cell(rtdb, std::exp(x[0]), std::exp(x[1]));
     };
 
     auto compute_g = [](const std::array<double, 2>& x, const json& lstress) {
@@ -37,7 +37,6 @@ int tetragonal_lattice_minimizer(MPI_Comm comm,
         return std::array<double, 2>{ a * dE_da, c * dE_dc };
     };
 
-    
     auto print_step = [](std::ostream& out, const std::string& tag, int istep,
                      const std::array<double, 2>& x,
                      const std::array<double, 2>& g,
@@ -79,7 +78,7 @@ int tetragonal_lattice_minimizer(MPI_Comm comm,
 
 
     return run_quasi_newton<2>(rtdbstring, comm, minimizer, coutput, ctx,
-                               "tetragonal",
+                               "hexagonal",
                                read_x, write_x, compute_g, print_step, print_final);
 }
 

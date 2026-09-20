@@ -116,6 +116,29 @@ int hexagonal_lattice_minimizer(MPI_Comm,        // <-- add this
                                 electronic_minimizer,
                                 const LatticeContext&);
 
+int orthorhombic_lattice_minimizer(MPI_Comm,
+                                   std::string&,
+                                   std::ostream&,
+                                   electronic_minimizer,
+                                   const LatticeContext&);
+
+int monoclinic_lattice_minimizer(MPI_Comm,
+                                 std::string&,
+                                 std::ostream&,
+                                 electronic_minimizer,
+                                 const LatticeContext&);
+
+int trigonal_lattice_minimizer(MPI_Comm, std::string&, 
+                               std::ostream&,
+                               electronic_minimizer, 
+                               const LatticeContext&);
+
+int triclinic_lattice_minimizer(MPI_Comm,
+                                std::string&,
+                                std::ostream&,
+                                electronic_minimizer,
+                                const LatticeContext&);
+
 // Declare these as you implement them:
 // int tetragonal_lattice_minimizer(...);
 // int orthorhombic_lattice_minimizer(...);
