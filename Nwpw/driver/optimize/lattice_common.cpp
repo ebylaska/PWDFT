@@ -6,7 +6,6 @@
 // be joined by scale_tetragonal_cell, scale_orthorhombic_cell, etc., or
 // replaced by a generic set_lattice(...).
 //
-// These functions were previously static members of driver_optimize.cpp.
 
 #include "lattice_common.hpp"
 

@@ -139,13 +139,6 @@ int triclinic_lattice_minimizer(MPI_Comm,
                                 electronic_minimizer,
                                 const LatticeContext&);
 
-// Declare these as you implement them:
-// int tetragonal_lattice_minimizer(...);
-// int orthorhombic_lattice_minimizer(...);
-// int hexagonal_lattice_minimizer(...);
-// int trigonal_lattice_minimizer(...);
-// int monoclinic_lattice_minimizer(...);
-// int triclinic_lattice_minimizer(...);
 
 // ---------------------------------------------------------------------------
 // Dispatch
