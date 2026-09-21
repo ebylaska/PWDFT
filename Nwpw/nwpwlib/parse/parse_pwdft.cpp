@@ -3249,47 +3249,322 @@ std::string parse_rtdbstring(std::string rtdbstring) {
  *                 parse_task                     *
  *                                                *
  **************************************************/
-
-int parse_task(std::string rtdbstring) {
-  auto rtdb = json::parse(rtdbstring);
-  int task = 0;
-  if (rtdb["foundtask"]) {
-     // Look for pspw jobs: 1-20
-     if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "pspw")) {
-        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "energy"))           task = 1;
-        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "gradient"))         task = 2;
-        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "optimize"))         task = 3;
-        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "geovib"))           task = 4;
-        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "freq"))             task = 5;
-        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "steepest_descent")) task = 6;
-        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "car-parrinello"))   task = 7;
-        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "born-oppenheimer")) task = 8;
-        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "dplot"))            task = 9;
-        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "stress"))           task = 10;
-        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "relax"))            task = 11; 
-     }
-
-     // Look for band jobs: 21-40
-     if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "band")) {
-        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "energy"))           task = 21;
-        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "gradient"))         task = 22;
-        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "optimize"))         task = 23;
-
-        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "freq"))             task = 25;
-        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "steepest_descent")) task = 26;
-
-        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "born-oppenheimer")) task = 28;
-
-        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "stress"))           task = 30;
-        if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "relax"))            task = 31; 
-     }
-
-     // Look for file jobs: 50-
-     if (mystring_contains(mystring_lowercase(rtdb["current_task"]),"file")) { task=50; }
-  }
-
-  return task;
+/*
+ * ============================================================================
+ *                         TASK ID MAP MATRIX REFERENCE TABLE
+ * ============================================================================
+ * ID  | Module | Tier         | Target Action / Physics Backend Hook
+ * ----|--------|--------------|-----------------------------------------------
+ * 1   | pspw   | Fundamental  | Single-point total energy snapshot (pspw_minimizer)
+ * 2   | pspw   | Fundamental  | Single-point forces/gradients check (pspw_minimizer)
+ * 3   | pspw   | Fundamental  | Quasi-Newton standard geometry optimization (pspw_geovib)
+ * 4   | pspw   | Fundamental  | Vibrational mode analytics configuration (pspw_geovib)
+ * 5   | pspw   | Fundamental  | General frequency evaluations hook (pspw_geovib)
+ * 6   | pspw   | Fundamental  | Planar local Steepest Descent relaxation kernel (cpsd)
+ * 7   | pspw   | Fundamental  | Car-Parrinello Quantum Molecular Dynamics tracker (cpmd)
+ * 8   | pspw   | Fundamental  | Born-Oppenheimer Molecular Dynamics integration (pspw_bomd)
+ * 9   | pspw   | Fundamental  | Charge density/molecular property plotting (pspw_dplot)
+ * 10  | pspw   | Fundamental  | Single-point macroscopic stress snapshot (pspw_minimizer)
+ * 11  | pspw   | Compound     | RTDB-Driven Structural Relaxation (driver_optimizer)
+ * 12  | pspw   | Compound     | Mechanical stress-strain elastic constants tensor matrix loop
+ * 13  | pspw   | Compound     | Local Hessian-driven transition state locator (Sella)
+ * 14  | pspw   | Compound     | Statistical configuration-averaged ensemble energy
+ * 15  | pspw   | Compound     | Statistical configuration-averaged ensemble force gradient
+ * 16  | pspw   | Compound     | Statistical configuration-averaged ensemble pressure stress
+ * 17  | pspw   | Compound     | Disordered/Paramagnetic ensemble coordinate optimization
+ * 18  | pspw   | Compound     | Disordered alloy/paramagnetic finite displacement ensemble phonon
+ * 19  | pspw   | Compound     | Automated catalytic grid-sweep of surface absorption sites
+ * 20  | pspw   | Compound     | Chained interpolation reaction pathway surface TS driver
+ * ----|--------|--------------|-----------------------------------------------
+ * 21  | band   | Fundamental  | Periodic k-point boundary single-point energy (band_minimizer)
+ * 22  | band   | Fundamental  | Periodic k-point boundary single-point force (band_minimizer)
+ * 23  | band   | Fundamental  | Standard geometry optimization coordinator (band_geovib)
+ * 24  | band   | Fundamental  | Vibrational analytics configuration wrapper (band_geovib)
+ * 25  | band   | Fundamental  | Full periodic second-derivative frequency (band_freq)
+ * 26  | band   | Fundamental  | Periodic k-point local Steepest Descent relaxation (band_cpsd)
+ * 28  | band   | Fundamental  | Periodic Born-Oppenheimer Molecular Dynamics track (band_bomd)
+ * 29  | band   | Fundamental  | Full Brillouin zone electronic band structure evaluator
+ * 30  | band   | Fundamental  | Periodic single-point cell stress tensor check (band_minimizer)
+ * 31  | band   | Compound     | RTDB-Driven Periodic Cell Relaxation (driver_optimizer)
+ * 32  | band   | Compound     | Periodic cell mechanical stress-strain elastic constants loop
+ * 33  | band   | Compound     | Periodic internal coordinate Hessian transition state locator (Sella)
+ * 34  | band   | Compound     | Periodic configuration-averaged ensemble energy solver
+ * 35  | band   | Compound     | Periodic configuration-averaged ensemble gradient solver
+ * 36  | band   | Compound     | Periodic configuration-averaged ensemble pressure stress solver
+ * 37  | band   | Compound     | Periodic ensemble coordinate relaxation driver loop
+ * 38  | band   | Compound     | Periodic ensemble finite displacement phonon matrix evaluator
+ * 39  | band   | Compound     | Periodic surface slab grid-sweep site absorption locator
+ * 40  | band   | Compound     | Periodic surface path-chained reaction transition state driver
+ * ----|--------|--------------|-----------------------------------------------
+ * 50  | file   | File Task    | Non-physics execution input format/file serialization block
+ * ----|--------|--------------|-----------------------------------------------
+ * 71  | pspw   | Agentic      | Multi-image reaction path optimization (Nudged Elastic Band)
+ * 72  | pspw   | Agentic      | Force-inversion global saddle-point locator (Dimer method)
+ * 73  | pspw   | Agentic      | Multi-volume scaling, loop relaxation, & Bulk Modulus fitting
+ * 74  | pspw   | Agentic      | Global structural optimization via stochastic coordinate rattling
+ * 75  | pspw   | Agentic      | Evolutionary material/crystal discovery (USPEX framework track)
+ * 76  | pspw   | Agentic      | Unsupervised confidence-based ML Potential frame extractor
+ * 77  | pspw   | Agentic      | Autonomous failure recovery runtime monitor (Auto-Heal)
+ * ----|--------|--------------|-----------------------------------------------
+ * 81  | band   | Agentic      | Periodic multi-image reaction path optimization (Nudged Elastic Band)
+ * 82  | band   | Agentic      | Periodic force-inversion local saddle-point locator (Dimer method)
+ * 83  | band   | Agentic      | Periodic multi-volume scaling, EOS bulk modulus curve fitting
+ * 84  | band   | Agentic      | Periodic global optimization via stochastic crystal box rattling
+ * 85  | band   | Agentic      | Periodic evolutionary material/crystal structure discovery searches
+ * 86  | band   | Agentic      | Periodic confidence-based ML Potential training data collector
+ * 87  | band   | Agentic      | Autonomous periodic solver failure recovery monitor (Auto-Heal)
+ * ============================================================================
+ */
+/*
+int parse_task(std::string rtdbstring) 
+{
+   auto rtdb = json::parse(rtdbstring);
+   int task = 0;
+   if (rtdb["foundtask"]) 
+   {
+      // Look for pspw jobs: 1-20
+      if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "pspw")) 
+      {
+         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "energy"))           task = 1;
+         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "gradient"))         task = 2;
+         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "optimize"))         task = 3;
+         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "geovib"))           task = 4;
+         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "freq"))             task = 5;
+         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "steepest_descent")) task = 6;
+         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "car-parrinello"))   task = 7;
+         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "born-oppenheimer")) task = 8;
+         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "dplot"))            task = 9;
+         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "stress"))           task = 10;
+         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "relax"))            task = 11; 
+      }
+ 
+      // Look for band jobs: 21-40
+      if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "band")) 
+      {
+         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "energy"))           task = 21;
+         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "gradient"))         task = 22;
+         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "optimize"))         task = 23;
+ 
+         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "freq"))             task = 25;
+         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "steepest_descent")) task = 26;
+ 
+         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "born-oppenheimer")) task = 28;
+ 
+         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "stress"))           task = 30;
+         if (mystring_contains(mystring_lowercase(rtdb["current_task"]), "relax"))            task = 31; 
+      }
+ 
+      // Look for file jobs: 50-
+      if (mystring_contains(mystring_lowercase(rtdb["current_task"]),"file")) { task=50; }
+   }
+ 
+   return task;
 }
+*/
+
+/**************************************************
+ *                                                *
+ *                 parse_task                     *
+ *                                                *
+ **************************************************/
+/*
+ * ============================================================================
+ *                         TASK ID MAP MATRIX REFERENCE TABLE
+ * ============================================================================
+ * ID  | Module | Tier         | Target Action / Physics Backend Hook
+ * ----|--------|--------------|-----------------------------------------------
+ * 1   | pspw   | Fundamental  | Single-point total energy snapshot (pspw_minimizer)
+ * 2   | pspw   | Fundamental  | Single-point forces/gradients check (pspw_minimizer)
+ * 3   | pspw   | Fundamental  | Quasi-Newton standard geometry optimization (pspw_geovib)
+ * 4   | pspw   | Fundamental  | Vibrational mode analytics configuration (pspw_geovib)
+ * 5   | pspw   | Fundamental  | General frequency evaluations hook (pspw_geovib)
+ * 6   | pspw   | Fundamental  | Planar local Steepest Descent relaxation kernel (cpsd)
+ * 7   | pspw   | Fundamental  | Car-Parrinello Quantum Molecular Dynamics tracker (cpmd)
+ * 8   | pspw   | Fundamental  | Born-Oppenheimer Molecular Dynamics integration (pspw_bomd)
+ * 9   | pspw   | Fundamental  | Charge density/molecular property plotting (pspw_dplot)
+ * 10  | pspw   | Fundamental  | Single-point macroscopic stress snapshot (pspw_minimizer)
+ * 11  | pspw   | Compound     | RTDB-Driven Structural Relaxation (driver_optimizer)
+ * 12  | pspw   | Compound     | Mechanical stress-strain elastic constants tensor matrix loop
+ * 13  | pspw   | Compound     | Local Hessian-driven transition state locator (Sella)
+ * 14  | pspw   | Compound     | Statistical configuration-averaged ensemble energy
+ * 15  | pspw   | Compound     | Statistical configuration-averaged ensemble force gradient
+ * 16  | pspw   | Compound     | Statistical configuration-averaged ensemble pressure stress
+ * 17  | pspw   | Compound     | Disordered/Paramagnetic ensemble coordinate optimization
+ * 18  | pspw   | Compound     | Disordered alloy/paramagnetic finite displacement ensemble phonon
+ * 19  | pspw   | Compound     | Automated catalytic grid-sweep of surface absorption sites
+ * 20  | pspw   | Compound     | Chained interpolation reaction pathway surface TS driver
+ * ----|--------|--------------|-----------------------------------------------
+ * 21  | band   | Fundamental  | Periodic k-point boundary single-point energy (band_minimizer)
+ * 22  | band   | Fundamental  | Periodic k-point boundary single-point force (band_minimizer)
+ * 23  | band   | Fundamental  | Standard geometry optimization coordinator (band_geovib)
+ * 24  | band   | Fundamental  | Vibrational analytics configuration wrapper (band_geovib)
+ * 25  | band   | Fundamental  | Full periodic second-derivative frequency (band_freq)
+ * 26  | band   | Fundamental  | Periodic k-point local Steepest Descent relaxation (band_cpsd)
+ * 28  | band   | Fundamental  | Periodic Born-Oppenheimer Molecular Dynamics track (band_bomd)
+ * 29  | band   | Fundamental  | Full Brillouin zone electronic band structure evaluator
+ * 30  | band   | Fundamental  | Periodic single-point cell stress tensor check (band_minimizer)
+ * 31  | band   | Compound     | RTDB-Driven Periodic Cell Relaxation (driver_optimizer)
+ * 32  | band   | Compound     | Periodic cell mechanical stress-strain elastic constants loop
+ * 33  | band   | Compound     | Periodic internal coordinate Hessian transition state locator (Sella)
+ * 34  | band   | Compound     | Periodic configuration-averaged ensemble energy solver
+ * 35  | band   | Compound     | Periodic configuration-averaged ensemble gradient solver
+ * 36  | band   | Compound     | Periodic configuration-averaged ensemble pressure stress solver
+ * 37  | band   | Compound     | Periodic ensemble coordinate relaxation driver loop
+ * 38  | band   | Compound     | Periodic ensemble finite displacement phonon matrix evaluator
+ * 39  | band   | Compound     | Periodic surface slab grid-sweep site absorption locator
+ * 40  | band   | Compound     | Periodic surface path-chained reaction transition state driver
+ * ----|--------|--------------|-----------------------------------------------
+ * 50  | file   | File Task    | Non-physics execution input format/file serialization block  
+ * ----|--------|--------------|-----------------------------------------------
+ * 71  | pspw   | Agentic      | Multi-image reaction path optimization (Nudged Elastic Band)
+ * 72  | pspw   | Agentic      | Force-inversion global saddle-point locator (Dimer method)
+ * 73  | pspw   | Agentic      | Multi-volume scaling, loop relaxation, & Bulk Modulus fitting
+ * 74  | pspw   | Agentic      | Global structural optimization via stochastic coordinate rattling
+ * 75  | pspw   | Agentic      | Evolutionary material/crystal discovery (USPEX framework track)
+ * 76  | pspw   | Agentic      | Unsupervised confidence-based ML Potential frame extractor
+ * 77  | pspw   | Agentic      | Autonomous failure recovery runtime monitor (Auto-Heal)
+ * ----|--------|--------------|-----------------------------------------------
+ * 81  | band   | Agentic      | Periodic multi-image reaction path optimization (Nudged Elastic Band)
+ * 82  | band   | Agentic      | Periodic force-inversion local saddle-point locator (Dimer method)
+ * 83  | band   | Agentic      | Periodic multi-volume scaling, EOS bulk modulus curve fitting
+ * 84  | band   | Agentic      | Periodic global optimization via stochastic crystal box rattling
+ * 85  | band   | Agentic      | Periodic evolutionary material/crystal structure discovery searches
+ * 86  | band   | Agentic      | Periodic confidence-based ML Potential training data collector
+ * 87  | band   | Agentic      | Autonomous periodic solver failure recovery monitor (Auto-Heal)
+ * ============================================================================
+ */
+/**
+ * @brief Parses the JSON runtime database string to identify and route simulation tasks.
+ * 
+ * This function extracts the active task configuration from a serialized JSON string 
+ * and maps it directly to a unique numeric Task ID signature used by the execution dispatcher.
+ * 
+ * @note Substring checking follows a strict order of operations: Advanced Agentic and 
+ *       Compound keywords are evaluated before baseline Fundamental signatures to prevent 
+ *       parsing collisions on structural substrings (e.g., catching "ensemble_energy" 
+ *       before matching a bare "energy" token).
+ * 
+ * @param[in] rtdbstring A serialized JSON configuration database string carrying the 
+ *                       user's active layout commands and environment parameters.
+ * 
+ * @return int The compiled integer Task ID matching the consolidated dispatcher matrix.
+ *             Returns 0 if no active task signature matches the database context.
+ * 
+ * @retval 1..10  PSPW Fundamental baseline snapshots & local solvers.
+ * @retval 11..20 PSPW Compound tasks (Macro drivers orchestrated via RTDB).
+ * @retval 21..30 BAND Fundamental periodic k-point solvers.
+ * @retval 31..40 BAND Compound periodic task drivers.
+ * @retval 50     Non-physics file format/serialization tasks.
+ * @retval 71..77 PSPW Agentic explorers & heuristic monitors.
+ * @retval 81..87 BAND Agentic explorers & heuristic monitors.
+ * 
+ * @see OpAction
+ * @see TaskTier
+ */
+int parse_task(std::string rtdbstring) 
+{
+   auto rtdb = json::parse(rtdbstring);
+   int task = 0;
+   
+   if (rtdb["foundtask"]) 
+   {
+      std::string task_str = mystring_lowercase(rtdb["current_task"]);
+
+      // ========================================================================
+      // 1. FILE GENERATION TRACK (Global Override)
+      // ========================================================================
+      if (mystring_contains(task_str, "file_generate") || mystring_contains(task_str, "file_gen"))
+      {
+         return 50;
+      }
+
+      // ========================================================================
+      // 2. AGENTIC TASKS (Checked first to prevent fundamental label collisions)
+      // ========================================================================
+      if (mystring_contains(task_str, "pspw")) 
+      {
+         if (mystring_contains(task_str, "neb"))                 return 71;
+         if (mystring_contains(task_str, "dimer"))               return 72;
+         if (mystring_contains(task_str, "eos_sweep"))           return 73;
+         if (mystring_contains(task_str, "basin_hopping"))       return 74;
+         if (mystring_contains(task_str, "genetic_search"))      return 75;
+         if (mystring_contains(task_str, "active_learning"))     return 76;
+         if (mystring_contains(task_str, "auto_heal"))           return 77;
+      }
+      if (mystring_contains(task_str, "band")) 
+      {
+         if (mystring_contains(task_str, "neb"))                 return 81;
+         if (mystring_contains(task_str, "dimer"))               return 82;
+         if (mystring_contains(task_str, "eos_sweep"))           return 83;
+         if (mystring_contains(task_str, "basin_hopping"))       return 84;
+         if (mystring_contains(task_str, "genetic_search"))      return 85;
+         if (mystring_contains(task_str, "active_learning"))     return 86;
+         if (mystring_contains(task_str, "auto_heal"))           return 87;
+      }
+
+      // ========================================================================
+      // 3. PSPW MODULES TRACK (Fundamental & Compound IDs: 1 to 20)
+      // ========================================================================
+      if (mystring_contains(task_str, "pspw")) 
+      {
+         // Compound Tasks (Checked before baseline signatures)
+         if (mystring_contains(task_str, "elastic"))             return 12;
+         if (mystring_contains(task_str, "sella"))               return 13;
+         if (mystring_contains(task_str, "ensemble_energy"))     return 14;
+         if (mystring_contains(task_str, "ensemble_gradient"))   return 15;
+         if (mystring_contains(task_str, "ensemble_stress"))     return 16;
+         if (mystring_contains(task_str, "ensemble_optimize"))   return 17;
+         if (mystring_contains(task_str, "ensemble_phonon"))     return 18;
+         if (mystring_contains(task_str, "surface_absorption"))  return 19;
+         if (mystring_contains(task_str, "surface_ts"))          return 20;
+
+         // Fundamental Tasks
+         if (mystring_contains(task_str, "relax"))               return 11; 
+         if (mystring_contains(task_str, "stress"))              return 10;
+         if (mystring_contains(task_str, "dplot"))               return 9;
+         if (mystring_contains(task_str, "born-oppenheimer"))    return 8;
+         if (mystring_contains(task_str, "car-parrinello"))      return 7;
+         if (mystring_contains(task_str, "steepest_descent"))    return 6;
+         if (mystring_contains(task_str, "freq"))                return 5;
+         if (mystring_contains(task_str, "geovib"))              return 4;
+         if (mystring_contains(task_str, "optimize"))            return 3;
+         if (mystring_contains(task_str, "gradient"))            return 2;
+         if (mystring_contains(task_str, "energy"))              return 1;
+      }
+ 
+      // ========================================================================
+      // 4. BAND MODULES TRACK (Fundamental & Compound IDs: 21 to 40)
+      // ========================================================================
+      if (mystring_contains(task_str, "band")) 
+      {
+         // Compound Tasks (Checked before baseline signatures)
+         if (mystring_contains(task_str, "elastic"))             return 32;
+         if (mystring_contains(task_str, "sella"))               return 33;
+         if (mystring_contains(task_str, "ensemble_energy"))     return 34;
+         if (mystring_contains(task_str, "ensemble_gradient"))   return 35;
+         if (mystring_contains(task_str, "ensemble_stress"))     return 36;
+         if (mystring_contains(task_str, "ensemble_optimize"))   return 37;
+         if (mystring_contains(task_str, "ensemble_phonon"))     return 38;
+         if (mystring_contains(task_str, "surface_absorption"))  return 39;
+         if (mystring_contains(task_str, "surface_ts"))          return 40;
+
+         // Fundamental Tasks
+         if (mystring_contains(task_str, "relax"))               return 31;
+         if (mystring_contains(task_str, "stress"))              return 30;
+         if (mystring_contains(task_str, "band_structure"))      return 29;
+         if (mystring_contains(task_str, "born-oppenheimer"))    return 28;
+         if (mystring_contains(task_str, "steepest_descent"))    return 26;
+         if (mystring_contains(task_str, "freq"))                return 25;
+         if (mystring_contains(task_str, "geovib"))              return 24;
+         if (mystring_contains(task_str, "optimize"))            return 23;
+         if (mystring_contains(task_str, "gradient"))            return 22;
+         if (mystring_contains(task_str, "energy"))              return 21;
+      }
+   }
+   
+   return task;
+}
+
 
 
 /**************************************************

@@ -912,12 +912,8 @@ int main(int argc, char *argv[]) {
 
   rtdbstr = resolve_symmetry_and_cell(rtdbstr);
 
-
-  if (oprint) std::cout << "HERC" << std::endl;
-
   int task = parse_task(rtdbstr);
 
-  if (oprint)  std::cout << "HERD" << std::endl;
   MPI_Barrier(MPI_COMM_WORLD);
 
   if (oprint)
@@ -925,7 +921,12 @@ int main(int argc, char *argv[]) {
   if (oprint)
      std::cout << "First task=" << task << std::endl << std::endl;
 
+  // ========================================================================
   // Initialize wavefunction
+  // ========================================================================
+  // WAVEFUNCTION BOOTSTRAP: Execute a quick, low-level electronic 
+  // minimization step to populate missing wavefunctions before driving tasks.
+  // ========================================================================
   //if ((task<10) && (parse_initialize_wvfnc(rtdbstr, true))) 
   if (parse_initialize_wvfnc(rtdbstr, true)) 
   {
@@ -955,7 +956,7 @@ int main(int argc, char *argv[]) {
               dum_rtdbstr = parse_initialize_wvfnc_set(dum_rtdbstr, true);
               wvfnc_initialize = false;
            }
-           if (task<=20)
+           if ((task<=20) || (task>=71 && task<=77))
            {
               if (oprint)
                  std::cout << std::endl
@@ -980,8 +981,79 @@ int main(int argc, char *argv[]) {
   std::cout << "TASK=" << task << std::endl;
 
   // Tasks
+  /*
+   * ============================================================================
+   *                         TASK ID MAP MATRIX REFERENCE TABLE
+   * ============================================================================
+   * ID  | Module | Tier         | Target Action / Physics Backend Hook
+   * ----|--------|--------------|-----------------------------------------------
+   * 1   | pspw   | Fundamental  | Single-point total energy snapshot (pspw_minimizer)
+   * 2   | pspw   | Fundamental  | Single-point forces/gradients check (pspw_minimizer)
+   * 3   | pspw   | Fundamental  | Quasi-Newton standard geometry optimization (pspw_geovib)
+   * 4   | pspw   | Fundamental  | Vibrational mode analytics configuration (pspw_geovib)
+   * 5   | pspw   | Fundamental  | General frequency evaluations hook (pspw_geovib)
+   * 6   | pspw   | Fundamental  | Planar local Steepest Descent relaxation kernel (cpsd)
+   * 7   | pspw   | Fundamental  | Car-Parrinello Quantum Molecular Dynamics tracker (cpmd)
+   * 8   | pspw   | Fundamental  | Born-Oppenheimer Molecular Dynamics integration (pspw_bomd)
+   * 9   | pspw   | Fundamental  | Charge density/molecular property plotting (pspw_dplot)
+   * 10  | pspw   | Fundamental  | Single-point macroscopic stress snapshot (pspw_minimizer)
+   * 11  | pspw   | Compound     | RTDB-Driven Structural Relaxation (driver_optimizer)
+   * 12  | pspw   | Compound     | Mechanical stress-strain elastic constants tensor matrix loop
+   * 13  | pspw   | Compound     | Local Hessian-driven transition state locator (Sella)
+   * 14  | pspw   | Compound     | Statistical configuration-averaged ensemble energy
+   * 15  | pspw   | Compound     | Statistical configuration-averaged ensemble force gradient
+   * 16  | pspw   | Compound     | Statistical configuration-averaged ensemble pressure stress
+   * 17  | pspw   | Compound     | Disordered/Paramagnetic ensemble coordinate optimization
+   * 18  | pspw   | Compound     | Disordered alloy/paramagnetic finite displacement ensemble phonon
+   * 19  | pspw   | Compound     | Automated catalytic grid-sweep of surface absorption sites
+   * 20  | pspw   | Compound     | Chained interpolation reaction pathway surface TS driver
+   * ----|--------|--------------|-----------------------------------------------
+   * 21  | band   | Fundamental  | Periodic k-point boundary single-point energy (band_minimizer)
+   * 22  | band   | Fundamental  | Periodic k-point boundary single-point force (band_minimizer)
+   * 23  | band   | Fundamental  | Standard geometry optimization coordinator (band_geovib)
+   * 24  | band   | Fundamental  | Vibrational analytics configuration wrapper (band_geovib)
+   * 25  | band   | Fundamental  | Full periodic second-derivative frequency (band_freq)
+   * 26  | band   | Fundamental  | Periodic k-point local Steepest Descent relaxation (band_cpsd)
+   * 28  | band   | Fundamental  | Periodic Born-Oppenheimer Molecular Dynamics track (band_bomd)
+   * 29  | band   | Fundamental  | Full Brillouin zone electronic band structure evaluator
+   * 30  | band   | Fundamental  | Periodic single-point cell stress tensor check (band_minimizer)
+   * 31  | band   | Compound     | RTDB-Driven Periodic Cell Relaxation (driver_optimizer)
+   * 32  | band   | Compound     | Periodic cell mechanical stress-strain elastic constants loop
+   * 33  | band   | Compound     | Periodic internal coordinate Hessian transition state locator (Sella)
+   * 34  | band   | Compound     | Periodic configuration-averaged ensemble energy solver
+   * 35  | band   | Compound     | Periodic configuration-averaged ensemble gradient solver
+   * 36  | band   | Compound     | Periodic configuration-averaged ensemble pressure stress solver
+   * 37  | band   | Compound     | Periodic ensemble coordinate relaxation driver loop
+   * 38  | band   | Compound     | Periodic ensemble finite displacement phonon matrix evaluator
+   * 39  | band   | Compound     | Periodic surface slab grid-sweep site absorption locator
+   * 40  | band   | Compound     | Periodic surface path-chained reaction transition state driver
+   * ----|--------|--------------|-----------------------------------------------
+   * 50  | file   | File Task    | Non-physics execution input format/file serialization block
+   * ----|--------|--------------|-----------------------------------------------
+   * 71  | pspw   | Agentic      | Multi-image reaction path optimization (Nudged Elastic Band)
+   * 72  | pspw   | Agentic      | Force-inversion global saddle-point locator (Dimer method)
+   * 73  | pspw   | Agentic      | Multi-volume scaling, loop relaxation, & Bulk Modulus fitting
+   * 74  | pspw   | Agentic      | Global structural optimization via stochastic coordinate rattling
+   * 75  | pspw   | Agentic      | Evolutionary material/crystal discovery (USPEX framework track)
+   * 76  | pspw   | Agentic      | Unsupervised confidence-based ML Potential frame extractor
+   * 77  | pspw   | Agentic      | Autonomous failure recovery runtime monitor (Auto-Heal)
+   * ----|--------|--------------|-----------------------------------------------
+   * 81  | band   | Agentic      | Periodic multi-image reaction path optimization (Nudged Elastic Band)
+   * 82  | band   | Agentic      | Periodic force-inversion local saddle-point locator (Dimer method)
+   * 83  | band   | Agentic      | Periodic multi-volume scaling, EOS bulk modulus curve fitting
+   * 84  | band   | Agentic      | Periodic global optimization via stochastic crystal box rattling
+   * 85  | band   | Agentic      | Periodic evolutionary material/crystal structure discovery searches
+   * 86  | band   | Agentic      | Periodic confidence-based ML Potential training data collector
+   * 87  | band   | Agentic      | Autonomous periodic solver failure recovery monitor (Auto-Heal)
+   * ============================================================================
+   */
+
   while (task > 0) 
   {
+     // ========================================================================
+     // 1. FUNDAMENTAL TASKS (Base Modules & Direct Mathematical Solvers)
+     // ========================================================================
+
      /* Energy or Gradient or Stress task*/
      if ((task == 1) || (task == 2) || (task==10)) 
      {
@@ -994,7 +1066,7 @@ int main(int argc, char *argv[]) {
         ierr += pwdft::pspw_minimizer(MPI_COMM_WORLD, rtdbstr, std::cout);
      }
     
-     /* Optimize, geovib, or freq  task */
+     /* pspw: Optimize, geovib, or freq  task */
      if ((task == 3) || (task == 4) || (task == 5))
      {
         if (oprint)
@@ -1006,22 +1078,21 @@ int main(int argc, char *argv[]) {
         ierr += pwdft::pspw_geovib(MPI_COMM_WORLD, rtdbstr, std::cout);
      }
     
-    
-     /* Steepest descent task */
+     /* pspw: Steepest descent task */
      if (task == 6) 
      {
         MPI_Barrier(MPI_COMM_WORLD);
         ierr += pwdft::cpsd(MPI_COMM_WORLD, rtdbstr); /* Steepest_Descent task */
      }
     
-     /* Car-Parrinello task */
+     /* pspw: Car-Parrinello task */
      if (task == 7) 
      {
         MPI_Barrier(MPI_COMM_WORLD);
         ierr += pwdft::cpmd(MPI_COMM_WORLD, rtdbstr); /* Car-Parrinello task */
      }
     
-     /* Born-Oppenheimer task */
+     /* pspw: Born-Oppenheimer task */
      if (task == 8) 
      {
         if (oprint)
@@ -1033,7 +1104,7 @@ int main(int argc, char *argv[]) {
         ierr += pwdft::pspw_bomd(MPI_COMM_WORLD, rtdbstr, std::cout);
      }
     
-     /* dplot task */
+     /* pspw: dplot task */
      if (task == 9) 
      {
         if (oprint)
@@ -1044,22 +1115,8 @@ int main(int argc, char *argv[]) {
         ierr += pwdft::pspw_dplot(MPI_COMM_WORLD, rtdbstr, std::cout);
      }
 
-     /* relax task */
-     if (task == 11)
-     {
-        if (oprint)
-           std::cout << std::endl
-                     << "Running pspw relax - rtdbstr = "
-                     << rtdbstr << std::endl
-                     << std::endl;
-        MPI_Barrier(MPI_COMM_WORLD);
-        ierr += pwdft::driver_optimizer(MPI_COMM_WORLD, rtdbstr, std::cout, pwdft::pspw_minimizer);
-     }
 
-
-    
-
-     /* Energy or Gradient or stress task */
+     /* band: Energy or Gradient or stress task */
      if ((task == 21) || (task ==22) || task==30)
      {
         if (oprint)
@@ -1071,7 +1128,7 @@ int main(int argc, char *argv[]) {
         ierr += pwdft::band_minimizer(MPI_COMM_WORLD, rtdbstr, std::cout);
      }
 
-     /* Optimize, geovib, or freq  task */
+     /* band: Optimize, geovib, or freq  task */
      if (task == 23)
      {
         if (oprint)
@@ -1083,7 +1140,7 @@ int main(int argc, char *argv[]) {
         ierr += pwdft::band_geovib(MPI_COMM_WORLD, rtdbstr, std::cout);
      }
 
-     /* Frequency task */
+     /* band: Frequency task */
      if (task == 25)
      {
         if (oprint)
@@ -1102,7 +1159,7 @@ int main(int argc, char *argv[]) {
         ierr += pwdft::band_cpsd(MPI_COMM_WORLD, rtdbstr); /* Steepest_Descent task */
      }
 
-     /* Born-Oppenheimer task */
+     /* 28 - band: Born-Oppenheimer task */
      if (task == 28)
      {
         if (oprint)
@@ -1114,7 +1171,38 @@ int main(int argc, char *argv[]) {
         ierr += pwdft::band_bomd(MPI_COMM_WORLD, rtdbstr, std::cout);
      }
 
-     /* relax task */
+     /* 29 - band structure task */
+
+
+    // ========================================================================
+    // 2. COMPOUND TASKS (Macro Drivers Orchestrated via RTDB State Parameters)
+    // ========================================================================
+     /* pspw relax task */
+     if (task == 11)
+     {
+        if (oprint)
+           std::cout << std::endl
+                     << "Running pspw relax - rtdbstr = "
+                     << rtdbstr << std::endl
+                     << std::endl;
+        MPI_Barrier(MPI_COMM_WORLD);
+        ierr += pwdft::driver_optimizer(MPI_COMM_WORLD, rtdbstr, std::cout, pwdft::pspw_minimizer);
+     }
+
+     /* pspw_compound_driver */
+     /* 12-20: pspw elastic, Sella, and Ensemble matrix blocks */
+     /* 12 - pspw elastic task */
+     /* 13 - pspw Sella task */
+     /* 14 - pspw Ensemble_Energy task */
+     /* 15 - pspw Ensemble_Gradient task */
+     /* 16 - pspw Ensemble_Stress task */
+     /* 17 - pspw Ensemble_Optimize task */
+     /* 18 - pspw Ensemble_Phonon task */
+     /* 19 - pspw Surface_Absorption task */
+     /* 20 - pspw Surface_TS task */
+
+
+     /* band relax task */
      if (task == 31)
      {
         if (oprint)
@@ -1125,8 +1213,45 @@ int main(int argc, char *argv[]) {
         MPI_Barrier(MPI_COMM_WORLD);
         ierr += pwdft::driver_optimizer(MPI_COMM_WORLD, rtdbstr, std::cout, pwdft::band_minimizer);
      }
+     /* band_compound_driver */
+     /* 32-40: band elastic, Sella, and Ensemble matrix blocks */
+     /* 32 - band elastic task */
+     /* 33 - band Sella task */
+     /* 34 - band Ensemble_Energy task */
+     /* 35 - band Ensemble_Gradient task */
+     /* 36 - band Ensemble_Stress task */
+     /* 37 - band Ensemble_Optimize task */
+     /* 38 - band Ensemble_Phonon task */
+     /* 39 - band Surface_Absorption task */
+     /* 40 - band Surface_TS task */
 
 
+    // ========================================================================
+    // 3. AGENTIC TASKS (Heuristic Multi-Image / Transition State Explorers)
+    // ========================================================================
+
+     /* pspw_agentic_driver */
+     /* 21-26: pspw: NEB, dimer, EOS_Sweep, Basin_Hopping, Genetic, Active_Learning */
+     /* 21 - pspw neb task */
+     /* 22 - pspw dimer task */
+     /* 23 - pspw EOS_Sweep task */
+     /* 24 - pspw Basin_Hopping task */
+     /* 25 - pspw Genetic_Search task */
+     /* 26 - pspw Active_Learning_Run task */
+
+     /* band_agentic_driver */
+     /* 41-46: band: NEB, dimer, EOS_Sweep, Basin_Hopping, Genetic, Active_Learning */
+     /* 41 - band neb task */
+     /* 42 - band dimer task */
+     /* 43 - band EOS_Sweep task */
+     /* 44 - band Basin_Hopping task */
+     /* 45 - band Genetic_Search task */
+     /* 46 - band Active_Learning_Run task */
+
+
+     // ========================================================================
+     // 4. FILE TASKS 
+     // ========================================================================
      /* file generate task */
      if (task == 50) {
         if (oprint)

@@ -32,6 +32,91 @@ namespace pwdft {
 
 using minimizer_function = electronic_minimizer;
 
+//task <backend> <action> relax <magnetic_state> <topology> [optional flags...]
+//OpAction::Relax;
+
+enum class OpAction {
+    // ========================================================================
+    // 1. FUNDAMENTAL TASKS (Base Modules & Direct Mathematical Solvers)
+    // ========================================================================
+    NoitEnergy,   // Single-point total energy snapshot (No Iterations)
+    NoitGradient, // Single-point force snapshot 
+    NoitStress,   // Single-point lattice pressure tensor snapshot
+    Energy,       // Single-point snapshot energy calculation
+    Gradient,     // Single-point forces/stresses check
+    Stress,       // Iterative cell stress tensor minimization
+    Optimize,     // Standard driver-driven geometry optimization (quasi-Newton)
+    Phonon,       // Second-derivative linear-response / finite-displacement calculations
+    Vibrations,   // Full vibrational mode analytics
+    Freq,         // Alias for Vibrations/Phonon frequency evaluations
+
+    // ========================================================================
+    // 2. COMPOUND TASKS (Macro Drivers Orchestrated via RTDB State Parameters)
+    // ========================================================================
+    Relax,        // RTDB-driven structural optimization (specialized for pspw/band)
+    Elastic,      // Compute elastic constants tensor
+    Sella,        // Transition state locator
+    Surface_Absorption, // Automated grid-sweep of molecule binding sites
+    Surface_TS,         // Chained interpolation reaction path drivers
+    Ensemble_Energy,    // Deterministic loop averaging energies over multiple microstates
+    Ensemble_Gradient,  // Averaging atomic force vectors across configuration sets
+    Ensemble_Stress,    // Averaging macroscopic pressure tensors across configuration sets
+    Ensemble_Optimize,  // Compound geometry relaxation over an ensemble population
+    Ensemble_Phonon,    // Calculating vibrational frequencies across microstate iterations
+
+    // ========================================================================
+    // 3. AGENTIC TASKS (Heuristic Multi-Image / Transition State Explorers)
+    // ========================================================================
+    NEB,                 // Multi-image reaction path optimization
+    Dimer,               // Single-point force-inversion transition state locator
+    EOS_Sweep,           // Automated multi-volume scaling and bulk-modulus fitting
+    Basin_Hopping,       // Global structural optimization via stochastic rattling
+    Genetic_Search,      // Evolutionary structure discovery (e.g., USPEX/CALYPSO tracks)
+    Active_Learning_Run, // Unsupervised training frame extraction for ML Potentials
+    Auto_Heal            // Autonomous failure recovery monitor (self-correcting runtime flags)
+};
+
+
+enum class RelaxCombinedTask {
+    // --- 1. Classical Ground State Structural Modes ---
+    GeometryOnly  = 0, // Frozen cell box; adjust inner coordinates
+    LatticeOnly   = 1, // Frozen atom coordinates; scale bounding box
+    Both          = 2, // Co-optimize atoms and bounding box in tandem
+
+};
+
+enum class ElasticCombinedTask {
+    // --- 2. Mechanical Stiffness Moduli ---
+    fixed_Elastic = 3, // Compute elastic constants tensor at current layout
+    Elastic       = 4, // Pre-optimize structure to 0K ground state, then run strains
+
+};
+
+enum class PhononCombinedTask {
+    // --- 3. Thermodynamic & Phonon Vibrations ---
+    Phonon_DFPT   = 5, // Response-function based vibrational spectrum (requires ground state)
+    Phonon_Finite = 6, // Supercell finite displacement force-matrix collection
+
+};
+
+enum class MagOrdering {
+    NonMagnetic,       // (NM) Spin-restricted, paired electrons only (Always Multiplicity = 1)
+    Ferromagnetic,     // (FM) Parallel spin alignment (Multiplicity > 1, Uniform initialization)
+    AntiFerromagnetic, // (AFM) Alternating up/down locked spins; net zero (Always Multiplicity = 1)
+    Ferrimagnetic,     // (FiM) Alternating sublattices with unequal cancellation (Multiplicity > 1)
+    Paramagnetic_DLM   // (PM) Disordered Local Moments via supercell spin-scrambling (Typically Multiplicity = 1)
+};
+
+enum class SpinTopology {
+    Collinear_Uniform, // All starting vectors face the same direction (FM / NM)
+    G_Type,            // 3D Checkerboard alternation (AFM or FiM)
+    A_Type,            // Layered alternation (AFM or FiM)
+    C_Type,            // Chain-like alternation (AFM or FiM)
+    Randomized,        // Stochastic distribution (PM)
+    GKA_Derived        // Solved analytically on-the-fly
+};
+
+
 /*******************************************
  *                                         *
  *          update_unita_frozen            *
@@ -232,6 +317,15 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
    bool hprint = master && control.print_level("high");
    bool oprint = master && control.print_level("medium");
    bool lprint = master && control.print_level("low");
+
+   // The Optimization Logic (The core question):
+   //   `optimization = 0` (Geometry only)
+   //   `optimization = 1` (Lattice only)
+   //   `optimization = 2` (Both)
+   //int optimization = 0;
+   //if (control.geometry_minimize())         optimization = 0;
+   //if (control.lattice_minimize())          optimization = 1;
+   //if (control.geometry_lattice_minimize()) optimization = 2;
 
    /* reset Parallel base_stdio_print = lprint */
    myparallel.base_stdio_print = lprint;
