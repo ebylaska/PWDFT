@@ -32,49 +32,6 @@ namespace pwdft {
 
 using minimizer_function = electronic_minimizer;
 
-//task <backend> <action> relax <magnetic_state> <topology> [optional flags...]
-//OpAction::Relax;
-
-enum class OpAction {
-    // ========================================================================
-    // 1. FUNDAMENTAL TASKS (Base Modules & Direct Mathematical Solvers)
-    // ========================================================================
-    NoitEnergy,   // Single-point total energy snapshot (No Iterations)
-    NoitGradient, // Single-point force snapshot 
-    NoitStress,   // Single-point lattice pressure tensor snapshot
-    Energy,       // Single-point snapshot energy calculation
-    Gradient,     // Single-point forces/stresses check
-    Stress,       // Iterative cell stress tensor minimization
-    Optimize,     // Standard driver-driven geometry optimization (quasi-Newton)
-    Phonon,       // Second-derivative linear-response / finite-displacement calculations
-    Vibrations,   // Full vibrational mode analytics
-    Freq,         // Alias for Vibrations/Phonon frequency evaluations
-
-    // ========================================================================
-    // 2. COMPOUND TASKS (Macro Drivers Orchestrated via RTDB State Parameters)
-    // ========================================================================
-    Relax,        // RTDB-driven structural optimization (specialized for pspw/band)
-    Elastic,      // Compute elastic constants tensor
-    Sella,        // Transition state locator
-    Surface_Absorption, // Automated grid-sweep of molecule binding sites
-    Surface_TS,         // Chained interpolation reaction path drivers
-    Ensemble_Energy,    // Deterministic loop averaging energies over multiple microstates
-    Ensemble_Gradient,  // Averaging atomic force vectors across configuration sets
-    Ensemble_Stress,    // Averaging macroscopic pressure tensors across configuration sets
-    Ensemble_Optimize,  // Compound geometry relaxation over an ensemble population
-    Ensemble_Phonon,    // Calculating vibrational frequencies across microstate iterations
-
-    // ========================================================================
-    // 3. AGENTIC TASKS (Heuristic Multi-Image / Transition State Explorers)
-    // ========================================================================
-    NEB,                 // Multi-image reaction path optimization
-    Dimer,               // Single-point force-inversion transition state locator
-    EOS_Sweep,           // Automated multi-volume scaling and bulk-modulus fitting
-    Basin_Hopping,       // Global structural optimization via stochastic rattling
-    Genetic_Search,      // Evolutionary structure discovery (e.g., USPEX/CALYPSO tracks)
-    Active_Learning_Run, // Unsupervised training frame extraction for ML Potentials
-    Auto_Heal            // Autonomous failure recovery monitor (self-correcting runtime flags)
-};
 
 
 enum class RelaxCombinedTask {
@@ -85,36 +42,6 @@ enum class RelaxCombinedTask {
 
 };
 
-enum class ElasticCombinedTask {
-    // --- 2. Mechanical Stiffness Moduli ---
-    fixed_Elastic = 3, // Compute elastic constants tensor at current layout
-    Elastic       = 4, // Pre-optimize structure to 0K ground state, then run strains
-
-};
-
-enum class PhononCombinedTask {
-    // --- 3. Thermodynamic & Phonon Vibrations ---
-    Phonon_DFPT   = 5, // Response-function based vibrational spectrum (requires ground state)
-    Phonon_Finite = 6, // Supercell finite displacement force-matrix collection
-
-};
-
-enum class MagOrdering {
-    NonMagnetic,       // (NM) Spin-restricted, paired electrons only (Always Multiplicity = 1)
-    Ferromagnetic,     // (FM) Parallel spin alignment (Multiplicity > 1, Uniform initialization)
-    AntiFerromagnetic, // (AFM) Alternating up/down locked spins; net zero (Always Multiplicity = 1)
-    Ferrimagnetic,     // (FiM) Alternating sublattices with unequal cancellation (Multiplicity > 1)
-    Paramagnetic_DLM   // (PM) Disordered Local Moments via supercell spin-scrambling (Typically Multiplicity = 1)
-};
-
-enum class SpinTopology {
-    Collinear_Uniform, // All starting vectors face the same direction (FM / NM)
-    G_Type,            // 3D Checkerboard alternation (AFM or FiM)
-    A_Type,            // Layered alternation (AFM or FiM)
-    C_Type,            // Chain-like alternation (AFM or FiM)
-    Randomized,        // Stochastic distribution (PM)
-    GKA_Derived        // Solved analytically on-the-fly
-};
 
 
 /*******************************************
@@ -318,14 +245,10 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
    bool oprint = master && control.print_level("medium");
    bool lprint = master && control.print_level("low");
 
-   // The Optimization Logic (The core question):
-   //   `optimization = 0` (Geometry only)
-   //   `optimization = 1` (Lattice only)
-   //   `optimization = 2` (Both)
-   //int optimization = 0;
-   //if (control.geometry_minimize())         optimization = 0;
-   //if (control.lattice_minimize())          optimization = 1;
-   //if (control.geometry_lattice_minimize()) optimization = 2;
+   // Initialize relax_type to a safe default fallback
+   RelaxCombinedTask driver_relax_type = static_cast<RelaxCombinedTask>(control.driver_relax_type());
+
+
 
    /* reset Parallel base_stdio_print = lprint */
    myparallel.base_stdio_print = lprint;
@@ -375,7 +298,6 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
       else  symmetry_info.system = "unknown";
    }
 
-
    if (oprint) 
    {
       std::ios_base::sync_with_stdio();
@@ -386,20 +308,22 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
               << tag << "                         PWDFT OPTIMIZATION DRIVER\n"
               << tag << std::string(width, '=') << '\n'
               << tag << '\n'
-              << tag << "  Architecture           : NWChem-style driver dispatch\n"
-              << tag << "  Role                   : top-level orchestration layer\n"
-              << tag << "  Backend                : PSPW or band minimizer callback\n"
-              << tag << "  Implementation         : NorthwestEx C++ driver\n"
-              << tag << "  Method                 : Grassmann/Stiefel manifold\n";
+              << tag << "  Architecture                   : NWChem-style driver dispatch\n"
+              << tag << "  Role                           : top-level orchestration layer\n"
+              << tag << "  Backend                        : PSPW or band minimizer callback\n"
+              << tag << "  Implementation                 : NorthwestEx C++ driver\n"
+              << tag << "  Method                         : Grassmann/Stiefel manifold\n" 
+              << tag << std::endl;
       if (symmetry_info.has_symmetry())
       {
-         coutput << tag << "  Symmetry information   :" << std::endl;
-         coutput << tag << "      Space group name        : " << symmetry_info.space_group_name << std::endl;
-         coutput << tag << "      Space group number (ITC): " << symmetry_info.ita_number << std::endl;
-         coutput << tag << "      Symmetry type           : " << symmetry_info.type << std::endl;
-         coutput << tag << "      Group order             : " << symmetry_info.group_order << std::endl;
-         coutput << tag << "      Primitive cell          : " << (symmetry_info.is_primitive ? "true" : "false") << std::endl;
-         coutput << tag << "      Crystal system          : " << symmetry_info.system <<std::endl;
+         coutput << tag << "  Symmetry information:            " << std::endl;
+         coutput << tag << "      Space group name           : " << symmetry_info.space_group_name << std::endl;
+         coutput << tag << "      Space group number         : " << symmetry_info.ita_number << " (ITC)" <<  std::endl;
+         coutput << tag << "      Symmetry type              : " << symmetry_info.type << std::endl;
+         coutput << tag << "      Group order                : " << symmetry_info.group_order << std::endl;
+         coutput << tag << "      Primitive cell             : " << (symmetry_info.is_primitive ? "true" : "false") << std::endl;
+         coutput << tag << "      Crystal system             : " << symmetry_info.system <<std::endl;
+         coutput << tag << std::endl;
          // Add more fields if needed
       } 
       else 
@@ -407,10 +331,14 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
          coutput << tag << "  No symmetry information detected." << std::endl;
       }
        
-      coutput << tag << "  Cell optimization      : RTDB unita_frozen reference lattice\n"
-              << tag << "  Numerical grid         : fixed during optimization stage\n"
-              << tag << "  Lattice tolerance      : " << lattice_tolerance << '\n' 
-              << tag << "  Date                   : " << util_date() << '\n'
+      //coutput << tag << "  Cell optimization      : RTDB unita_frozen reference lattice\n";
+      if (driver_relax_type == RelaxCombinedTask::GeometryOnly) coutput << tag << "  Geometry only optimization     : RTDB unita_frozen reference lattice\n";
+      if (driver_relax_type == RelaxCombinedTask::LatticeOnly)  coutput << tag << "  Lattice only optimization      : RTDB unita_frozen reference lattice\n";
+      if (driver_relax_type == RelaxCombinedTask::Both)         coutput << tag << "  Geometry and Cell optimization : RTDB unita_frozen reference lattice\n";
+
+      coutput << tag << "  Numerical grid                 : fixed during optimization stage\n"
+              << tag << "  Lattice tolerance              : " << lattice_tolerance << '\n' 
+              << tag << "  Date                           : " << util_date() << '\n'
               << tag << '\n'
               << tag << "  The current lattice may change during unit-cell optimization.\n"
               << tag << "  RTDB variable unita_frozen stores the reference lattice used\n"

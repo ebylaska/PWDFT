@@ -225,10 +225,10 @@ int run_quasi_newton(std::string& rtdbstring,
 
     if (oprint)
     {
-        coutput << tag << "==============================================\n"
+        coutput << tag << "==============================================================================\n"
                 << tag << " PWDFT " << system_name << " lattice optimization\n"
                 << tag << " " << N << "D quasi-Newton (BFGS) in log coordinates\n"
-                << tag << "==============================================\n";
+                << tag << "==============================================================================\n";
     }
 
     for (int istep = 0; istep < max_steps; ++istep)

@@ -75,6 +75,7 @@ class Control2 {
    double pdriver_lattice_gmax    = 1.0e-4;
    double pdriver_lattice_step    = 0.0025;
    double pdriver_lattice_xmin    = 1.0e-5;
+   int pdriver_relax_type = 1;
 
  
    bool pgeometry_optimize;
@@ -679,6 +680,8 @@ public:
    double thermo_pressure() { return ppressure; }
    double thermo_temperature() { return ptemperature; }
    double thermo_freq_scale() { return pfreq_scale; }
+
+   int driver_relax_type()              { return  pdriver_relax_type; }
 
 };
 
