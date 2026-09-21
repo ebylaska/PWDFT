@@ -248,6 +248,27 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
       symmetry_info.group_order = effective_symmetry.value("order", -1);
       symmetry_info.is_primitive = effective_symmetry.value("primitive", false);
       symmetry_info.ita_number = effective_symmetry.value("ita_number", -1);
+
+      // Read symmetry operations if present.
+      if (effective_symmetry.contains("ops") && effective_symmetry["ops"].is_array())
+      {
+         symmetry_info.ops.reserve(effective_symmetry["ops"].size());
+         for (const auto& op : effective_symmetry["ops"])
+         {
+            FracSymOp s{};
+        
+            const auto& R = op.at("R");
+            for (int i = 0; i < 3; ++i)
+                for (int j = 0; j < 3; ++j)
+                    s.R[3*i + j] = R.at(i).at(j).get<double>();
+        
+            const auto& t = op.at("t");
+            for (int i = 0; i < 3; ++i)
+                s.t[i] = t.at(i).get<double>();
+        
+            symmetry_info.ops.push_back(s);
+         }
+      }
      
       int sgnum = symmetry_info.ita_number;
       if      (sgnum >= 1   && sgnum <= 2)   symmetry_info.system = "triclinic";

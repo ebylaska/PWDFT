@@ -4,6 +4,8 @@
 #include <mpi.h>
 #include <ostream>
 #include <string>
+#include <array>
+#include <vector>
 
 namespace pwdft {
 
@@ -50,12 +52,68 @@ using lattice_minimizer    = int (*)(MPI_Comm,
                                      const LatticeContext&);
 
 
+
+// ---------------------------------------------------------------------------
+// FracSymOp
+//
+// One symmetry operation of the effective space group, in the same form the
+// RTDB "effective_symmetry.ops" block uses:
+//
+//     f' = R * f + t
+//
+// where f is a fractional coordinate 3-vector, R is a 3x3 integer-valued
+// rotation (stored row-major), and t is a fractional translation.
+//
+// This is the primitive action on fractional coordinates. It's all the atom
+// optimizer needs for projecting gradients and symmetrizing positions.
+// ---------------------------------------------------------------------------
+
+struct FracSymOp {
+    std::array<double, 9> R{};   // row-major 3x3
+    std::array<double, 3> t{};   // fractional translation
+
+    // Apply to a fractional coordinate: f' = R * f + t
+    std::array<double, 3> apply(const std::array<double, 3>& f) const
+    {
+        return {
+            R[0]*f[0] + R[1]*f[1] + R[2]*f[2] + t[0],
+            R[3]*f[0] + R[4]*f[1] + R[5]*f[2] + t[1],
+            R[6]*f[0] + R[7]*f[1] + R[8]*f[2] + t[2]
+        };
+    }
+
+    // Apply the transpose: g' = R^T * g   (used for projecting gradients,
+    // since the gradient transforms with the inverse rotation).
+    std::array<double, 3> apply_transpose(const std::array<double, 3>& g) const
+    {
+        return {
+            R[0]*g[0] + R[3]*g[1] + R[6]*g[2],
+            R[1]*g[0] + R[4]*g[1] + R[7]*g[2],
+            R[2]*g[0] + R[5]*g[1] + R[8]*g[2]
+        };
+    }
+
+    bool is_identity(double tol = 1.0e-8) const
+    {
+        for (int i = 0; i < 9; ++i)
+            if (std::abs(R[i] - ((i % 4 == 0) ? 1.0 : 0.0)) > tol)
+                return false;
+        for (int i = 0; i < 3; ++i)
+            if (std::abs(t[i]) > tol)
+                return false;
+        return true;
+    }
+};
+
+
+
 // ---------------------------------------------------------------------------
 // SymmetryInfo
 //
 // Plain data struct describing the effective symmetry of the current cell.
 // Populated once by the driver from the RTDB "effective_symmetry" block, then
-// passed to pick_lattice_minimizer to select a strategy.
+// passed to pick_lattice_minimizer to select a strategy, and to the atom
+// optimizer for symmetry projection.
 //
 // Members mirror the JSON keys:
 //   name       -> space_group_name
@@ -63,9 +121,15 @@ using lattice_minimizer    = int (*)(MPI_Comm,
 //   order      -> group_order       (number of symmetry operations)
 //   primitive  -> is_primitive
 //   ita_number -> ita_number        (1..230; -1 if absent)
+//   ops        -> ops               (array of {R, t})
 //
 // "system" is derived here from ita_number and is the field the dispatch
 // actually switches on.
+//
+// "ops" is empty when no symmetry block is present in the RTDB. When
+// non-empty, it contains one entry per operation of the effective space
+// group, in the same order the SCF used them. The atom optimizer uses this
+// list for gradient projection and position symmetrization.
 // ---------------------------------------------------------------------------
 
 struct SymmetryInfo {
@@ -77,10 +141,18 @@ struct SymmetryInfo {
     bool        is_cubic         = false;
     std::string system           = "unknown"; // triclinic..cubic, or "unknown"
 
+    std::vector<FracSymOp> ops;
+
     bool has_symmetry() const {
         return (space_group_name != "unknown" && group_order > 0);
     }
+
+    // Whether we have enough information to project with symmetry.
+    bool has_ops() const {
+        return !ops.empty();
+    }
 };
+
 
 
 // ---------------------------------------------------------------------------
