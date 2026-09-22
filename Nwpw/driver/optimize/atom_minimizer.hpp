@@ -31,17 +31,6 @@ struct AtomContext {
     std::vector<FracSymOp> ops;
 };
 
-struct AtomContext {
-    bool        oprint = false;
-    std::string tag    = "@@";
-
-    int         max_steps        = 50;
-    int         lbfgs_memory     = 10;
-    double      minimum_gradient = 1.0e-3;
-    double      initial_step     = 0.1;
-
-    bool        use_symmetry     = true;
-};
 
 // For each (op, atom), the index of the atom that the op maps it to.
 // perm[op][atom] = permuted atom index.
