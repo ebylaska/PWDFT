@@ -24,6 +24,23 @@ struct AtomContext {
     double      initial_step     = 0.1;
 
     bool        use_symmetry     = true;
+
+    // Symmetry ops for projection. Populated by the driver from
+    // symmetry_info.ops. Empty list (or use_symmetry=false) means no
+    // projection is applied.
+    std::vector<FracSymOp> ops;
+};
+
+struct AtomContext {
+    bool        oprint = false;
+    std::string tag    = "@@";
+
+    int         max_steps        = 50;
+    int         lbfgs_memory     = 10;
+    double      minimum_gradient = 1.0e-3;
+    double      initial_step     = 0.1;
+
+    bool        use_symmetry     = true;
 };
 
 // For each (op, atom), the index of the atom that the op maps it to.
@@ -67,5 +84,13 @@ inline double frac_distance_sq(const FracCoord& a, const FracCoord& b) {
     }
     return d2;
 }
+
+// Atom optimizer entry point. Same signature shape as the lattice
+// minimizers: takes the RTDB by reference, returns 0 on success.
+int atom_minimizer(MPI_Comm comm,
+                   std::string& rtdbstring,
+                   std::ostream& coutput,
+                   electronic_minimizer minimizer,
+                   const AtomContext& ctx);
 
 } // namespace pwdft
