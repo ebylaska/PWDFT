@@ -978,7 +978,7 @@ int main(int argc, char *argv[]) {
      }
   }
 
-  std::cout << "TASK=" << task << std::endl;
+  std::cout << "HERA!!! TASK=" << task << std::endl;
 
   // Tasks
   /*
@@ -1048,6 +1048,7 @@ int main(int argc, char *argv[]) {
    * ============================================================================
    */
 
+  std::cout << "HERA, task = "  << task << std::endl;
   while (task > 0) 
   {
      // ========================================================================

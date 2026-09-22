@@ -681,7 +681,7 @@ public:
    double thermo_temperature() { return ptemperature; }
    double thermo_freq_scale() { return pfreq_scale; }
 
-   int driver_relax_type()              { return  pdriver_relax_type; }
+   int driver_relax_type() { return  pdriver_relax_type; }
 
 };
 

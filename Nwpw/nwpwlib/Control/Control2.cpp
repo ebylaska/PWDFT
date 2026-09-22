@@ -901,6 +901,7 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    {
     use_frozen_lattice = true;
    }
+   
 
    if (use_frozen_lattice)
    {
@@ -948,6 +949,15 @@ Control2::Control2(const int np0, const std::string rtdbstring)
          punita_frozen_changed = true;
       }
    }
+
+   if (rtdbjson.contains("driver") &&
+       rtdbjson["driver"].is_object() &&
+       rtdbjson["driver"].contains("relax_type"))
+   {
+      // Fallback to 1 (LattticeOnly) if the key is structurally corrupted
+      pdriver_relax_type = rtdbjson["driver"].value("relax_type", 1);
+   }
+
 
 if (rtdbjson.contains("driver") &&
     rtdbjson["driver"].is_object() &&

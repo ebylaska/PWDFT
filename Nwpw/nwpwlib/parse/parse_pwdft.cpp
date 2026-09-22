@@ -2698,6 +2698,12 @@ static json parse_driver(json driverjson, int *curptr,
     } else if (mystring_contains(line, "xyz")) {
       ss = mystring_split0(line);
       driverjson["xyz"] = ss[1];
+    } else if (mystring_contains(line, "geometry_only")) {
+        driverjson["relax_type"] = 0;
+    } else if (mystring_contains(line, "lattice_only")) {
+        driverjson["relax_type"] = 1;
+    } else if (mystring_contains(line, "geometry_lattice_both")) {
+        driverjson["relax_type"] = 2;
     } else if (mystring_contains(line, "lmbfgs_size")) {
       ss = mystring_split0(line);
       if (ss.size() > 1)

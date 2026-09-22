@@ -446,29 +446,54 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
    }
    */
 
-
-   // ---------------------------------------------------------------
-   // Dispatch to the crystal-system-specific lattice minimizer.
-   //
-   // pick_lattice_minimizer never returns nullptr: unknown systems fall
-   // back to general_lattice_minimizer, which currently evaluates once
-   // and returns without modifying the lattice.
-   // ---------------------------------------------------------------
-   lattice_minimizer lm = pick_lattice_minimizer(symmetry_info.system);
-
-   // define ctx lattice optimization controls
-   LatticeContext ctx;
-   ctx.oprint           = oprint;
-   ctx.max_steps        = control.driver_lattice_maxiter();
-   ctx.minimum_gradient = control.driver_lattice_gmax();
-   ctx.initial_step     = control.driver_lattice_step();
-   ctx.minimum_step     = control.driver_lattice_xmin();
-
-   const int ierr = lm(comm_world0, rtdbstring, coutput, minimizer, ctx);
-   if (ierr != 0)
+  
+   // Dispatch to the crystal-system-specific geometry minimizer.
+   if (driver_relax_type == RelaxCombinedTask::GeometryOnly)
    {
-      coutput << tag << "lattice minimizer returned " << ierr << '\n';
-      return ierr;
+      const int ierr = 1;
+      if (ierr != 0)
+      {
+         coutput << tag << "geometry minimizer not finished ierr=" << ierr <<  '\n';
+         return ierr;
+      }
+   }
+
+   // Dispatch to the crystal-system-specific lattice minimizer.
+   if (driver_relax_type == RelaxCombinedTask::LatticeOnly)
+   {
+      // ---------------------------------------------------------------
+      // pick_lattice_minimizer never returns nullptr: unknown systems fall
+      // back to general_lattice_minimizer, which currently evaluates once
+      // and returns without modifying the lattice.
+      // ---------------------------------------------------------------
+      lattice_minimizer lm = pick_lattice_minimizer(symmetry_info.system);
+ 
+      // define ctx lattice optimization controls
+      LatticeContext ctx;
+      ctx.oprint           = oprint;
+      ctx.max_steps        = control.driver_lattice_maxiter();
+      ctx.minimum_gradient = control.driver_lattice_gmax();
+      ctx.initial_step     = control.driver_lattice_step();
+      ctx.minimum_step     = control.driver_lattice_xmin();
+ 
+      const int ierr = lm(comm_world0, rtdbstring, coutput, minimizer, ctx);
+      if (ierr != 0)
+      {
+         coutput << tag << "lattice minimizer returned " << ierr << '\n';
+         return ierr;
+      }
+   }
+
+   // Dispatch to the crystal-system-specific geometry and lattice  minimizer.
+   if (driver_relax_type == RelaxCombinedTask::Both)
+   {
+      const int ierr = 1;
+      if (ierr != 0)
+      {
+         coutput << tag << "geometry and lattice minimizer not finished, ierr=" << ierr <<  '\n';
+         return ierr;
+      }
+
    }
 
    return 0;
