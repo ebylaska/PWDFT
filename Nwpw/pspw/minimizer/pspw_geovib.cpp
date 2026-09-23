@@ -763,6 +763,8 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
    nwpw_lmbfgs geom_lmbfgs(3 * myion.nion, lmbfgs_size, myion.rion1, fion);
  
    /* update coords in mymolecule */
+   //(mymolecule.myion->is_crystal) ?  mymolecule.myion->fixed_step(-trust, fion,unita) : mymolecule.myion->fixed_step(-trust, fion);
+   //mymolecule.myion->fixed_step(-trust, fion, unita);
    mymolecule.myion->fixed_step(-trust, fion);
 
    // project geometry if enforcing symmetry
@@ -921,7 +923,11 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
       geom_lmbfgs.lmbfgs(myion.rion1, fion, sion);
  
       /* update coords in mymolecule */
+      //(mymolecule.myion->is_crystal) ?  mymolecule.myion->fixed_step(-trust, sion, unita) : mymolecule.myion->fixed_step(-trust, sion);
+      //mymolecule.myion->fixed_step(-trust, sion, unita);
       mymolecule.myion->fixed_step(-trust, sion);
+
+
 
       // project geometry if enforcing symmetry
       if (control.use_symmetry() && control.symmetry_lock())
