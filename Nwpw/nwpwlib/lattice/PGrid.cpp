@@ -28,11 +28,11 @@ namespace pwdft {
 void print_tmp(int taskid, double *tmp1)
 {     
    
-   std::cout << "taskid = " << taskid;
-   std::cout << " TMP=";
-   for (auto k=0; k<32; ++k)
-      std::cout << tmp1[k] << " " ;
-   std::cout << std::endl;
+   //std::cout << "taskid = " << taskid;
+   //std::cout << " TMP=";
+   //for (auto k=0; k<32; ++k)
+   //   std::cout << tmp1[k] << " " ;
+   //std::cout << std::endl;
 }  
 
 /********************************
@@ -106,6 +106,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
    Gmax = sqrt(ggmax);
    Gmin = sqrt(ggmin);
 
+   /*
    for (auto nb = 0; nb <= 1; ++nb) 
    if (parall->is_master())
    {
@@ -136,6 +137,7 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
              << lattice->unitg_frozen(2, j) << '\n';
       }
    }
+   */
  
  
    // aligned Memory
@@ -198,42 +200,42 @@ PGrid::PGrid(Parallel *inparall, Lattice *inlattice, int mapping0, int balance0,
       nwave_entire[nb] = parall->ISumAll(1, nwave_entire[nb]);
    }
 
+/*
    for (auto nb = 0; nb <= 1; ++nb) 
-if (parall->is_master())
-{
-    std::cout
-        << "@PGrid mask result nb = "
-        << nb
-        << " local waves = "
-        << nwave[nb]
-        << " global waves = "
-        << nwave_entire[nb]
-        << '\n';
-}
+      if (parall->is_master())
+      {
+          std::cout
+              << "@PGrid mask result nb = "
+              << nb
+              << " local waves = "
+              << nwave[nb]
+              << " global waves = "
+              << nwave_entire[nb]
+              << '\n';
+      }
 
-std::uint64_t mask_hash =
+      std::uint64_t mask_hash =
     1469598103934665603ULL;
 
-for (int nb = 0; nb < 2; ++nb)
-{
-    for (int i = 0; i < nfft3d; ++i)
-    {
-        mask_hash ^=
-            static_cast<std::uint64_t>(
-                masker[nb][i] + 2);
+      for (int nb = 0; nb < 2; ++nb)
+      {
+          for (int i = 0; i < nfft3d; ++i)
+          {
+              mask_hash ^= static_cast<std::uint64_t>(masker[nb][i] + 2);
 
-        mask_hash *=
-            1099511628211ULL;
-    }
-}
+              mask_hash *= 1099511628211ULL;
+          }
+      }
 
-if (parall->is_master())
-{
-    std::cout
-        << "@PGrid mask hash = "
-        << mask_hash
-        << '\n';
-}
+      if (parall->is_master())
+      {
+          std::cout
+              << "@PGrid mask hash = "
+              << mask_hash
+              << '\n';
+      }
+
+*/
 
 
  

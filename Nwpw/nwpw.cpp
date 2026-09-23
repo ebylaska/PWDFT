@@ -1000,13 +1000,13 @@ int main(int argc, char *argv[]) {
    * 11  | pspw   | Compound     | RTDB-Driven Structural Relaxation (driver_optimizer)
    * 12  | pspw   | Compound     | Mechanical stress-strain elastic constants tensor matrix loop
    * 13  | pspw   | Compound     | Local Hessian-driven transition state locator (Sella)
-   * 14  | pspw   | Compound     | Statistical configuration-averaged ensemble energy
-   * 15  | pspw   | Compound     | Statistical configuration-averaged ensemble force gradient
-   * 16  | pspw   | Compound     | Statistical configuration-averaged ensemble pressure stress
-   * 17  | pspw   | Compound     | Disordered/Paramagnetic ensemble coordinate optimization
-   * 18  | pspw   | Compound     | Disordered alloy/paramagnetic finite displacement ensemble phonon
-   * 19  | pspw   | Compound     | Automated catalytic grid-sweep of surface absorption sites
-   * 20  | pspw   | Compound     | Chained interpolation reaction pathway surface TS driver
+   * 14  | pspw   | Compound     | COVOS select CI energy
+   * 15  | pspw   | Compound     | Statistical configuration-averaged ensemble energy/gradient/stress
+   * 16  | pspw   | Compound     | Disordered/Paramagnetic ensemble coordinate optimization
+   * 17  | pspw   | Compound     | Disordered alloy/paramagnetic finite displacement ensemble phonon
+   * 18  | pspw   | Compound     | Automated catalytic grid-sweep of surface absorption sites
+   * 19  | pspw   | Compound     | Chained interpolation reaction pathway surface TS driver
+   * 20  | pspw   | Compound     | 
    * ----|--------|--------------|-----------------------------------------------
    * 21  | band   | Fundamental  | Periodic k-point boundary single-point energy (band_minimizer)
    * 22  | band   | Fundamental  | Periodic k-point boundary single-point force (band_minimizer)
@@ -1020,13 +1020,13 @@ int main(int argc, char *argv[]) {
    * 31  | band   | Compound     | RTDB-Driven Periodic Cell Relaxation (driver_optimizer)
    * 32  | band   | Compound     | Periodic cell mechanical stress-strain elastic constants loop
    * 33  | band   | Compound     | Periodic internal coordinate Hessian transition state locator (Sella)
-   * 34  | band   | Compound     | Periodic configuration-averaged ensemble energy solver
-   * 35  | band   | Compound     | Periodic configuration-averaged ensemble gradient solver
-   * 36  | band   | Compound     | Periodic configuration-averaged ensemble pressure stress solver
+   * 34  | band   | Compound     | COVOS select CI energy
+   * 35  | band   | Compound     | Statistical configuration-averaged ensemble energy/gradient/stress
    * 37  | band   | Compound     | Periodic ensemble coordinate relaxation driver loop
-   * 38  | band   | Compound     | Periodic ensemble finite displacement phonon matrix evaluator
-   * 39  | band   | Compound     | Periodic surface slab grid-sweep site absorption locator
-   * 40  | band   | Compound     | Periodic surface path-chained reaction transition state driver
+   * 36  | band   | Compound     | Periodic ensemble finite displacement phonon matrix evaluator
+   * 37  | band   | Compound     | Periodic surface slab grid-sweep site absorption locator
+   * 38  | band   | Compound     | Periodic surface path-chained reaction transition state driver
+   * 40  | band   | Compound     | 
    * ----|--------|--------------|-----------------------------------------------
    * 50  | file   | File Task    | Non-physics execution input format/file serialization block
    * ----|--------|--------------|-----------------------------------------------

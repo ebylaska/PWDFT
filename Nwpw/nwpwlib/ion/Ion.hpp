@@ -430,10 +430,13 @@ public:
      kg_total += ekg;
    }
  
-   void fixed_step(const double alpha, const double *fion) {
-     for (auto i = 0; i < (3 * nion); ++i)
-       rion2[i] = rion1[i] + alpha * fion[i];
-   }
+   //void fixed_step(const double alpha, const double *fion) {
+   //   for (auto i = 0; i < (3*nion); ++i)
+   //      rion2[i] = rion1[i] + alpha * fion[i];
+   //}
+
+   void fixed_step(const double alpha, const double *fion);
+   void fixed_step(const double alpha, const double *fion, const double unita[9]);
  
    void set_zv_psp(const int ia, const double zv) { zv_psp[ia] = zv; }
    double total_zv() {

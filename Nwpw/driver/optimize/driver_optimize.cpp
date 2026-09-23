@@ -16,7 +16,7 @@
 
 //#include "lattice_minimizer.hpp"
 #include "lattice_common.hpp"
-
+#include "atom_minimizer.hpp"
 
 //#include "gdevice.hpp"
 
@@ -450,7 +450,18 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
    // Dispatch to the crystal-system-specific geometry minimizer.
    if (driver_relax_type == RelaxCombinedTask::GeometryOnly)
    {
-      const int ierr = 1;
+
+      AtomContext atom_ctx;
+      atom_ctx.oprint           = oprint;
+      atom_ctx.tag              = tag;
+      atom_ctx.max_steps        = control.driver_lattice_maxiter();
+      atom_ctx.minimum_gradient = control.driver_lattice_gmax();
+      atom_ctx.initial_step     = control.driver_lattice_step();
+      atom_ctx.use_symmetry     = true;
+      atom_ctx.ops              = symmetry_info.ops;
+
+      const int ierr = atom_minimizer(comm_world0, rtdbstring, coutput, minimizer, atom_ctx);
+
       if (ierr != 0)
       {
          coutput << tag << "geometry minimizer not finished ierr=" << ierr <<  '\n';
