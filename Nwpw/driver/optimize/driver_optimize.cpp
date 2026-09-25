@@ -17,6 +17,7 @@
 //#include "lattice_minimizer.hpp"
 #include "lattice_common.hpp"
 #include "atom_minimizer.hpp"
+#include "combined_optimizer.hpp"
 
 //#include "gdevice.hpp"
 
@@ -498,13 +499,38 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
    // Dispatch to the crystal-system-specific geometry and lattice  minimizer.
    if (driver_relax_type == RelaxCombinedTask::Both)
    {
-      const int ierr = 1;
-      if (ierr != 0)
-      {
-         coutput << tag << "geometry and lattice minimizer not finished, ierr=" << ierr <<  '\n';
-         return ierr;
-      }
+    // --- atom context ---
+    AtomContext atom_ctx;
+    atom_ctx.oprint           = oprint;
+    atom_ctx.tag              = tag;
+    atom_ctx.max_steps        = control.driver_lattice_maxiter();
+    atom_ctx.minimum_gradient = control.driver_lattice_gmax();
+    atom_ctx.initial_step     = control.driver_lattice_step();
+    atom_ctx.use_symmetry     = true;
+    atom_ctx.ops              = symmetry_info.ops;
 
+    // --- lattice context ---
+    LatticeContext lat_ctx;
+    lat_ctx.oprint           = oprint;
+    lat_ctx.tag              = tag;
+    lat_ctx.max_steps        = control.driver_lattice_maxiter();
+    lat_ctx.minimum_gradient = control.driver_lattice_gmax();
+    lat_ctx.initial_step     = control.driver_lattice_step();
+    lat_ctx.minimum_step     = control.driver_lattice_xmin();
+
+    // --- dispatched lattice minimizer ---
+    lattice_minimizer lm = pick_lattice_minimizer(symmetry_info.system);
+
+    const int ierr = combined_optimizer(comm_world0, rtdbstring, coutput,
+                                        minimizer,
+                                        atom_ctx, lat_ctx, lm,
+                                        10,       // max_outer
+                                        1.0e-5);  // energy_tol
+    if (ierr != 0)
+    {
+        coutput << tag << " combined minimizer returned " << ierr << '\n';
+        return ierr;
+    }
    }
 
    return 0;
