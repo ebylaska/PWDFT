@@ -1118,19 +1118,6 @@ void Ion::remove_rotation()
     }
 }
 
-void Ion::fixed_step(const double alpha, const double *fion)
-{
-   for (auto i = 0; i < (3*nion); ++i)
-      rion2[i] = rion1[i] + alpha * fion[i];
-}
-
-void Ion::fixed_step(const double alpha, const double *fion, const double unita[9])
-{
-   for (auto i = 0; i < (3*nion); ++i)
-      rion2[i] = rion1[i] + alpha * fion[i];
-   incell1(nion,unita,rion2);
-}
-
 
 /*******************************************
  *                                         *

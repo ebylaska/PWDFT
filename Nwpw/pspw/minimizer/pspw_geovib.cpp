@@ -577,13 +577,13 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
    double Eold = 0.0;
    double EV = 0.0;
  
-   int nfsize = 3 * myion.nion;
+   int nfsize = 3*myion.nion;
    int one = 1;
    double mrone = -1.0;
  
    // allocate temporary memory from stack
-   double fion[3 * myion.nion];
-   double sion[3 * myion.nion];
+   double fion[3*myion.nion];
+   double sion[3*myion.nion];
 
 
  
@@ -760,7 +760,7 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
    {
  
    /* initialize lmbfgs */
-   nwpw_lmbfgs geom_lmbfgs(3 * myion.nion, lmbfgs_size, myion.rion1, fion);
+   nwpw_lmbfgs geom_lmbfgs(3*myion.nion, lmbfgs_size, myion.rion1, fion);
  
    /* update coords in mymolecule */
    //(mymolecule.myion->is_crystal) ?  mymolecule.myion->fixed_step(-trust, fion,unita) : mymolecule.myion->fixed_step(-trust, fion);
@@ -920,7 +920,21 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
       // calculate stress here
  
       /* lmbfgs gradient */
-      geom_lmbfgs.lmbfgs(myion.rion1, fion, sion);
+      //geom_lmbfgs.lmbfgs(myion.rion1, fion, sion);
+      geom_lmbfgs.lmbfgs_cartesian(myion.rion1, fion, sion, unita);
+
+      if (oprint)
+      {
+         coutput << " lmbfgs gradients (au):"
+                 << "\n";
+         for (auto ii=0; ii<mymolecule.myion->nion; ++ii)
+            coutput << Ifmt(5) << ii+1 << " "
+                    << Lfmt(2) << mymolecule.myion->symbol(ii) << "  ( "
+                    << Ffmt(10,5) << sion[3*ii] << " "
+                    << Ffmt(10,5) << sion[3*ii+1] << " "
+                    << Ffmt(10,5) << sion[3*ii+2] << " )" << std::endl;
+
+      }
  
       /* update coords in mymolecule */
       //(mymolecule.myion->is_crystal) ?  mymolecule.myion->fixed_step(-trust, sion, unita) : mymolecule.myion->fixed_step(-trust, sion);

@@ -285,8 +285,7 @@ int run_quasi_newton(std::string& rtdbstring,
             const double y_norm = std::sqrt(y_norm2);
             const double g_norm = std::sqrt(g_norm2);
 
-            const bool usable_pair =
-                (s_norm > 1.0e-6) && (y_norm > 1.0e-3 * g_norm);
+            const bool usable_pair = (s_norm > 1.0e-6) && (y_norm > 1.0e-3 * g_norm);
 
             if (usable_pair)
             {

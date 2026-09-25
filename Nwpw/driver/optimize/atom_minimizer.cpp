@@ -460,6 +460,7 @@ int atom_minimizer(MPI_Comm comm,
               << (symmetry_active ? "on" : "off")
               << " (ops read = " << ctx.ops.size() << ")\n"
               << tag << "==============================================\n";
+
    }
 
    LBFGS lbfgs(N, lbfgs_memory);
@@ -471,6 +472,7 @@ int atom_minimizer(MPI_Comm comm,
    bool converged   = false;
    int  steps_taken = 0;
 
+   double energy0 = 0.0;
    for (int istep = 0; istep < max_steps; ++istep)
    {
       // --- fractional -> cartesian, flatten into vectors ---
@@ -540,6 +542,15 @@ int atom_minimizer(MPI_Comm comm,
                         << gmax << '\n'
                  << tag << " Grms          : " << grms << '\n'
                  << tag << " Trust radius  : " << trust_radius << '\n';
+         
+         // Refactored Compact Version
+         //coutput << tag << " Step: " << istep 
+         //        << " | E: " << std::fixed << std::setprecision(10) << energy 
+         //        << " | Gmax: " << std::defaultfloat << std::setprecision(6) << gmax 
+         //        << " | Grms: " << grms 
+         //        << " | TR: " << trust_radius << '\n';
+
+
       }
 
       // --- convergence ---
@@ -722,17 +733,40 @@ int atom_minimizer(MPI_Comm comm,
                     << tag << " rho           : " << rho << '\n'
                     << tag << " Trust radius  : " << trust_radius << '\n'
                     << tag << " New energy    : " << std::fixed << std::setprecision(10) << accepted_energy << " Hartree\n"
+                    << tag << " Delta energy  : " << std::fixed << std::setprecision(10) << accepted_energy - energy << " Hartree\n"
                     << tag << "----------------------------------------------\n";
+         /*
+         if (oprint) {
+            coutput << "@@ Step " << istep 
+                    << " | Energy: " << std::scientific << energy 
+                    << " | Method: " << (used_lbfgs ? "L-BFGS" : "gradient fallback")
+                    << " | Action: " << "accepted"
+                    << " | rho: " << rho 
+                    << " | Trust radius: " << trust_radius 
+                    << " | New energy: " << std::fixed << std::setprecision(10) << accepted_energy << " Hartree\n";
+        }
+        */
+
       }
       else
       {
          trust_radius *= 0.5;
-
          if (oprint)
             coutput << tag << " Method        : " << (used_lbfgs ? "L-BFGS" : "gradient fallback") << '\n'
                     << tag << " Action        : rejected; halve trust radius.\n"
                     << tag << " New radius    : " << std::defaultfloat << std::setprecision(10) << trust_radius << '\n'
                     << tag << "----------------------------------------------\n";
+
+         /*
+         if (oprint) {
+            coutput << "@@ Step " << istep 
+                    << " | Energy: " << std::scientific << energy 
+                    << " | Method: " << (used_lbfgs ? "L-BFGS" : "gradient fallback")
+                    << " | Action: " << "rejected; halve trust radius"
+                    << " | Trust radius: " << trust_radius 
+                    << " | New energy: " << std::fixed << std::setprecision(10) << accepted_energy << " Hartree\n";
+         }
+         */
 
          if (trust_radius < 1.0e-8) break;
       }
