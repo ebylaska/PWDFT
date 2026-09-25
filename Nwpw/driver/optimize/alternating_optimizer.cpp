@@ -1,4 +1,4 @@
-// combined_optimizer.cpp
+// alternating_optimizer.cpp
 //
 // Alternating atom + lattice optimizer.
 //
@@ -12,7 +12,7 @@
 // the atom phase from the current RTDB each call, so a cell change in
 // phase 2 is picked up correctly by the next atom phase.
 
-#include "combined_optimizer.hpp"
+#include "alternating_optimizer.hpp"
 #include "lattice_common.hpp"    // for compute_egs_values
 
 #include <cmath>
@@ -41,19 +41,19 @@ double evaluate_energy(MPI_Comm comm,
 
 } // namespace
 
-int combined_optimizer(MPI_Comm comm,
-                       std::string& rtdbstring,
-                       std::ostream& coutput,
-                       electronic_minimizer minimizer,
-                       const AtomContext& atom_ctx,
-                       const LatticeContext& lattice_ctx,
-                       lattice_minimizer lm,
-                       int    max_outer,
-                       double energy_tol)
+int alternating_optimizer(MPI_Comm comm,
+                          std::string& rtdbstring,
+                          std::ostream& coutput,
+                          electronic_minimizer minimizer,
+                          const AtomContext& atom_ctx,
+                          const LatticeContext& lattice_ctx,
+                          lattice_minimizer lm,
+                          int    max_outer,
+                          double energy_tol)
 {
     if (lm == nullptr)
     {
-        coutput << "combined_optimizer: null lattice minimizer\n";
+        coutput << "alternating_optimizer: null lattice minimizer\n";
         return 1;
     }
 
@@ -64,7 +64,7 @@ int combined_optimizer(MPI_Comm comm,
     {
         coutput << '\n'
                 << tag << "==============================================\n"
-                << tag << " PWDFT combined geometry + lattice optimization\n"
+                << tag << " PWDFT alternating geometry + lattice optimization\n"
                 << tag << " Alternating atom and cell phases\n"
                 << tag << " outer max = " << max_outer
                 << "  E tol = " << energy_tol << '\n'
@@ -151,7 +151,7 @@ int combined_optimizer(MPI_Comm comm,
     {
         coutput << '\n'
                 << tag << "==============================================\n"
-                << tag << " PWDFT combined optimization COMPLETE\n"
+                << tag << " PWDFT alternating optimization COMPLETE\n"
                 << tag << "==============================================\n"
                 << tag << " Outer iterations : "
                        << (converged ? outer : outer + 1) << '\n'

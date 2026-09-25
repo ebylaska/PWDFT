@@ -1,4 +1,4 @@
-// combined_optimizer.hpp
+// alternating_optimizer.hpp
 #pragma once
 
 #include <mpi.h>
@@ -24,14 +24,14 @@ namespace pwdft {
 // Returns 0 on successful completion (including non-converged runs that
 // hit max_outer), non-zero if either phase reports a fatal error.
 
-int combined_optimizer(MPI_Comm comm,
-                       std::string& rtdbstring,
-                       std::ostream& coutput,
-                       electronic_minimizer minimizer,
-                       const AtomContext& atom_ctx,
-                       const LatticeContext& lattice_ctx,
-                       lattice_minimizer lm,
-                       int    max_outer  = 10,
-                       double energy_tol = 1.0e-5);
+int alternating_optimizer(MPI_Comm comm,
+                          std::string& rtdbstring,
+                          std::ostream& coutput,
+                          electronic_minimizer minimizer,
+                          const AtomContext& atom_ctx,
+                          const LatticeContext& lattice_ctx,
+                          lattice_minimizer lm,
+                          int    max_outer  = 10,
+                          double energy_tol = 1.0e-5);
 
 } // namespace pwdft

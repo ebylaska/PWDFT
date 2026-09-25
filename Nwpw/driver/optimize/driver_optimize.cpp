@@ -17,7 +17,8 @@
 //#include "lattice_minimizer.hpp"
 #include "lattice_common.hpp"
 #include "atom_minimizer.hpp"
-#include "combined_optimizer.hpp"
+#include "alternating_optimizer.hpp"
+//#include "combined_optimizer.hpp"
 
 //#include "gdevice.hpp"
 
@@ -39,7 +40,8 @@ enum class RelaxCombinedTask {
     // --- 1. Classical Ground State Structural Modes ---
     GeometryOnly  = 0, // Frozen cell box; adjust inner coordinates
     LatticeOnly   = 1, // Frozen atom coordinates; scale bounding box
-    Both          = 2, // Co-optimize atoms and bounding box in tandem
+    Alternating   = 2, // Co-optimize atoms and bounding box in tandem
+    Combined      = 3, // Co-optimize atoms and bounding box in tandem
 
 };
 
@@ -335,7 +337,8 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
       //coutput << tag << "  Cell optimization      : RTDB unita_frozen reference lattice\n";
       if (driver_relax_type == RelaxCombinedTask::GeometryOnly) coutput << tag << "  Geometry only optimization     : RTDB unita_frozen reference lattice\n";
       if (driver_relax_type == RelaxCombinedTask::LatticeOnly)  coutput << tag << "  Lattice only optimization      : RTDB unita_frozen reference lattice\n";
-      if (driver_relax_type == RelaxCombinedTask::Both)         coutput << tag << "  Geometry and Cell optimization : RTDB unita_frozen reference lattice\n";
+      if (driver_relax_type == RelaxCombinedTask::Alternating)  coutput << tag << "  Alternating Geometry and Cell optimization : RTDB unita_frozen reference lattice\n";
+      if (driver_relax_type == RelaxCombinedTask::Combined)     coutput << tag << "  Combined Geometry and Cell optimization : RTDB unita_frozen reference lattice\n";
 
       coutput << tag << "  Numerical grid                 : fixed during optimization stage\n"
               << tag << "  Lattice tolerance              : " << lattice_tolerance << '\n' 
@@ -497,40 +500,44 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
    }
 
    // Dispatch to the crystal-system-specific geometry and lattice  minimizer.
-   if (driver_relax_type == RelaxCombinedTask::Both)
+   if (driver_relax_type == RelaxCombinedTask::Alternating)
    {
-    // --- atom context ---
-    AtomContext atom_ctx;
-    atom_ctx.oprint           = oprint;
-    atom_ctx.tag              = tag;
-    atom_ctx.max_steps        = control.driver_maxiter();
-    atom_ctx.minimum_gradient = control.driver_gmax();
-    atom_ctx.initial_step     = control.driver_step();
-    atom_ctx.use_symmetry     = true;
-    atom_ctx.ops              = symmetry_info.ops;
+      // --- atom context ---
+      AtomContext atom_ctx;
+      atom_ctx.oprint           = oprint;
+      atom_ctx.tag              = tag;
+      atom_ctx.max_steps        = control.driver_maxiter();
+      atom_ctx.minimum_gradient = control.driver_gmax();
+      atom_ctx.initial_step     = control.driver_step();
+      atom_ctx.use_symmetry     = true;
+      atom_ctx.ops              = symmetry_info.ops;
+     
+      // --- lattice context ---
+      LatticeContext lat_ctx;
+      lat_ctx.oprint           = oprint;
+      lat_ctx.tag              = tag;
+      lat_ctx.max_steps        = control.driver_lattice_maxiter();
+      lat_ctx.minimum_gradient = control.driver_lattice_gmax();
+      lat_ctx.initial_step     = control.driver_lattice_step();
+      lat_ctx.minimum_step     = control.driver_lattice_xmin();
+     
+      // --- dispatched lattice minimizer ---
+      lattice_minimizer lm = pick_lattice_minimizer(symmetry_info.system);
+     
+      const int ierr = alternating_optimizer(comm_world0, rtdbstring, coutput,
+                                             minimizer,
+                                             atom_ctx, lat_ctx, lm,
+                                             10,       // max_outer
+                                             1.0e-5);  // energy_tol
+      if (ierr != 0)
+      {
+          coutput << tag << " combined minimizer returned " << ierr << '\n';
+          return ierr;
+      }
+   }
 
-    // --- lattice context ---
-    LatticeContext lat_ctx;
-    lat_ctx.oprint           = oprint;
-    lat_ctx.tag              = tag;
-    lat_ctx.max_steps        = control.driver_lattice_maxiter();
-    lat_ctx.minimum_gradient = control.driver_lattice_gmax();
-    lat_ctx.initial_step     = control.driver_lattice_step();
-    lat_ctx.minimum_step     = control.driver_lattice_xmin();
-
-    // --- dispatched lattice minimizer ---
-    lattice_minimizer lm = pick_lattice_minimizer(symmetry_info.system);
-
-    const int ierr = combined_optimizer(comm_world0, rtdbstring, coutput,
-                                        minimizer,
-                                        atom_ctx, lat_ctx, lm,
-                                        10,       // max_outer
-                                        1.0e-5);  // energy_tol
-    if (ierr != 0)
-    {
-        coutput << tag << " combined minimizer returned " << ierr << '\n';
-        return ierr;
-    }
+   if (driver_relax_type == RelaxCombinedTask::Combined)
+   {
    }
 
    return 0;
