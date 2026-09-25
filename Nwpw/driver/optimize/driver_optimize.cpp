@@ -455,9 +455,9 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
       AtomContext atom_ctx;
       atom_ctx.oprint           = oprint;
       atom_ctx.tag              = tag;
-      atom_ctx.max_steps        = control.driver_lattice_maxiter();
-      atom_ctx.minimum_gradient = control.driver_lattice_gmax();
-      atom_ctx.initial_step     = control.driver_lattice_step();
+      atom_ctx.max_steps        = control.driver_maxiter();
+      atom_ctx.minimum_gradient = control.driver_gmax();
+      atom_ctx.initial_step     = control.driver_step();
       atom_ctx.use_symmetry     = true;
       atom_ctx.ops              = symmetry_info.ops;
 
@@ -503,9 +503,9 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
     AtomContext atom_ctx;
     atom_ctx.oprint           = oprint;
     atom_ctx.tag              = tag;
-    atom_ctx.max_steps        = control.driver_lattice_maxiter();
-    atom_ctx.minimum_gradient = control.driver_lattice_gmax();
-    atom_ctx.initial_step     = control.driver_lattice_step();
+    atom_ctx.max_steps        = control.driver_maxiter();
+    atom_ctx.minimum_gradient = control.driver_gmax();
+    atom_ctx.initial_step     = control.driver_step();
     atom_ctx.use_symmetry     = true;
     atom_ctx.ops              = symmetry_info.ops;
 
