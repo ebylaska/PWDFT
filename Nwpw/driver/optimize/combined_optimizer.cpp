@@ -26,6 +26,8 @@
 
 namespace pwdft {
 
+using json = nlohmann::json;
+
 namespace {
 
 double evaluate_energy(MPI_Comm comm,
