@@ -78,6 +78,11 @@ class Control2 {
    double pdriver_lattice_xmin    = 1.0e-5;
    int pdriver_relax_type = 1;
 
+   int pdriver_combined_maxiter  = 30;
+   double pdriver_combined_gmax  = 1.0e-4;
+   double pdriver_combined_step  = 0.0025;
+   double pdriver_combined_xmin  = 1.0e-5;
+
  
    bool pgeometry_optimize;
  

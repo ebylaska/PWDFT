@@ -2600,6 +2600,24 @@ static json parse_driver(json driverjson, int *curptr,
       ss = mystring_split0(line);
       if (ss.size() == 2)
         driverjson["lattice_xmin"] = std::stod(ss[1]);
+
+    } else if (mystring_contains(line, "combined_maxiter")) {
+      ss = mystring_split0(line);
+      if (ss.size() > 1)
+        driverjson["combined_maxiter"] = std::stoi(ss[1]);
+    } else if (mystring_contains(line, "combined_gmax")) {
+      ss = mystring_split0(line);
+      if (ss.size() == 2)
+        driverjson["combined_gmax"] = std::stod(ss[1]);
+    } else if (mystring_contains(line, "combined_step")) {
+      ss = mystring_split0(line);
+      if (ss.size() == 2)
+        driverjson["combined_step"] = std::stod(ss[1]);
+    } else if (mystring_contains(line, "combined_xmin")) {
+      ss = mystring_split0(line);
+      if (ss.size() == 2)
+        driverjson["combined_xmin"] = std::stod(ss[1]);
+
     } else if (mystring_contains(line, "maxiter")) {
       ss = mystring_split0(line);
       if (ss.size() > 1)

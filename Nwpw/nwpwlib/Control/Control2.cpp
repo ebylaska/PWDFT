@@ -1306,11 +1306,17 @@ if (rtdbjson.contains("driver") &&
    get("xmax", pdriver_xmax);
    get("xrms", pdriver_xrms);
    get("trust", pdriver_trust);
+   get("step", pdriver_step);
 
    get("lattice_maxiter", pdriver_lattice_maxiter);
    get("lattice_gmax", pdriver_lattice_gmax);
    get("lattice_step", pdriver_lattice_step);
    get("lattice_xmin", pdriver_lattice_xmin);
+
+   get("combined_maxiter", pdriver_combined_maxiter);
+   get("combined_gmax", pdriver_combined_gmax);
+   get("combined_step", pdriver_combined_step);
+   get("combined_xmin", pdriver_combined_xmin);
 
    phessian_print = driver_json.value("hessian_print", phessian_print);
 
