@@ -1,0 +1,72 @@
+title "swnc: e theory=pspw xc=pbe formula=Mg2F4 charge=0 mult=1"
+#machinejob:expert
+ 
+echo
+permanent_dir ./perm20
+scratch_dir   ./perm20
+
+start pspw-pbe-mgf2
+ 
+memory heap 950 mb stack 900 mb global 10 mb
+ 
+charge 0
+
+
+geometry noautoz nocenter noautosym
+   system crystal cartesian
+      lat_a  4.549
+      lat_b  4.549
+      lat_c  3.398
+      alpha 90.0
+      beta  90.0
+      gamma 90.0
+   end
+
+
+Mg       -0.000000    -0.000000    -0.000000
+Mg        2.274499     2.274499     1.698999
+F         1.379791     1.379791    -0.000000
+F         0.894708     3.654290     1.698999
+F         3.169207     3.169207    -0.000000
+F         3.654290     0.894708     1.698999
+end
+
+
+#symmetry P42/mnm setting 1 conventional
+
+nwpw
+  #simulation_cell
+  #   ngrid 40 40 30 
+  #end
+  ### pseudopotential block begin ###
+  ### pseudopotential block end   ###
+  cutoff 50.0
+  mult 1
+  xc pbe
+  lmbfgs grassman
+  2d-hcurve
+  #includestress
+  tolerances 1.0e-11 1.0e-11
+  #ewald_ncut 8
+end
+task pspw energy
+
+set nwpw:use_symmetry true
+set driver:symmetry_lock true
+ 
+ 
+### restart here ###
+driver
+   clear
+   geometry_only
+   #lattice_only
+   #geometry_lattice_both
+   maxiter 25
+   lattice_maxiter 25
+   trust 0.3
+end
+
+task pspw optimize
+
+
+ 

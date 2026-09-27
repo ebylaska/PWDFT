@@ -1,0 +1,46 @@
+title "swnc: e theory=pspw xc=pbe formula=C8 charge=0 mult=1"
+#machinejob:expert
+ 
+echo
+permanent_dir ./perm20
+scratch_dir   ./perm20
+
+start pspw-pbe-mgf2
+ 
+memory heap 950 mb stack 900 mb global 10 mb
+ 
+charge 0
+
+
+geometry noautoz nocenter noautosym
+   system crystal
+      lat_a 4.6672
+      lat_b 4.6672
+      lat_c 3.0215
+      alpha 90.0
+      beta  90.0
+      gamma 90.0
+   end
+
+Mg  0.000000  0.000000  0.000000
+F   1.414162  1.414162  0.000000
+
+symmetry P42/mnm conventional
+end
+
+
+#symmetry P42/mnm setting 1 conventional
+
+print high
+nwpw
+  ### pseudopotential block begin ###
+  ### pseudopotential block end   ###
+  cutoff 50.0
+  mult 1
+  xc pbe96
+  lmbfgs grassman
+  2d-hcurve
+end
+task pspw stress
+ 
+

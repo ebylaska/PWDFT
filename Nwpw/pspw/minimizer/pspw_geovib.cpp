@@ -285,13 +285,13 @@ int pspw_geovib(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &cou
    MPI_Barrier(comm_world0);
  
    // driver parameters
-   int maxit = control.driver_maxiter();
+   int maxit       = control.driver_maxiter();
+   int lmbfgs_size = control.driver_lmbfgs_size();
    double tol_Gmax = control.driver_gmax();
    double tol_Grms = control.driver_grms();
    double tol_Xrms = control.driver_xrms();
    double tol_Xmax = control.driver_xmax();
-   double trust = control.driver_trust();
-   int lmbfgs_size = control.driver_lmbfgs_size();
+   double trust    = control.driver_trust();
  
    // GeoVib mygeovib(&molecule,control);
  

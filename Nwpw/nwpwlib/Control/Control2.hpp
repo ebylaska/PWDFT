@@ -70,6 +70,7 @@ class Control2 {
    double pdriver_xrms = 0.00120;
    double pdriver_xmax = 0.00180;
    double pdriver_trust = 0.3;
+   //double pdriver_trust = 0.0025;
    double pdriver_step  = 0.0025;
 
    int pdriver_lattice_maxiter = 30;

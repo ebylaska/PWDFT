@@ -2720,8 +2720,10 @@ static json parse_driver(json driverjson, int *curptr,
         driverjson["relax_type"] = 0;
     } else if (mystring_contains(line, "lattice_only")) {
         driverjson["relax_type"] = 1;
-    } else if (mystring_contains(line, "geometry_lattice_both")) {
+    } else if (mystring_contains(line, "geometry_lattice_alternating")) {
         driverjson["relax_type"] = 2;
+    } else if (mystring_contains(line, "geometry_lattice_combined")) {
+        driverjson["relax_type"] = 3;
     } else if (mystring_contains(line, "lmbfgs_size")) {
       ss = mystring_split0(line);
       if (ss.size() > 1)

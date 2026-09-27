@@ -76,7 +76,7 @@ public:
       }
 
       //if (std::fabs(sum) > 1.0e-11) 
-      if (std::fabs(sum) > (threshold_factor * yabs * sabs + safety_floor))
+      if ((std::fabs(sum) > (threshold_factor * yabs * sabs + safety_floor)) && (std::fabs(sum) > 1.0e-11))
       {
          rho[indx[m]] = 1.0 / sum;
         
@@ -156,8 +156,6 @@ public:
       // ========================================================================
       //DAXPY_PWDFT(nsize, mrone, x, one, &sylist[(2*indx[m])*nsize], one); 
       const int n_atoms = nsize / 3;
-      std::cout << "NSIZE=" << nsize << std::endl;
-      std::cout << "NATOMs=" << n_atoms << std::endl;
      
       for (int ii=0; ii<n_atoms; ++ii)
       {
@@ -206,26 +204,18 @@ public:
       }
 
       //if (std::fabs(sum) > 1.0e-11)
-      if (std::fabs(sum) > (threshold_factor * yabs * sabs + safety_floor))
+      if ((std::fabs(sum) > (threshold_factor * yabs * sabs + safety_floor)) && (std::fabs(sum) > 1.0e-11))
       {
          rho[indx[m]] = 1.0/sum;
-         std::cout << "m=" << m << " indx_m=" << indx[m] << std::scientific << std::setprecision(14) << " rho="  << rho[indx[m]] << std::endl;;
-         
          
          double alpha[m+1];
          for (auto k=m-1; k>=0; --k) 
          {         
-            //int k = indx[i];
-            //double jj =  DDOT_PWDFT(nsize, &sylist[(2*indx[k])*nsize], one, q, one);
-            //std::cout << "k=" << k << " indx_k=" << indx[k] << std::scientific << std::setprecision(14) << " jj=" << jj << " rho="  << rho[indx[k]] << std::endl;;
-
             alpha[k] = rho[indx[k]]*DDOT_PWDFT(nsize, &sylist[(2*indx[k])*nsize], one, q, one); //dx terms
             double tscal = -alpha[k];
-            std::cout << "k=" << k << " indx_k=" << indx[k] << " alpha=" << alpha[k] << " tscal=" << tscal << std::endl;
             if (std::abs(tscal) < 1000.0)
             {
                DAXPY_PWDFT(nsize, tscal, &sylist[(2*indx[k]+1)*nsize], one, q, one);
-               //std::cout << "include" << std::endl;
             }
          }
 
@@ -248,11 +238,9 @@ public:
             //int k = indx[i];
             double beta = rho[indx[k]] * DDOT_PWDFT(nsize, &sylist[(2*indx[k]+1)*nsize], one, q, one);
             double tscal = -(beta - alpha[k]);
-            std::cout << "k=" << k << " indx_k=" << indx[k] << " beta=" << beta << " tscal=" << tscal << std::endl;
             if (std::abs(tscal) < 1000.0)
             {
                DAXPY_PWDFT(nsize, tscal, &sylist[(2*indx[k])*nsize], one, q, one); //dx terms
-               //std::cout << "include2" << std::endl;
             }
          }
 
