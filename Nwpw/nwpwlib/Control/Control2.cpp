@@ -222,32 +222,27 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    pdipole_on = false;
  
    ptask = 0;
-   if (!rtdbjson["current_task"].is_null()) {
-     if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "energy"))
-       ptask = 1;
-     if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "gradient"))
-       ptask = 2;
-     if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "optimize"))
-       ptask = 3;
+   if (!rtdbjson["current_task"].is_null()) 
+   {
+      if       (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "gradientstress"))  ptask = 11;
+      else if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "energy"))           ptask = 1;
+      else if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "gradient"))         ptask = 2;
+      else if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "optimize"))         ptask = 3;
+     
+      else if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "geovib"))           ptask = 4;
+     
+      else if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "freq"))             ptask = 5;
+     
+      else if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "steepest_descent")) ptask = 6;
+      else if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "car-parrinello"))   ptask = 7;
+      else if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "born-oppenheimer")) ptask = 8;
+     
+      else if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "stress"))           ptask = 10;
+      else if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "relax"))            ptask = 12;
 
-     if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "geovib"))
-       ptask = 4;
-
-     if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "freq"))
-       ptask = 5;
-
-     if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "steepest_descent"))
-       ptask = 6;
-     if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "car-parrinello"))
-       ptask = 7;
-     if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "born-oppenheimer"))
-       ptask = 8;
-
-     if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "stress"))
-       ptask = 10;
-
-     if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "noit_"))
-       ptask *= -1;
+      //if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "gradientstress"))   ptask = 11;
+     
+      if (mystring_contains(mystring_lowercase(rtdbjson["current_task"]), "noit_")) ptask *= -1;
    }
  
    ptotal_ion_charge = -1.0;
@@ -430,97 +425,83 @@ Control2::Control2(const int np0, const std::string rtdbstring)
  
    // from car-parrinello block
    if (ptask == 7)
-     if (rtdbjson["nwpw"]["car-parrinello"]["input_wavefunction_filename"]
-             .is_string())
-       input_movecs =
-           rtdbjson["nwpw"]["car-parrinello"]["input_wavefunction_filename"];
+      if (rtdbjson["nwpw"]["car-parrinello"]["input_wavefunction_filename"].is_string())
+         input_movecs = rtdbjson["nwpw"]["car-parrinello"]["input_wavefunction_filename"];
    if (ptask == 7)
-     if (rtdbjson["nwpw"]["car-parrinello"]["output_wavefunction_filename"]
-             .is_string())
-       output_movecs =
-           rtdbjson["nwpw"]["car-parrinello"]["output_wavefunction_filename"];
+      if (rtdbjson["nwpw"]["car-parrinello"]["output_wavefunction_filename"].is_string())
+         output_movecs = rtdbjson["nwpw"]["car-parrinello"]["output_wavefunction_filename"];
    if (ptask == 7)
-     if (rtdbjson["nwpw"]["car-parrinello"]["input_v_wavefunction_filename"]
-             .is_string())
-       input_v_movecs =
-           rtdbjson["nwpw"]["car-parrinello"]["input_v_wavefunction_filename"];
+      if (rtdbjson["nwpw"]["car-parrinello"]["input_v_wavefunction_filename"].is_string())
+         input_v_movecs = rtdbjson["nwpw"]["car-parrinello"]["input_v_wavefunction_filename"];
    if (ptask == 7)
-     if (rtdbjson["nwpw"]["car-parrinello"]["output_v_wavefunction_filename"]
-             .is_string())
-       output_v_movecs =
-           rtdbjson["nwpw"]["car-parrinello"]["output_v_wavefunction_filename"];
+      if (rtdbjson["nwpw"]["car-parrinello"]["output_v_wavefunction_filename"].is_string())
+         output_v_movecs = rtdbjson["nwpw"]["car-parrinello"]["output_v_wavefunction_filename"];
  
-   if (rtdbjson["dbname"].is_string()) {
-     std::string dbname = rtdbjson["dbname"];
-     xyz_filename = dbname + ".xyz";
-     ion_motion_filename = dbname + ".ion_motion";
-     emotion_filename = dbname + ".emotion";
-     fei_filename = dbname + ".fei";
-     cif_filename = dbname + ".cif";
-     omotion_filename = dbname + ".omotion";
-     hmotion_filename = dbname + ".hmotion";
-     fei_filename = dbname + ".fei";
-     eigmotion_filename = dbname + ".eigmotion";
-     dipole_motion_filename = dbname + ".dipole_motion";
+   if (rtdbjson["dbname"].is_string()) 
+   {
+      std::string dbname = rtdbjson["dbname"];
+      xyz_filename = dbname + ".xyz";
+      ion_motion_filename = dbname + ".ion_motion";
+      emotion_filename = dbname + ".emotion";
+      fei_filename = dbname + ".fei";
+      cif_filename = dbname + ".cif";
+      omotion_filename = dbname + ".omotion";
+      hmotion_filename = dbname + ".hmotion";
+      fei_filename = dbname + ".fei";
+      eigmotion_filename = dbname + ".eigmotion";
+      dipole_motion_filename = dbname + ".dipole_motion";
    }
    if (ptask == 7)
-     if (rtdbjson["nwpw"]["car-parrinello"]["xyz_filename"].is_string())
-       xyz_filename = rtdbjson["nwpw"]["car-parrinello"]["xyz_filename"];
+      if (rtdbjson["nwpw"]["car-parrinello"]["xyz_filename"].is_string())
+         xyz_filename = rtdbjson["nwpw"]["car-parrinello"]["xyz_filename"];
    if (ptask == 7)
-     if (rtdbjson["nwpw"]["car-parrinello"]["motion_filename"].is_string())
-       ion_motion_filename = rtdbjson["nwpw"]["car-parrinello"]["ion_motion_filename"];
+      if (rtdbjson["nwpw"]["car-parrinello"]["motion_filename"].is_string())
+         ion_motion_filename = rtdbjson["nwpw"]["car-parrinello"]["ion_motion_filename"];
    if (ptask == 7)
-     if (rtdbjson["nwpw"]["car-parrinello"]["emotion_filename"].is_string())
-       emotion_filename = rtdbjson["nwpw"]["car-parrinello"]["emotion_filename"];
+      if (rtdbjson["nwpw"]["car-parrinello"]["emotion_filename"].is_string())
+         emotion_filename = rtdbjson["nwpw"]["car-parrinello"]["emotion_filename"];
  
    if (ptask == 7)
-     if (rtdbjson["nwpw"]["car-parrinello"]["omotion_filename"].is_string())
-       omotion_filename = rtdbjson["nwpw"]["car-parrinello"]["omotion_filename"];
+      if (rtdbjson["nwpw"]["car-parrinello"]["omotion_filename"].is_string())
+         omotion_filename = rtdbjson["nwpw"]["car-parrinello"]["omotion_filename"];
    if (ptask == 7)
-     if (rtdbjson["nwpw"]["car-parrinello"]["hmotion_filename"].is_string())
-       hmotion_filename = rtdbjson["nwpw"]["car-parrinello"]["hmotion_filename"];
+      if (rtdbjson["nwpw"]["car-parrinello"]["hmotion_filename"].is_string())
+         hmotion_filename = rtdbjson["nwpw"]["car-parrinello"]["hmotion_filename"];
    if (ptask == 7)
-     if (rtdbjson["nwpw"]["car-parrinello"]["eigmotion_filename"].is_string())
-       eigmotion_filename =
-           rtdbjson["nwpw"]["car-parrinello"]["eigmotion_filename"];
+      if (rtdbjson["nwpw"]["car-parrinello"]["eigmotion_filename"].is_string())
+         eigmotion_filename = rtdbjson["nwpw"]["car-parrinello"]["eigmotion_filename"];
    if (ptask == 7)
-     if (rtdbjson["nwpw"]["car-parrinello"]["fei_filename"].is_string())
-       fei_filename = rtdbjson["nwpw"]["car-parrinello"]["fei_filename"];
+      if (rtdbjson["nwpw"]["car-parrinello"]["fei_filename"].is_string())
+         fei_filename = rtdbjson["nwpw"]["car-parrinello"]["fei_filename"];
    if (ptask == 7)
-     if (rtdbjson["nwpw"]["car-parrinello"]["cif_filename"].is_string())
-       cif_filename = rtdbjson["nwpw"]["car-parrinello"]["cif_filename"];
+      if (rtdbjson["nwpw"]["car-parrinello"]["cif_filename"].is_string())
+         cif_filename = rtdbjson["nwpw"]["car-parrinello"]["cif_filename"];
    if (ptask == 7)
-     if (rtdbjson["nwpw"]["car-parrinello"]["dipole_motion_filename"]
-             .is_string())
-       dipole_motion_filename =
-           rtdbjson["nwpw"]["car-parrinello"]["dipole_motion_filename"];
+      if (rtdbjson["nwpw"]["car-parrinello"]["dipole_motion_filename"].is_string())
+         dipole_motion_filename = rtdbjson["nwpw"]["car-parrinello"]["dipole_motion_filename"];
    if (ptask == 7)
-     if (rtdbjson["nwpw"]["car-parrinello"]["fei_on"].is_boolean())
-       pfei_on = rtdbjson["nwpw"]["car-parrinello"]["fei_on"];
+      if (rtdbjson["nwpw"]["car-parrinello"]["fei_on"].is_boolean())
+         pfei_on = rtdbjson["nwpw"]["car-parrinello"]["fei_on"];
    if (ptask == 7)
-     if (rtdbjson["nwpw"]["car-parrinello"]["cif_on"].is_boolean())
-       pcif_on = rtdbjson["nwpw"]["car-parrinello"]["cif_on"];
+      if (rtdbjson["nwpw"]["car-parrinello"]["cif_on"].is_boolean())
+         pcif_on = rtdbjson["nwpw"]["car-parrinello"]["cif_on"];
    if (ptask == 7)
-     if (rtdbjson["nwpw"]["car-parrinello"]["cif_shift_cell"].is_boolean())
-       pcif_shift_cell = rtdbjson["nwpw"]["car-parrinello"]["cif_shift_cell"];
+      if (rtdbjson["nwpw"]["car-parrinello"]["cif_shift_cell"].is_boolean())
+         pcif_shift_cell = rtdbjson["nwpw"]["car-parrinello"]["cif_shift_cell"];
 
    if (ptask == 7)
-     if (rtdbjson["nwpw"]["car-parrinello"]["dipole_on"].is_boolean())
-       pdipole_on = rtdbjson["nwpw"]["car-parrinello"]["dipole_on"];
+      if (rtdbjson["nwpw"]["car-parrinello"]["dipole_on"].is_boolean())
+         pdipole_on = rtdbjson["nwpw"]["car-parrinello"]["dipole_on"];
    // if (ptask==7) if (rtdbjson["nwpw"]["mulliken"].is_boolean()) pmulliken_on =
    // rtdbjson["nwpw"]["mulliken_on"];
  
    // from steepest_descent block
    if (ptask == 6)
-     if (rtdbjson["nwpw"]["steepest_descent"]["input_wavefunction_filename"]
-             .is_string())
-       input_movecs =
-           rtdbjson["nwpw"]["steepest_descent"]["input_wavefunction_filename"];
+      if (rtdbjson["nwpw"]["steepest_descent"]["input_wavefunction_filename"].is_string())
+         input_movecs = rtdbjson["nwpw"]["steepest_descent"]["input_wavefunction_filename"];
    if (ptask == 6)
-     if (rtdbjson["nwpw"]["steepest_descent"]["output_wavefunction_filename"]
-             .is_string())
-       output_movecs =
-           rtdbjson["nwpw"]["steepest_descent"]["output_wavefunction_filename"];
+      if (rtdbjson["nwpw"]["steepest_descent"]["output_wavefunction_filename"].is_string())
+         output_movecs = rtdbjson["nwpw"]["steepest_descent"]["output_wavefunction_filename"];
  
    if (permanent_dir_str.size() > 0) 
    {
@@ -559,13 +540,13 @@ Control2::Control2(const int np0, const std::string rtdbstring)
  
    ptime_step = 5.8;
    if (rtdbjson["nwpw"]["time_step"].is_number_float())
-     ptime_step = rtdbjson["nwpw"]["time_step"];
+      ptime_step = rtdbjson["nwpw"]["time_step"];
    if (ptask == 6)
-     if (rtdbjson["nwpw"]["steepest_descent"]["time_step"].is_number_float())
-       ptime_step = rtdbjson["nwpw"]["steepest_descent"]["time_step"];
+      if (rtdbjson["nwpw"]["steepest_descent"]["time_step"].is_number_float())
+         ptime_step = rtdbjson["nwpw"]["steepest_descent"]["time_step"];
    if (ptask == 7)
-     if (rtdbjson["nwpw"]["car-parrinello"]["time_step"].is_number_float())
-       ptime_step = rtdbjson["nwpw"]["car-parrinello"]["time_step"];
+      if (rtdbjson["nwpw"]["car-parrinello"]["time_step"].is_number_float())
+         ptime_step = rtdbjson["nwpw"]["car-parrinello"]["time_step"];
 
    if (rtdbjson["nwpw"]["virtual"][0].is_number_integer())
       pnexcited[0] = rtdbjson["nwpw"]["virtual"][0];
@@ -574,14 +555,14 @@ Control2::Control2(const int np0, const std::string rtdbstring)
  
    pscf_algorithm = 0;
    if (rtdbjson["nwpw"]["scf_algorithm"].is_number_integer())
-       pscf_algorithm = rtdbjson["nwpw"]["scf_algorithm"];
+      pscf_algorithm = rtdbjson["nwpw"]["scf_algorithm"];
 
    pks_algorithm = 0;
    if (rtdbjson["nwpw"]["ks_algorithm"].is_number_integer())
-       pks_algorithm = rtdbjson["nwpw"]["ks_algorithm"];
+      pks_algorithm = rtdbjson["nwpw"]["ks_algorithm"];
 
    if (rtdbjson["nwpw"]["fractional_smeartype"].is_number_integer())
-       pfractional_smeartype = rtdbjson["nwpw"]["fractional_smeartype"];
+      pfractional_smeartype = rtdbjson["nwpw"]["fractional_smeartype"];
 
 
    if (rtdbjson["nwpw"]["fractional_orbitals"][0].is_number_integer())
@@ -592,11 +573,11 @@ Control2::Control2(const int np0, const std::string rtdbstring)
 
    pks_maxit_orb = 5;
    if (rtdbjson["nwpw"]["ks_maxit_orb"].is_number_integer())
-       pks_maxit_orb = rtdbjson["nwpw"]["ks_maxit_orb"];
+      pks_maxit_orb = rtdbjson["nwpw"]["ks_maxit_orb"];
 
    pks_maxit_orbs = 1;
    if (rtdbjson["nwpw"]["ks_maxit_orbs"].is_number_integer())
-       pks_maxit_orbs = rtdbjson["nwpw"]["ks_maxit_orbs"];
+      pks_maxit_orbs = rtdbjson["nwpw"]["ks_maxit_orbs"];
 
    pdiis_histories = 15;
    if (rtdbjson["nwpw"]["diis_histories"].is_number_integer())

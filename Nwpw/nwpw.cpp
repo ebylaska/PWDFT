@@ -978,7 +978,6 @@ int main(int argc, char *argv[]) {
      }
   }
 
-  std::cout << "HERA!!! TASK=" << task << std::endl;
 
   // Tasks
   /*
@@ -997,15 +996,16 @@ int main(int argc, char *argv[]) {
    * 8   | pspw   | Fundamental  | Born-Oppenheimer Molecular Dynamics integration (pspw_bomd)
    * 9   | pspw   | Fundamental  | Charge density/molecular property plotting (pspw_dplot)
    * 10  | pspw   | Fundamental  | Single-point macroscopic stress snapshot (pspw_minimizer)
-   * 11  | pspw   | Compound     | RTDB-Driven Structural Relaxation (driver_optimizer)
-   * 12  | pspw   | Compound     | Mechanical stress-strain elastic constants tensor matrix loop
-   * 13  | pspw   | Compound     | Local Hessian-driven transition state locator (Sella)
-   * 14  | pspw   | Compound     | COVOS select CI energy
-   * 15  | pspw   | Compound     | Statistical configuration-averaged ensemble energy/gradient/stress
-   * 16  | pspw   | Compound     | Disordered/Paramagnetic ensemble coordinate optimization
-   * 17  | pspw   | Compound     | Disordered alloy/paramagnetic finite displacement ensemble phonon
-   * 18  | pspw   | Compound     | Automated catalytic grid-sweep of surface absorption sites
-   * 19  | pspw   | Compound     | Chained interpolation reaction pathway surface TS driver
+   * 11  | pspw   | Fundamental  | Single-point macroscopic gradientstress snapshot (pspw_minimizer)
+
+   * 12  | pspw   | Compound     | RTDB-Driven Structural Relaxation (driver_optimizer)
+   * 13  | pspw   | Compound     | Mechanical stress-strain elastic constants tensor matrix loop
+   * 14  | pspw   | Compound     | Local Hessian-driven transition state locator (Sella)
+   * 15  | pspw   | Compound     | COVOS select CI energy
+   * 16  | pspw   | Compound     | Statistical configuration-averaged ensemble energy/gradient/stress
+   * 17  | pspw   | Compound     | Disordered/Paramagnetic ensemble coordinate optimization
+   * 18  | pspw   | Compound     | Disordered alloy/paramagnetic finite displacement ensemble phonon
+   * 19  | pspw   | Compound     | 
    * 20  | pspw   | Compound     | 
    * ----|--------|--------------|-----------------------------------------------
    * 21  | band   | Fundamental  | Periodic k-point boundary single-point energy (band_minimizer)
@@ -1017,15 +1017,17 @@ int main(int argc, char *argv[]) {
    * 28  | band   | Fundamental  | Periodic Born-Oppenheimer Molecular Dynamics track (band_bomd)
    * 29  | band   | Fundamental  | Full Brillouin zone electronic band structure evaluator
    * 30  | band   | Fundamental  | Periodic single-point cell stress tensor check (band_minimizer)
-   * 31  | band   | Compound     | RTDB-Driven Periodic Cell Relaxation (driver_optimizer)
-   * 32  | band   | Compound     | Periodic cell mechanical stress-strain elastic constants loop
-   * 33  | band   | Compound     | Periodic internal coordinate Hessian transition state locator (Sella)
-   * 34  | band   | Compound     | COVOS select CI energy
+   * 31  | band   | Fundamental  | Periodic single-point cell gradientstress tensor check (band_minimizer)
+
+   * 32  | band   | Compound     | RTDB-Driven Periodic Cell Relaxation (driver_optimizer)
+   * 33  | band   | Compound     | Periodic cell mechanical stress-strain elastic constants loop
+   * 34  | band   | Compound     | Periodic internal coordinate Hessian transition state locator (Sella)
+   * 35  | band   | Compound     | COVOS select CI energy
    * 35  | band   | Compound     | Statistical configuration-averaged ensemble energy/gradient/stress
-   * 37  | band   | Compound     | Periodic ensemble coordinate relaxation driver loop
-   * 36  | band   | Compound     | Periodic ensemble finite displacement phonon matrix evaluator
-   * 37  | band   | Compound     | Periodic surface slab grid-sweep site absorption locator
-   * 38  | band   | Compound     | Periodic surface path-chained reaction transition state driver
+   * 36  | band   | Compound     | Periodic ensemble coordinate relaxation driver loop
+   * 37  | band   | Compound     | Periodic ensemble finite displacement phonon matrix evaluator
+   * 38  | band   | Compound     | 
+   * 39  | band   | Compound     | 
    * 40  | band   | Compound     | 
    * ----|--------|--------------|-----------------------------------------------
    * 50  | file   | File Task    | Non-physics execution input format/file serialization block
@@ -1048,7 +1050,6 @@ int main(int argc, char *argv[]) {
    * ============================================================================
    */
 
-  std::cout << "HERA, task = "  << task << std::endl;
   while (task > 0) 
   {
      // ========================================================================
@@ -1056,7 +1057,7 @@ int main(int argc, char *argv[]) {
      // ========================================================================
 
      /* Energy or Gradient or Stress task*/
-     if ((task == 1) || (task == 2) || (task==10)) 
+     if ((task == 1) || (task == 2) || (task==10) || (task ==11)) 
      {
         if (oprint)
            std::cout << std::endl
@@ -1118,7 +1119,7 @@ int main(int argc, char *argv[]) {
 
 
      /* band: Energy or Gradient or stress task */
-     if ((task == 21) || (task ==22) || task==30)
+     if ((task == 21) || (task ==22) || (task==30) || (task==31))
      {
         if (oprint)
            std::cout << std::endl
@@ -1179,7 +1180,7 @@ int main(int argc, char *argv[]) {
     // 2. COMPOUND TASKS (Macro Drivers Orchestrated via RTDB State Parameters)
     // ========================================================================
      /* pspw relax task */
-     if (task == 11)
+     if (task == 12)
      {
         if (oprint)
            std::cout << std::endl
@@ -1204,7 +1205,7 @@ int main(int argc, char *argv[]) {
 
 
      /* band relax task */
-     if (task == 31)
+     if (task == 32)
      {
         if (oprint)
            std::cout << std::endl

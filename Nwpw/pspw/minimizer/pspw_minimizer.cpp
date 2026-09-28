@@ -513,7 +513,7 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
    rtdbjson["pspw"]["eigenvalues"] = mymolecule.eig_vector();
   
    // calculate fion
-   if (flag == 2) 
+   if ((flag == 2) || (flag==12))
    {
       // double *fion = new double[3*myion.nion];
       double fion[3*myion.nion];
@@ -537,7 +537,7 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
 
 
    // calculate stress
-   if (flag == 10) 
+   if ((flag == 10) || (flag==12))
    {
       // --- 1. Data Initialization ---
       double stress[9] = {0.0};
