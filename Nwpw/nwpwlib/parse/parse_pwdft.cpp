@@ -3541,11 +3541,12 @@ int parse_task(std::string rtdbstring)
          if (mystring_contains(task_str, "ensemble_stress"))     return 16;
          if (mystring_contains(task_str, "ensemble_optimize"))   return 17;
          if (mystring_contains(task_str, "ensemble_phonon"))     return 18;
-         if (mystring_contains(task_str, "surface_absorption"))  return 19;
-         if (mystring_contains(task_str, "surface_ts"))          return 20;
+         //if (mystring_contains(task_str, "surface_absorption"))  return 19;
+         //if (mystring_contains(task_str, "surface_ts"))          return 20;
 
          // Fundamental Tasks
-         if (mystring_contains(task_str, "relax"))               return 11; 
+         if (mystring_contains(task_str, "relax"))               return 12;
+         if (mystring_contains(task_str, "gradientstress"))      return 11;
          if (mystring_contains(task_str, "stress"))              return 10;
          if (mystring_contains(task_str, "dplot"))               return 9;
          if (mystring_contains(task_str, "born-oppenheimer"))    return 8;
@@ -3571,11 +3572,12 @@ int parse_task(std::string rtdbstring)
          if (mystring_contains(task_str, "ensemble_stress"))     return 36;
          if (mystring_contains(task_str, "ensemble_optimize"))   return 37;
          if (mystring_contains(task_str, "ensemble_phonon"))     return 38;
-         if (mystring_contains(task_str, "surface_absorption"))  return 39;
-         if (mystring_contains(task_str, "surface_ts"))          return 40;
+         //if (mystring_contains(task_str, "surface_absorption"))  return 39;
+         //if (mystring_contains(task_str, "surface_ts"))          return 40;
 
          // Fundamental Tasks
-         if (mystring_contains(task_str, "relax"))               return 31;
+         if (mystring_contains(task_str, "relax"))               return 32;
+         if (mystring_contains(task_str, "gradientstress"))      return 31;
          if (mystring_contains(task_str, "stress"))              return 30;
          if (mystring_contains(task_str, "band_structure"))      return 29;
          if (mystring_contains(task_str, "born-oppenheimer"))    return 28;
