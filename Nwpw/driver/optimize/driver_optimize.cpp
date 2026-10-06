@@ -97,6 +97,7 @@ enum class RelaxCombinedTask {
  */
 static bool update_unita_frozen(std::string& rtdbstring, std::ostream& coutput, const double lattice_tolerance, const bool oprint)
 {
+   std::cout << "HAS INTO UPDATE_UNITA_FROZEN" << std::endl;
    if (lattice_tolerance < 0.0)
    {
       if (oprint) coutput << "driver_optimizer: negative lattice tolerance\n";
@@ -237,6 +238,7 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
    //  - This driver is the unit-cell/geometry optimization path,
    //  - so establish or validate unita_frozen before Control2 reads the RTDB.
    constexpr double lattice_tolerance = 0.05;
+   //constexpr double lattice_tolerance = 0.00;
 
    if (!update_unita_frozen(rtdbstring, coutput, lattice_tolerance, master))
       return 1;
@@ -344,13 +346,13 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
               << tag << "  Lattice tolerance              : " << lattice_tolerance << '\n' 
               << tag << "  Date                           : " << util_date() << '\n'
               << tag << '\n'
-              << tag << "  The current lattice may change during unit-cell optimization.\n"
-              << tag << "  RTDB variable unita_frozen stores the reference lattice used\n"
-              << tag << "  to establish the numerical grid and basis-support policy.\n"
-              << tag << "  It is reset when the relative lattice change exceeds the\n"
-              << tag << "  configured tolerance or when a new optimization stage begins.\n"
-              << tag << "  Current energy, force, and stress evaluations use the current\n"
-              << tag << "  physical lattice, not unita_frozen.\n"
+              << tag << "  The current lattice will change during unit-cell optimization\n"
+              << tag << "  (use_frozen_lattice==false).  RTDB variable unita_frozen stores\n"
+              << tag << "  the reference lattice used to establish the numerical grid and\n"
+              << tag << "  basis-support policy. It is reset when the relative lattice change\n"
+              << tag << "  exceeds the configured tolerance or when a new optimization stage\n"
+              << tag << "  begins. Current energy, force, and stress evaluations use the\n"
+              << tag << "  current physical lattice, not unita_frozen.\n"
               << tag << '\n'
               << tag << std::string(width, '-') << '\n';
    }

@@ -3947,12 +3947,10 @@ void Pseudopotential::v_local_euv(const double *dng, const double *vc, double *s
       // **** tmp2(G) = tmp2(G)*(dvl(G)) ****
       mypneb->tt_pack_Mul2(0,dvl[ia],tmp2);
 
-
       // **** tmp2(G) = tmp2(G)/G ****
       mypneb->tt_pack_SMul(0,ss,vc,tmp1); // tmp1(G) = 1/4pi * 4pi/G2 = 1/G2
       mypneb->t_pack_Sqrt1(0,tmp1);       // tmp1(G) = sqrt(1/G2)
       mypneb->tt_pack_Mul2(0,tmp1,tmp2);  // tmp2(G) = 1/G * Real[conjg(dng(G))*exi(G)]*dvl[ia](G)
-
 
       // **** Bus = Bus - Sum(G) tmp2(G)*Gu*Gs ****
       for (size_t u=0; u<3; ++u)
@@ -3976,8 +3974,8 @@ void Pseudopotential::v_local_euv(const double *dng, const double *vc, double *s
       for (size_t s=0; s<3; ++s)
          stress[u+3*v] += Bus[u+3*s]*hm[s+3*v];
    }
-
 }
+
 
 /*******************************************
  *                                         *

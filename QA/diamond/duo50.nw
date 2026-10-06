@@ -11,11 +11,11 @@ memory heap 950 mb stack 900 mb global 10 mb
  
 charge 0
 
-geometry noautoz nocenter noautosym
+geometry noautoz nocenter noautosym 
    system crystal
-      lat_a 3.648
-      lat_b 3.648
-      lat_c 3.648
+      lat_a 3.63865
+      lat_b 3.63865
+      lat_c 3.63865
       alpha 90.0
       beta  90.0
       gamma 90.0
@@ -29,9 +29,9 @@ end
 nwpw
   ### pseudopotential block begin ###
   ### pseudopotential block end   ###
-  cutoff 50.0
+  cutoff 50.0 200.0
   mult 1
-  xc pbe96
+  xc pbe
   lmbfgs grassman
   2d-hcurve
   includestress
@@ -52,6 +52,3 @@ end
 
 
 task pspw relax
-
-
- 

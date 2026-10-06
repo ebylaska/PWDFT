@@ -820,49 +820,6 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    if (read_unita(tmpsimulation_cell.value("unita", json{}), simulation_unita))
       std::memcpy(punita, simulation_unita, 9*sizeof(double));
 
-   /*
-   // Initialize by copying unita to unita_frozen
-   //    make sure pcell_optimize and pparrinello_rahman have already been initialized 
-   // Initialize the frozen lattice from the current physical lattice.
-   punita_frozen_changed = false;
-   std::memcpy(punita_frozen, punita, 9*sizeof(double));
-
-   // Cell optimization and variable-cell dynamics use the RTDB
-   //    unita_frozen reference lattice.
-   bool use_frozen_lattice = pcell_optimize || pparrinello_rahman;
-
-   // The driver callback changes current_task to energy, gradient,
-   // or stress. Preserve the optimization-stage state separately
-   // from current_task.
-   if (rtdbjson.contains("driver") &&
-       rtdbjson["driver"].is_object() &&
-       rtdbjson["driver"].value("use_frozen_lattice", false))
-   {
-      use_frozen_lattice = true;
-   }
-
-   if (use_frozen_lattice)
-   {
-      if (read_unita(tmpsimulation_cell.value("unita_frozen", json{}), punita_frozen))
-      {
-         double difference_squared = 0.0;
-         double frozen_squared = 0.0;
-         for (int i=0; i<9; ++i)
-         {
-            const double difference = punita[i] - punita_frozen[i];
-            difference_squared += difference*difference;
-            frozen_squared     += punita_frozen[i]*punita_frozen[i];
-         }
-         const double lattice_tolerance = 0.01;
-         const double relative_difference = std::sqrt(difference_squared) / std::max( 1.0, std::sqrt(frozen_squared));
-         if (relative_difference > lattice_tolerance)
-         {
-            punita_frozen_changed = true;
-            std::memcpy(punita_frozen, punita, 9*sizeof(double));
-         }
-      }
-   }
-   */
 
    // Initialize the frozen lattice from the current physical lattice.
    punita_frozen_changed = false;
@@ -880,9 +837,10 @@ Control2::Control2(const int np0, const std::string rtdbstring)
        rtdbjson["driver"].is_object() &&
        rtdbjson["driver"].value("use_frozen_lattice", false))
    {
-    use_frozen_lattice = true;
+      use_frozen_lattice = true;
    }
    
+  std::cout << "USE_FROZEN_LATTICE=" << use_frozen_lattice << std::endl;
 
    if (use_frozen_lattice)
    {
@@ -894,7 +852,7 @@ Control2::Control2(const int np0, const std::string rtdbstring)
       {
           double difference_squared = 0.0;
           double frozen_squared = 0.0;
-     
+
           for (int i=0; i<9; ++i)
           {
               const double difference = punita[i] - rtdb_unita_frozen[i];
@@ -904,16 +862,16 @@ Control2::Control2(const int np0, const std::string rtdbstring)
               frozen_squared += rtdb_unita_frozen[i] * rtdb_unita_frozen[i];
           }
      
-          constexpr double lattice_tolerance = 0.01;
+          constexpr double lattice_tolerance = 0.05;
      
           const double relative_difference = std::sqrt(difference_squared) / std::max(1.0, std::sqrt(frozen_squared));
      
           if (relative_difference > lattice_tolerance)
           {
-              // Start a new numerical-grid stage.
-              std::memcpy(punita_frozen, punita, 9*sizeof(double));
+             // Start a new numerical-grid stage.
+             std::memcpy(punita_frozen, punita, 9*sizeof(double));
      
-              punita_frozen_changed = true;
+             punita_frozen_changed = true;
           }
           else
           {
@@ -953,6 +911,19 @@ if (rtdbjson.contains("driver") &&
         << punita_frozen[8]
         << '\n';
 }
+    std::cout
+        << "@Control2 using RTDB lattice: "
+        << punita[0] << " " << punita[1] << " " << punita[2]
+        << punita[3] << " " << punita[4] << " " << punita[5]
+        << punita[6] << " " << punita[7] << " " << punita[8]
+        << '\n';
+
+    std::cout
+        << "@Control2 using RTDB frozen lattice: "
+        << punita_frozen[0] << " " << punita_frozen[1] << " " << punita_frozen[2]
+        << punita_frozen[3] << " " << punita_frozen[4] << " " << punita_frozen[5]
+        << punita_frozen[6] << " " << punita_frozen[7] << " " << punita_frozen[8]
+        << '\n';
   
 
 /*

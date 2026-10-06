@@ -62,17 +62,16 @@ void print_lattice_state(const json& rtdbjson,
     {
         const json& simulation_cell = rtdbjson["nwpw"]["simulation_cell"];
 
-        if (simulation_cell.contains("unita_frozen") &&
-            simulation_cell["unita_frozen"].is_array())
+        if (simulation_cell.contains("unita_frozen") && simulation_cell["unita_frozen"].is_array())
         {
-            frozen_unita = &simulation_cell["unita_frozen"];
+           frozen_unita = &simulation_cell["unita_frozen"];
         }
     }
 
     if (current_unita != nullptr && current_unita->size() == 9)
     {
         coutput << tag << "Current unita:\n";
-        for (int j = 0; j < 3; ++j)
+        for (int j=0; j<3; ++j)
         {
             coutput << std::setprecision(10)
                     << tag << "  "
@@ -161,7 +160,7 @@ double unita_relative_difference(const std::array<double, 9>& current,
     double difference_squared = 0.0;
     double frozen_squared     = 0.0;
 
-    for (int i = 0; i < 9; ++i)
+    for (int i=0; i<9; ++i)
     {
         const double difference = current[i] - frozen[i];
         difference_squared += difference * difference;
@@ -226,8 +225,7 @@ void scale_cubic_cell(std::string& rtdbstring, const double scale)
         {
             for (int i = 0; i < 9; ++i)
             {
-                cell["unita"][i] =
-                    cell["unita"][i].get<double>() * scale;
+               cell["unita"][i] = cell["unita"][i].get<double>() * scale;
             }
         }
     }
@@ -275,22 +273,23 @@ json compute_egs_values(const int option,
 
     if (option == 1)
     {
-        request["current_task"] = "task pspw energy";
-        request["nwpw"]["includestress"] = false;
+       request["current_task"] = "task pspw energy";
+       request["nwpw"]["includestress"] = false;
     }
     else if (option == 2)
     {
-        request["current_task"] = "task pspw gradient";
-        request["nwpw"]["includestress"] = false;
+       request["current_task"] = "task pspw gradient";
+       request["nwpw"]["includestress"] = false;
     }
     else // option == 3
     {
-        request["current_task"] = "task pspw stress";
-        request["nwpw"]["includestress"] = true;
+       request["current_task"] = "task pspw stress";
+       request["nwpw"]["includestress"] = true;
     }
 
     request["driver"]["cell_optimization"] = true;
     request["driver"]["use_frozen_lattice"] = true;
+    //request["driver"]["use_frozen_lattice"] = false;
 
     const std::string tag = "@";
     print_lattice_state(request, coutput, tag);
@@ -300,20 +299,17 @@ json compute_egs_values(const int option,
     const int ierr = minimizer(comm_world0, rtdbstring1, coutput);
 
     if (ierr != 0)
-        throw std::runtime_error(
-            "compute_egs_values: minimizer failed with error " +
-            std::to_string(ierr));
+       throw std::runtime_error("compute_egs_values: minimizer failed with error " + std::to_string(ierr));
 
     const json output = json::parse(rtdbstring1);
 
     const json* backend = nullptr;
     if (output.contains("pspw") && output["pspw"].is_object())
-        backend = &output["pspw"];
+       backend = &output["pspw"];
     else if (output.contains("band") && output["band"].is_object())
-        backend = &output["band"];
+       backend = &output["band"];
     else
-        throw std::runtime_error(
-            "compute_egs_values: neither pspw nor band results found");
+       throw std::runtime_error("compute_egs_values: neither pspw nor band results found");
 
     const json& backend_result = *backend;
 
@@ -493,14 +489,11 @@ void set_hexagonal_cell(std::string& rtdbstring, double a_new, double c_new)
     // Assumes the standard hexagonal orientation: a1 along x, a2 in the
     // xy-plane at 120 degrees, a3 along z.
     for (int i = 0; i < 3; ++i)
-        geometry["unita"][i] =
-            geometry["unita"][i].get<double>() * scale_a;
+       geometry["unita"][i] = geometry["unita"][i].get<double>() * scale_a;
     for (int i = 3; i < 6; ++i)
-        geometry["unita"][i] =
-            geometry["unita"][i].get<double>() * scale_a;
+       geometry["unita"][i] = geometry["unita"][i].get<double>() * scale_a;
     for (int i = 6; i < 9; ++i)
-        geometry["unita"][i] =
-            geometry["unita"][i].get<double>() * scale_c;
+       geometry["unita"][i] = geometry["unita"][i].get<double>() * scale_c;
 
     // Cartesian coords: in-plane (x, y) by scale_a; z by scale_c.
     if (geometry.contains("coords") && geometry["coords"].is_array())
@@ -527,14 +520,11 @@ void set_hexagonal_cell(std::string& rtdbstring, double a_new, double c_new)
             cell["unita"].size() == 9)
         {
             for (int i = 0; i < 3; ++i)
-                cell["unita"][i] =
-                    cell["unita"][i].get<double>() * scale_a;
+                cell["unita"][i] = cell["unita"][i].get<double>() * scale_a;
             for (int i = 3; i < 6; ++i)
-                cell["unita"][i] =
-                    cell["unita"][i].get<double>() * scale_a;
+                cell["unita"][i] = cell["unita"][i].get<double>() * scale_a;
             for (int i = 6; i < 9; ++i)
-                cell["unita"][i] =
-                    cell["unita"][i].get<double>() * scale_c;
+                cell["unita"][i] = cell["unita"][i].get<double>() * scale_c;
         }
     }
 
@@ -1011,8 +1001,7 @@ read_triclinic_lattice(const std::string& rtdbstring)
     return { a, b, c, alpha, beta, gamma };
 }
 
-void
-set_triclinic_cell(std::string& rtdbstring,
+void set_triclinic_cell(std::string& rtdbstring,
                    double a, double b, double c,
                    double alpha_rad, double beta_rad, double gamma_rad)
 {

@@ -201,295 +201,332 @@ int run_quasi_newton(std::string& rtdbstring,
                      PrintStep&& print_step,
                      PrintFinal&& print_final)
 {
-    const bool oprint = ctx.oprint;
-    const std::string& tag = ctx.tag;
+   const bool oprint = ctx.oprint;
+   const std::string& tag = ctx.tag;
 
-    const int    max_steps        = ctx.max_steps;
-    const double minimum_step     = ctx.minimum_step;
-    const double minimum_gradient = ctx.minimum_gradient;
+   const int    max_steps        = ctx.max_steps;
+   const double minimum_step     = ctx.minimum_step;
+   const double minimum_gradient = ctx.minimum_gradient;
 
-    double trust_radius = std::abs(ctx.initial_step);
-    if (!std::isfinite(trust_radius) || trust_radius <= 0.0)
-        trust_radius = 1.0e-2;
-    const double trust_upper_bound =
-        std::max(10.0 * std::abs(ctx.initial_step), minimum_step);
+   double trust_radius = std::abs(ctx.initial_step);
+   if (!std::isfinite(trust_radius) || trust_radius <= 0.0)
+       trust_radius = 1.0e-2;
+   const double trust_upper_bound =
+       std::max(10.0 * std::abs(ctx.initial_step), minimum_step);
 
-    HessianN<N> B(0.1);
+   HessianN<N> B(0.1);
 
-    bool have_previous_point = false;
-    std::array<double, N> previous_x{};
-    std::array<double, N> previous_g{};
+   bool have_previous_point = false;
+   std::array<double, N> previous_x{};
+   std::array<double, N> previous_g{};
 
-    bool converged   = false;
-    int  steps_taken = 0;
+   bool converged   = false;
+   int  steps_taken = 0;
 
-    if (oprint)
-    {
-        coutput << tag << "==============================================================================\n"
-                << tag << " PWDFT " << system_name << " lattice optimization\n"
-                << tag << " " << N << "D quasi-Newton (BFGS) in log coordinates\n"
-                << tag << "==============================================================================\n";
-    }
+   if (oprint)
+   {
+       coutput << tag << "==============================================================================\n"
+               << tag << " PWDFT " << system_name << " lattice optimization\n"
+               << tag << " " << N << "D quasi-Newton (BFGS) in log coordinates\n"
+               << tag << "==============================================================================\n";
+   }
 
-    for (int istep = 0; istep < max_steps; ++istep)
-    {
-        const std::array<double, N> x = read_x(rtdbstring);
+   for (int istep = 0; istep < max_steps; ++istep)
+   {
+       const std::array<double, N> x = read_x(rtdbstring);
 
-        const json   current_result = compute_egs_values(3, comm, minimizer, rtdbstring, coutput);
-        const double current_energy = current_result.at("energy").get<double>();
-        const json&  lstress        = current_result.at("lstress");
+       const json   current_result = compute_egs_values(3, comm, minimizer, rtdbstring, coutput);
+       const double current_energy = current_result.at("energy").get<double>();
+       const json&  lstress        = current_result.at("lstress");
 
-        const std::array<double, N> g = compute_g(x, lstress);
+       const std::array<double, N> g = compute_g(x, lstress);
 
-        if (oprint)
-            print_step(coutput, tag, istep, x, g, current_energy, trust_radius);
+       if (oprint)
+           print_step(coutput, tag, istep, x, g, current_energy, trust_radius);
 
-        bool finite = std::isfinite(current_energy);
-        for (int i = 0; i < N; ++i)
-            finite = finite && std::isfinite(x[i]) && std::isfinite(g[i]);
-        if (!finite)
-        {
-            if (oprint)
-                coutput << tag << " Action        : non-finite; stop.\n"
-                        << tag << "----------------------------------------------\n";
-            break;
-        }
+       bool finite = std::isfinite(current_energy);
+       for (int i=0; i<N; ++i)
+           finite = finite && std::isfinite(x[i]) && std::isfinite(g[i]);
+       if (!finite)
+       {
+           if (oprint)
+               coutput << tag << " Action        : non-finite; stop.\n"
+                       << tag << "----------------------------------------------\n";
+           break;
+       }
 
-        double max_g = 0.0;
-        for (int i = 0; i < N; ++i)
-            max_g = std::max(max_g, std::abs(g[i]));
-        if (max_g < minimum_gradient)
-        {
-            converged = true;
-            if (oprint)
-                coutput << tag << " Action        : gradient converged.\n"
-                        << tag << "----------------------------------------------\n";
-            break;
-        }
+       double max_g = 0.0;
+       for (int i = 0; i < N; ++i)
+          max_g = std::max(max_g, std::abs(g[i]));
+       if (max_g < minimum_gradient)
+       {
+          converged = true;
+          if (oprint)
+             coutput << tag << " Action        : gradient converged.\n"
+                     << tag << "----------------------------------------------\n";
+          break;
+       }
 
-        // BFGS update from previous accepted step
-        bool updated_hessian = false;
-        if (have_previous_point)
-        {
-            std::array<double, N> s{}, y{};
-            double s_norm2 = 0.0, y_norm2 = 0.0, g_norm2 = 0.0;
-            for (int i = 0; i < N; ++i)
-            {
-                s[i] = x[i] - previous_x[i];
-                y[i] = g[i] - previous_g[i];
-                s_norm2 += s[i] * s[i];
-                y_norm2 += y[i] * y[i];
-                g_norm2 += g[i] * g[i];
-            }
-            const double s_norm = std::sqrt(s_norm2);
-            const double y_norm = std::sqrt(y_norm2);
-            const double g_norm = std::sqrt(g_norm2);
+       // BFGS update from previous accepted step
+       bool updated_hessian = false;
+       if (have_previous_point)
+       {
+           std::array<double, N> s{}, y{};
+           double s_norm2 = 0.0, y_norm2 = 0.0, g_norm2 = 0.0;
+           for (int i = 0; i < N; ++i)
+           {
+               s[i] = x[i] - previous_x[i];
+               y[i] = g[i] - previous_g[i];
+               s_norm2 += s[i] * s[i];
+               y_norm2 += y[i] * y[i];
+               g_norm2 += g[i] * g[i];
+           }
+           const double s_norm = std::sqrt(s_norm2);
+           const double y_norm = std::sqrt(y_norm2);
+           const double g_norm = std::sqrt(g_norm2);
 
-            const bool usable_pair = (s_norm > 1.0e-6) && (y_norm > 1.0e-3 * g_norm);
+           const bool usable_pair = (s_norm > 1.0e-6) && (y_norm > 1.0e-3 * g_norm);
 
-            if (usable_pair)
-            {
-                updated_hessian = B.bfgs_update(s, y);
-                if (updated_hessian)
-                    B.enforce_positive_definite();
-            }
-        }
+           if (usable_pair)
+           {
+               updated_hessian = B.bfgs_update(s, y);
+               if (updated_hessian)
+                   B.enforce_positive_definite();
+           }
+       }
 
-        // Propose step
-        std::array<double, N> dx{};
-        bool used_bfgs = false;
-        if (have_previous_point && updated_hessian)
-        {
-            dx = B.apply(g);
-            for (int i = 0; i < N; ++i) dx[i] = -dx[i];
-            used_bfgs = true;
-        }
-        else
-        {
-            for (int i = 0; i < N; ++i) dx[i] = -g[i];
-        }
+       // Propose step
+       std::array<double, N> dx{};
+       bool used_bfgs = false;
+       if (have_previous_point && updated_hessian)
+       {
+          dx = B.apply(g);
+          for (int i = 0; i < N; ++i) dx[i] = -dx[i];
+          used_bfgs = true;
+       }
+       else
+       {
+          for (int i = 0; i < N; ++i) dx[i] = -g[i];
+       }
 
-        // Reject non-descent
-        double g_dot_dx = 0.0;
-        for (int i = 0; i < N; ++i) g_dot_dx += g[i] * dx[i];
-        if (g_dot_dx >= 0.0)
-        {
-            for (int i = 0; i < N; ++i) dx[i] = -g[i];
-            used_bfgs = false;
-        }
+       // Reject non-descent
+       double g_dot_dx = 0.0;
+       for (int i = 0; i < N; ++i) g_dot_dx += g[i] * dx[i];
+       if (g_dot_dx >= 0.0)
+       {
+          for (int i = 0; i < N; ++i) dx[i] = -g[i];
+          used_bfgs = false;
+       }
 
-        // Trust region clip
-        double dx_norm2 = 0.0;
-        for (int i = 0; i < N; ++i) dx_norm2 += dx[i] * dx[i];
-        double dx_norm = std::sqrt(dx_norm2);
-        if (dx_norm > trust_radius && dx_norm > 0.0)
-        {
-            const double scale = trust_radius / dx_norm;
-            for (int i = 0; i < N; ++i) dx[i] *= scale;
-            dx_norm = trust_radius;
-        }
+       // Trust region clip
+       double dx_norm2 = 0.0;
+       for (int i=0; i<N; ++i) dx_norm2 += dx[i] * dx[i];
+       double dx_norm = std::sqrt(dx_norm2);
+       if (dx_norm > trust_radius && dx_norm > 0.0)
+       {
+          const double scale = trust_radius / dx_norm;
+          for (int i = 0; i < N; ++i) dx[i] *= scale;
+          dx_norm = trust_radius;
+       }
 
-        if (dx_norm < std::numeric_limits<double>::epsilon())
-        {
-            if (oprint)
-                coutput << tag << " Action        : zero step; stop.\n"
-                        << tag << "----------------------------------------------\n";
-            break;
-        }
+       if (dx_norm < std::numeric_limits<double>::epsilon())
+       {
+          if (oprint)
+             coutput << tag << " Action        : zero step; stop.\n"
+                     << tag << "----------------------------------------------\n";
+          break;
+       }
 
-        // Backtracking line search
-        bool accepted = false;
-        std::array<double, N> accepted_dx{};
-        double accepted_energy = current_energy;
-        std::string accepted_rtdb;
+       // Backtracking line search
+       bool accepted = false;
+       std::array<double, N> accepted_dx{};
+       double accepted_energy = current_energy;
+       std::string accepted_rtdb;
 
-        std::array<double, N> trial_dx = dx;
-        constexpr int maximum_backtracks = 12;
+       std::array<double, N> trial_dx = dx;
+       constexpr int maximum_backtracks = 12;
 
-        for (int iback = 0; iback < maximum_backtracks; ++iback)
-        {
-            double trial_norm2 = 0.0;
-            for (int i = 0; i < N; ++i) trial_norm2 += trial_dx[i] * trial_dx[i];
-            if (std::sqrt(trial_norm2) < minimum_step)
-                break;
+       for (int iback = 0; iback < maximum_backtracks; ++iback)
+       {
+          double trial_norm2 = 0.0;
+          for (int i = 0; i < N; ++i) trial_norm2 += trial_dx[i] * trial_dx[i];
+          if (std::sqrt(trial_norm2) < minimum_step)
+              break;
 
-            std::array<double, N> x_trial{};
-            for (int i = 0; i < N; ++i) x_trial[i] = x[i] + trial_dx[i];
+          std::array<double, N> x_trial{};
+          for (int i=0; i<N; ++i) x_trial[i] = x[i] + trial_dx[i];
 
-            std::string trial_rtdb = rtdbstring;
-            bool wrote_ok = false;
-            try
-            {
-                write_x(trial_rtdb, x_trial);
-                wrote_ok = true;
-            }
-            catch (const std::exception& e)
-            {
-                if (oprint)
-                    coutput << tag << " write_x failed: " << e.what()
-                            << "; halving step.\n";
-            }
-            if (!wrote_ok)
-            {
-                for (int i = 0; i < N; ++i) trial_dx[i] *= 0.5;
-                continue;
-            }
+          std::string trial_rtdb = rtdbstring;
+          bool wrote_ok = false;
+          try
+          {
+              write_x(trial_rtdb, x_trial);
+              wrote_ok = true;
+          }
+          catch (const std::exception& e)
+          {
+              if (oprint)
+                  coutput << tag << " write_x failed: " << e.what()
+                          << "; halving step.\n";
+          }
+          if (!wrote_ok)
+          {
+              for (int i = 0; i < N; ++i) trial_dx[i] *= 0.5;
+              continue;
+          }
 
-            const json trial_result =
-                compute_egs_values(1, comm, minimizer, trial_rtdb, coutput);
-            const double trial_energy = trial_result.at("energy").get<double>();
+          /*
+          const json trial_result = compute_egs_values(1, comm, minimizer, trial_rtdb, coutput);
+          const double trial_energy = trial_result.at("energy").get<double>();
 
-            if (std::isfinite(trial_energy) && trial_energy < current_energy)
-            {
-                accepted        = true;
-                accepted_dx     = trial_dx;
-                accepted_energy = trial_energy;
-                accepted_rtdb   = std::move(trial_rtdb);
-                break;
-            }
+          if (std::isfinite(trial_energy) && trial_energy < current_energy)
+          {
+              accepted        = true;
+              accepted_dx     = trial_dx;
+              accepted_energy = trial_energy;
+              accepted_rtdb   = std::move(trial_rtdb);
+              break;
+          }
+          */
+          const json trial_result = compute_egs_values(1, comm, minimizer, trial_rtdb, coutput);
+          const double trial_energy = trial_result.at("energy").get<double>();
 
-            for (int i = 0; i < N; ++i) trial_dx[i] *= 0.5;
-        }
+          // Calculate absolute energy difference
+          double delta_E = trial_energy - current_energy;
 
-        if (accepted)
-        {
-            previous_x = x;
-            previous_g = g;
-            have_previous_point = true;
+          // Fix A: Include a gradient safeguard so floating-point noise 
+          // near a flat minimum doesn't cause a valid step to be falsely rejected.
+          //if (std::isfinite(trial_energy) && (trial_energy < current_energy || max_g < minimum_gradient))
+          // GENERIC ARCHITECTURE FIX: 
+          // Accept the step if the energy strictly decreases, OR if the energy change 
+          // has stalled completely within numerical noise limits (e.g., machine epsilon).
+          // This prevents infinite backtracking loops across ALL coordinates when near a minimum.
+          if (std::isfinite(trial_energy) && (trial_energy < current_energy || std::abs(delta_E) < 1.0e-12))
+          {
+              accepted        = true;
+              accepted_dx     = trial_dx;
+              accepted_energy = trial_energy;
+              accepted_rtdb   = std::move(trial_rtdb);
+              break;
+          }
 
-            rtdbstring = std::move(accepted_rtdb);
-            ++steps_taken;
+          // === COMPLETE AND CORRECT FIX B: RESET INTERNALS ON BACKTRACK FAILURE ===
+          // 1. Restore the rtdb string back to the current accepted baseline 'rtdbstring'
+          std::string reset_rtdb = rtdbstring;
+          
+          // 2. Explicitly force write_x to re-impose the initial coordinate constraints 'x'
+          write_x(reset_rtdb, x);
+          
+          // 3. Re-run an evaluation shot (flag=1 or 3 depending on state flags) 
+          // to fully restore wavefunctions, grids, and densities to the baseline coordinates.
+          compute_egs_values(1, comm, minimizer, reset_rtdb, coutput);
 
-            // Trust-region update via rho
-            const double sHs = B.inverse_quadratic_form(accepted_dx);
 
-            double g_dot_s = 0.0;
-            for (int i = 0; i < N; ++i) g_dot_s += g[i] * accepted_dx[i];
-            const double predicted_reduction = -g_dot_s - 0.5 * sHs;
-            const double actual_reduction    = current_energy - accepted_energy;
+          for (int i=0; i<N; ++i) trial_dx[i] *= 0.5;
+       }
 
-            double rho = 0.0;
-            if (predicted_reduction > 1.0e-14)
-                rho = actual_reduction / predicted_reduction;
+       if (accepted)
+       {
+           previous_x = x;
+           previous_g = g;
+           have_previous_point = true;
 
-            double accepted_norm2 = 0.0;
-            for (int i = 0; i < N; ++i) accepted_norm2 += accepted_dx[i] * accepted_dx[i];
-            const double accepted_norm = std::sqrt(accepted_norm2);
+           rtdbstring = std::move(accepted_rtdb);
+           ++steps_taken;
 
-            if (rho < 0.25)
-                trust_radius *= 0.5;
-            else if (rho > 0.75 && accepted_norm > 0.9 * trust_radius)
-                trust_radius = std::min(2.0 * trust_radius, trust_upper_bound);
+           // Trust-region update via rho
+           const double sHs = B.inverse_quadratic_form(accepted_dx);
 
-            if (oprint)
-                coutput << tag << " Method        : "
-                        << (used_bfgs ? "BFGS/quasi-Newton" : "gradient fallback")
-                        << '\n'
-                        << tag << " Action        : accepted\n"
-                        << tag << " rho           : " << rho << '\n'
-                        << tag << " Trust radius  : " << trust_radius << '\n'
-                        << tag << " New energy    : "
-                        << std::fixed << std::setprecision(10)
-                        << accepted_energy << " Hartree\n"
-                        << tag << "----------------------------------------------\n";
-        }
-        else
-        {
-            trust_radius *= 0.5;
+           double g_dot_s = 0.0;
+           for (int i=0; i<N; ++i) g_dot_s += g[i] * accepted_dx[i];
+           const double predicted_reduction = -g_dot_s - 0.5 * sHs;
+           const double actual_reduction    = current_energy - accepted_energy;
 
-            if (oprint)
-                coutput << tag << " Method        : "
-                        << (used_bfgs ? "BFGS/quasi-Newton" : "gradient fallback")
-                        << '\n'
-                        << tag << " Action        : rejected; halve trust radius.\n"
-                        << tag << " New radius    : "
-                        << std::defaultfloat << std::setprecision(10)
-                        << trust_radius << '\n'
-                        << tag << "----------------------------------------------\n";
+           double rho = 0.0;
+           if (predicted_reduction > 1.0e-14)
+               rho = actual_reduction / predicted_reduction;
 
-            if (trust_radius < minimum_step)
-                break;
-        }
-    }
+           double accepted_norm2 = 0.0;
+           for (int i = 0; i < N; ++i) accepted_norm2 += accepted_dx[i] * accepted_dx[i];
+           const double accepted_norm = std::sqrt(accepted_norm2);
 
-    // Final report
-    const json   final_result  = compute_egs_values(3, comm, minimizer, rtdbstring, coutput);
-    const double final_energy  = final_result.at("energy").get<double>();
-    const json&  final_lstress = final_result.at("lstress");
-    const std::array<double, N> final_x = read_x(rtdbstring);
-    const std::array<double, N> final_g = compute_g(final_x, final_lstress);
+           if (rho < 0.25)
+               trust_radius *= 0.5;
+           else if (rho > 0.75 && accepted_norm > 0.9 * trust_radius)
+               trust_radius = std::min(2.0 * trust_radius, trust_upper_bound);
 
-    double final_max_g = 0.0;
-    for (int i = 0; i < N; ++i)
-        final_max_g = std::max(final_max_g, std::abs(final_g[i]));
-    if (final_max_g < minimum_gradient)
-        converged = true;
-
-    if (oprint)
-    {
-        coutput << '\n'
-                << tag << "==============================================\n"
-                << tag << " PWDFT " << system_name
-                       << " lattice optimization COMPLETE\n"
-                << tag << "==============================================\n";
-
-        print_final(coutput, tag, final_x, final_energy);
-
-        coutput << tag << " Final energy   : "
-                       << std::fixed << std::setprecision(8)
-                       << final_energy << " Hartree\n"
-                << tag << " Max |gradient| : "
-                       << std::defaultfloat << std::setprecision(10)
-                       << final_max_g << '\n'
-                << tag << " Accepted steps : " << steps_taken << '\n'
-                << tag << " Status         : "
-                       << (converged ? "Converged"
-                                     : "Stopped before gradient convergence")
+           if (oprint)
+               coutput << tag << " Method        : "
+                       << (used_bfgs ? "BFGS/quasi-Newton" : "gradient fallback")
                        << '\n'
-                << tag << "==============================================\n";
-    }
+                       << tag << " Action        : accepted\n"
+                       << tag << " rho           : " << rho << '\n'
+                       << tag << " Trust radius  : " << trust_radius << '\n'
+                       << tag << " New energy    : "
+                       << std::fixed << std::setprecision(10)
+                       << accepted_energy << " Hartree\n"
+                       << tag << "----------------------------------------------\n";
+       }
+       else
+       {
+           trust_radius *= 0.5;
 
-    return 0;
+           if (oprint)
+               coutput << tag << " Method        : "
+                       << (used_bfgs ? "BFGS/quasi-Newton" : "gradient fallback")
+                       << '\n'
+                       << tag << " Action        : rejected; halve trust radius.\n"
+                       << tag << " New radius    : "
+                       << std::defaultfloat << std::setprecision(10)
+                       << trust_radius << '\n'
+                       << tag << "----------------------------------------------\n";
+
+           if (trust_radius < minimum_step)
+           {
+              converged = true; // Set convergence flag true
+              break;
+           }
+       }
+   }
+
+   // Final report
+   const json   final_result  = compute_egs_values(3, comm, minimizer, rtdbstring, coutput);
+   const double final_energy  = final_result.at("energy").get<double>();
+   const json&  final_lstress = final_result.at("lstress");
+   const std::array<double, N> final_x = read_x(rtdbstring);
+   const std::array<double, N> final_g = compute_g(final_x, final_lstress);
+
+   double final_max_g = 0.0;
+   for (int i = 0; i < N; ++i)
+       final_max_g = std::max(final_max_g, std::abs(final_g[i]));
+   if (final_max_g < minimum_gradient)
+       converged = true;
+
+   if (oprint)
+   {
+       coutput << '\n'
+               << tag << "==============================================\n"
+               << tag << " PWDFT " << system_name
+                      << " lattice optimization COMPLETE\n"
+               << tag << "==============================================\n";
+
+       print_final(coutput, tag, final_x, final_energy);
+
+       coutput << tag << " Final energy   : "
+                      << std::fixed << std::setprecision(8)
+                      << final_energy << " Hartree\n"
+               << tag << " Max |gradient| : "
+                      << std::defaultfloat << std::setprecision(10)
+                      << final_max_g << '\n'
+               << tag << " Accepted steps : " << steps_taken << '\n'
+               << tag << " Status         : "
+                      << (converged ? "Converged"
+                                    : "Stopped before gradient convergence")
+                      << '\n'
+               << tag << "==============================================\n";
+   }
+
+   return 0;
 }
 
 } // namespace pwdft

@@ -757,39 +757,48 @@ void cgsd_energy_stress(Molecule &mymolecule, double *stress, bool doprint, std:
    double tstress[9];
 
    //**** Kinetic energy component : dE_kin/dhuv ****
+   std::memset(tstress,0.0,9*sizeof(double));
    mymolecule.psi_1ke_stress(tstress);
    if (oprint) print_stress_array("  kinetic stress (au)   ", tstress);
    accumulate(tstress);
 
    //**** Coulomb energy component : dE_Coul/dhuv ****
+   std::memset(tstress,0.0,9*sizeof(double));
    mymolecule.dng_1coulomb_stress(tstress);
    if (oprint) print_stress_array("  coulomb stress (au)   ", tstress);
    accumulate(tstress);
 
    //**** Local pseudo energy component : dE_local/dhuv ****
+   std::memset(tstress,0.0,9*sizeof(double));
    mymolecule.dng_1local_stress(tstress);
    if (oprint) print_stress_array(" local psp stress (au)  ", tstress);
    accumulate(tstress);
 
    //**** Nonlocal pseudo energy component : dE_nolocal/dhuv ****
+   std::memset(tstress,0.0,9*sizeof(double));
    mymolecule.psi_1nonlocal_stress(tstress);
    if (oprint) print_stress_array("nonlocal psp stress (au)", tstress);
    accumulate(tstress);
-   
+
    //**** xc energy component : dE_xc/dhuv ****
+   std::memset(tstress,0.0,9*sizeof(double));
    mymolecule.rho_1xc_stress(tstress);
    if (oprint) print_stress_array("    xc stress (au)      ", tstress);
    accumulate(tstress);
 
    //**** Core-correction xcb energy component : dE_core/dhuv ****
+   std::memset(tstress,0.0,9*sizeof(double));
    mymolecule.rho_1semicore_stress(tstress);
    if (oprint) print_stress_array("   semicore stress (au) ", tstress);
    accumulate(tstress);
 
+
    //**** Ewald energy component : dE_ewald/dhuv ****
+   std::memset(tstress,0.0,9*sizeof(double));
    mymolecule.ewald_stress(tstress);
    if (oprint) print_stress_array("   ewald stress (au)    ", tstress);
    accumulate(tstress);
+
 
    //**** SIC energy component : dE_SIC/dhuv ****
    //mymolecule.electron_SIC_stress(tstress);

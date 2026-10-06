@@ -904,10 +904,8 @@ int main(int argc, char *argv[]) {
         nwinput.resize(nwinput_size);
      MPI_Bcast(const_cast<char *>(nwinput.data()), nwinput_size, MPI_CHAR, MASTER, MPI_COMM_WORLD);
   }
-  if (oprint) std::cout << "HERA" << std::endl;
 
   MPI_Barrier(MPI_COMM_WORLD);
-  if (oprint) std::cout << "HERB" << std::endl;
   std::string rtdbstr = parse_nwinput(nwinput);
 
   rtdbstr = resolve_symmetry_and_cell(rtdbstr);
