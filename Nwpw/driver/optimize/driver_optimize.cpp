@@ -164,7 +164,7 @@ static bool update_unita_frozen(std::string& rtdbstring, std::ostream& coutput, 
 
    std::array<double, 9> frozen_unita{};
 
-   const bool has_frozen_unita = read_unita(simulation_cell.value( "unita_frozen", json{}), frozen_unita);
+   const bool has_frozen_unita = read_unita(simulation_cell.value("unita_frozen", json{}), frozen_unita);
 
    if (!has_frozen_unita)
    {
@@ -355,6 +355,96 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
               << tag << "  current physical lattice, not unita_frozen.\n"
               << tag << '\n'
               << tag << std::string(width, '-') << '\n';
+   }
+
+
+   // Print the initial geometry and lattice.
+   if (oprint)
+   {
+      constexpr double bohr_to_angstrom_local = 0.529177;
+
+      const std::string geomname =
+          (parse_json.contains("geometry") &&
+           parse_json["geometry"].is_string())
+              ? parse_json["geometry"].get<std::string>()
+              : "geometry";
+
+      if (parse_json.contains("geometries") &&
+          parse_json["geometries"].is_object() &&
+          parse_json["geometries"].contains(geomname))
+      {
+         const json& geometry = parse_json["geometries"].at(geomname);
+
+         coutput << '\n'
+                 << tag << "==============================================\n"
+                 << tag << " Initial lattice and geometry\n"
+                 << tag << "==============================================\n";
+
+         // --- lattice vectors ---
+         std::array<double, 9> unita{};
+         if (read_unita(geometry.value("unita", json{}), unita))
+         {
+            coutput << tag << " Lattice vectors (bohr):\n";
+            for (int i = 0; i < 3; ++i)
+            {
+               coutput << tag << "   a" << (i+1) << " = < "
+                       << std::fixed << std::setprecision(6)
+                       << std::setw(12) << unita[3*i + 0] << " "
+                       << std::setw(12) << unita[3*i + 1] << " "
+                       << std::setw(12) << unita[3*i + 2] << " >\n";
+            }
+
+            // --- lattice parameters ---
+            const TriclinicLattice tl = read_triclinic_lattice(rtdbstring);
+
+            coutput << tag << " Lattice parameters:\n";
+            coutput << tag << "   a     = " << std::fixed << std::setprecision(6)
+                    << tl.a << " bohr ("
+                    << tl.a * bohr_to_angstrom_local << " A)\n";
+            coutput << tag << "   b     = " << tl.b << " bohr ("
+                    << tl.b * bohr_to_angstrom_local << " A)\n";
+            coutput << tag << "   c     = " << tl.c << " bohr ("
+                    << tl.c * bohr_to_angstrom_local << " A)\n";
+            coutput << tag << "   alpha = " << std::fixed << std::setprecision(4)
+                    << tl.alpha_rad * 180.0 / M_PI << " deg\n";
+            coutput << tag << "   beta  = "
+                    << tl.beta_rad  * 180.0 / M_PI << " deg\n";
+            coutput << tag << "   gamma = "
+                    << tl.gamma_rad * 180.0 / M_PI << " deg\n";
+         }
+
+         // --- atom positions ---
+         const bool has_coords =
+             geometry.contains("coords") && geometry["coords"].is_array();
+         const bool has_symbols =
+             geometry.contains("symbols") && geometry["symbols"].is_array();
+
+         if (has_coords && geometry["coords"].size() % 3 == 0)
+         {
+            const std::size_t n_atoms = geometry["coords"].size() / 3;
+
+            coutput << tag << " Initial atom positions (bohr):\n";
+            for (std::size_t i = 0; i < n_atoms; ++i)
+            {
+               const double x = geometry["coords"][3*i + 0].get<double>();
+               const double y = geometry["coords"][3*i + 1].get<double>();
+               const double z = geometry["coords"][3*i + 2].get<double>();
+
+               coutput << tag << "   " << std::setw(4) << (i + 1) << " ";
+
+               if (has_symbols && i < geometry["symbols"].size())
+                  coutput << std::setw(2) << geometry["symbols"][i].get<std::string>() << " ";
+
+               coutput << "( "
+                       << std::fixed << std::setprecision(6)
+                       << std::setw(12) << x << " "
+                       << std::setw(12) << y << " "
+                       << std::setw(12) << z << " )\n";
+            }
+         }
+
+         coutput << tag << "==============================================\n";
+      }
    }
 
   

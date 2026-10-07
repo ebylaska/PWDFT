@@ -288,8 +288,8 @@ json compute_egs_values(const int option,
     }
 
     request["driver"]["cell_optimization"] = true;
-    request["driver"]["use_frozen_lattice"] = true;
-    //request["driver"]["use_frozen_lattice"] = false;
+    //request["driver"]["use_frozen_lattice"] = true;
+    request["driver"]["use_frozen_lattice"] = false;
 
     const std::string tag = "@";
     print_lattice_state(request, coutput, tag);
