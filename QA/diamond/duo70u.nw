@@ -1,0 +1,53 @@
+title "swnc: e theory=pspw xc=pbe formula=C8 charge=0 mult=1"
+#machinejob:expert
+ 
+echo
+permanent_dir ./perm50
+scratch_dir   ./perm50
+
+start pspw-pbe-C8
+ 
+memory heap 950 mb stack 900 mb global 10 mb
+ 
+charge 0
+
+geometry noautoz nocenter noautosym 
+   system crystal
+      lat_a 3.63866
+      lat_b 3.63866
+      lat_c 3.63866
+      alpha 90.0
+      beta  90.0
+      gamma 90.0
+   end
+ 
+C 0.000000 0.000000 0.000000
+ 
+symmetry Fd-3m setting 1 conventional
+end
+
+nwpw
+  ### pseudopotential block begin ###
+  ### pseudopotential block end   ###
+  cutoff 50.0 200.0
+  mult 1
+  xc pbe
+  lmbfgs grassman
+  2d-hcurve
+  includestress
+  tolerances 1.0e-11 1.0e-11
+  ewald_ncut 10
+  ewald_rcut 3.0
+end
+task pspw stress
+ 
+ 
+### restart here ###
+#driver
+#   clear
+#   lattice_only
+#   #geometry_lattice_alternating
+#   lattice_maxiter 25
+#end
+#
+#task pspw relax
