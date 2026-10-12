@@ -839,10 +839,14 @@ Control2::Control2(const int np0, const std::string rtdbstring)
    {
       use_frozen_lattice = true;
    }
-   
-  std::cout << "USE_FROZEN_LATTICE=" << use_frozen_lattice << std::endl;
 
-   if (use_frozen_lattice)
+   const bool is_trial = rtdbjson.contains("driver") &&
+                      rtdbjson["driver"].is_object() &&
+                      rtdbjson["driver"].value("trial_evaluation", false);
+
+
+   //if (use_frozen_lattice)
+   if (use_frozen_lattice && !is_trial)
    {
       double rtdb_unita_frozen[9] = {};
      
@@ -862,7 +866,12 @@ Control2::Control2(const int np0, const std::string rtdbstring)
               frozen_squared += rtdb_unita_frozen[i] * rtdb_unita_frozen[i];
           }
      
-          constexpr double lattice_tolerance = 0.05;
+          //constexpr double lattice_tolerance = 0.05;
+          const double lattice_tolerance = (rtdbjson["driver"].is_object() &&
+                                            rtdbjson["driver"].contains("lattice_tolerance") &&
+                                            rtdbjson["driver"]["lattice_tolerance"].is_number())
+                                           ? rtdbjson["driver"]["lattice_tolerance"].get<double>()
+                                           : 0.05;
      
           const double relative_difference = std::sqrt(difference_squared) / std::max(1.0, std::sqrt(frozen_squared));
      
@@ -889,42 +898,7 @@ Control2::Control2(const int np0, const std::string rtdbstring)
       }
    }
 
-   if (rtdbjson.contains("driver") &&
-       rtdbjson["driver"].is_object() &&
-       rtdbjson["driver"].contains("relax_type"))
-   {
-      // Fallback to 1 (LattticeOnly) if the key is structurally corrupted
-      pdriver_relax_type = rtdbjson["driver"].value("relax_type", 1);
-   }
 
-
-if (rtdbjson.contains("driver") &&
-    rtdbjson["driver"].is_object() &&
-    rtdbjson["driver"].value(
-        "use_frozen_lattice",
-        false))
-{
-    std::cout
-        << "@Control2 using RTDB frozen lattice: "
-        << punita_frozen[0] << " "
-        << punita_frozen[4] << " "
-        << punita_frozen[8]
-        << '\n';
-}
-    std::cout
-        << "@Control2 using RTDB lattice: "
-        << punita[0] << " " << punita[1] << " " << punita[2]
-        << punita[3] << " " << punita[4] << " " << punita[5]
-        << punita[6] << " " << punita[7] << " " << punita[8]
-        << '\n';
-
-    std::cout
-        << "@Control2 using RTDB frozen lattice: "
-        << punita_frozen[0] << " " << punita_frozen[1] << " " << punita_frozen[2]
-        << punita_frozen[3] << " " << punita_frozen[4] << " " << punita_frozen[5]
-        << punita_frozen[6] << " " << punita_frozen[7] << " " << punita_frozen[8]
-        << '\n';
-  
 
 /*
 
@@ -1270,6 +1244,10 @@ if (rtdbjson.contains("driver") &&
    get("combined_step", pdriver_combined_step);
    get("combined_xmin", pdriver_combined_xmin);
 
+   get("relax_type", pdriver_relax_type);
+   get("use_frozen_lattice", pdriver_use_frozen_lattice);
+   get("lattice_tolerance", pdriver_lattice_tolerance);
+
    phessian_print = driver_json.value("hessian_print", phessian_print);
 
 
@@ -1290,36 +1268,6 @@ if (rtdbjson.contains("driver") &&
 
 
 
-
-   /*
-   if (rtdbjson["driver"].contains("symmetry_lock") && rtdbjson["driver"]["symmetry_lock"].is_boolean())
-      symmetry_lock_ = rtdbjson["driver"]["symmetry_lock"]; 
-
-   if (!rtdbjson["driver"]["maxiter"].is_null()) {
-     pdriver_maxiter = rtdbjson["driver"]["maxiter"];
-   }
-   if (!rtdbjson["driver"]["lmbfgs_size"].is_null()) {
-     pdriver_lmbfgs_size = rtdbjson["driver"]["lmbfgs_size"];
-   }
-   if (!rtdbjson["driver"]["gmax"].is_null()) {
-     pdriver_gmax = rtdbjson["driver"]["gmax"];
-   }
-   if (!rtdbjson["driver"]["grms"].is_null()) {
-     pdriver_grms = rtdbjson["driver"]["grms"];
-   }
-   if (!rtdbjson["driver"]["xmax"].is_null()) {
-     pdriver_xmax = rtdbjson["driver"]["xmax"];
-   }
-   if (!rtdbjson["driver"]["xrms"].is_null()) {
-     pdriver_xrms = rtdbjson["driver"]["xrms"];
-   }
-   if (!rtdbjson["driver"]["trust"].is_null()) {
-     pdriver_trust = rtdbjson["driver"]["trust"];
-   }
-
-   // Hessian print
-   phessian_print = rtdbjson.value("driver", nlohmann::json{}).value("hessian_print", phessian_print);
-   */
 
 
    // pspspin

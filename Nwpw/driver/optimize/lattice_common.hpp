@@ -73,4 +73,7 @@ void set_triclinic_cell(std::string& rtdbstring,
 bool invert_3x3(const std::array<double, 9>& M,
                 std::array<double, 9>& Minv);
 
+// lattice_common.hpp
+bool read_unita_frozen(const std::string& rtdbstring, std::array<double, 9>& frozen);
+
 } // namespace pwdft

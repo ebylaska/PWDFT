@@ -244,4 +244,234 @@ void cKinetic_Operator::ke_precondition(const int nbq1, const double Ep, const i
    delete [] tmp;
 }
 
+
+/*******************************************
+ *                                         *
+ *         cKinetic_Operator::euv          *
+ *                                         *
+ *******************************************/
+//
+// Kinetic contribution to the lattice stress tensor.
+//
+// Computes
+//
+//     Aus(u,s) = Σ_k w_k Σ_n occ_n Σ_G (G+k)_u (G+k)_s |ψ_{n,G+k}|²
+//
+// then symmetrizes Aus (Aus is built symmetric by construction here,
+// since the summand is symmetric in u,s), reduces across MPI ranks,
+// doubles if spin-restricted, and finally contracts with the reciprocal
+// metric
+//
+//     hm(i,j) = (1/2π) * lattice->unitg(i,j)
+//
+// to produce
+//
+//     euv(u,v) = -Σ_s Aus(u,s) * hm(s,v).
+//
+// The occupation array, if provided, is indexed as occ[n + nbq*nsize]
+// with n in [0, nsize).
+
+namespace {
+
+inline int gxyz_component(int u, double gx, double gy, double gz)
+{
+   switch (u) {
+      case 0: return 0;  // unused; kept for clarity
+      default: return 0;
+   }
+}
+
+} // namespace
+
+void cKinetic_Operator::euv(const double *psi, double euv[3][3])
+{
+   int nbqsize    = mycneb->nbrillq;
+   int nsize      = mycneb->neq[0] + mycneb->neq[1];
+   int npack1_max = mycneb->npack1_max();
+   int shift1     = 2*npack1_max;
+
+   // Accumulate the symmetric second-moment tensor in the (G+k) basis.
+   double Aus[3][3] = {{0.0, 0.0, 0.0},
+                       {0.0, 0.0, 0.0},
+                       {0.0, 0.0, 0.0}};
+
+   int indx1n = 0;
+   for (int nbq = 0; nbq < nbqsize; ++nbq)
+   {
+      const int     npack1 = mycneb->npack(1 + nbq);
+      const double  weight = mycneb->pbrill_weight(nbq);
+      const double *Gpackx = mycneb->Gpackxyz(1 + nbq, 0);
+      const double *Gpacky = mycneb->Gpackxyz(1 + nbq, 1);
+      const double *Gpackz = mycneb->Gpackxyz(1 + nbq, 2);
+      const double *kv     = mycneb->pbrill_kvector(nbq);
+
+      const double kx = kv[0];
+      const double ky = kv[1];
+      const double kz = kv[2];
+
+      for (int u = 0; u < 3; ++u)
+      {
+         for (int s = u; s < 3; ++s)
+         {
+            double asum = 0.0;
+
+            for (int n = 0; n < nsize; ++n)
+            {
+               const double *tmp_psi = psi + indx1n + n*shift1;
+
+               double orb_sum = 0.0;
+               for (int k = 0; k < npack1; ++k)
+               {
+                  const double gx = Gpackx[k] + kx;
+                  const double gy = Gpacky[k] + ky;
+                  const double gz = Gpackz[k] + kz;
+
+                  const double g_u = (u == 0) ? gx : (u == 1) ? gy : gz;
+                  const double g_s = (s == 0) ? gx : (s == 1) ? gy : gz;
+
+                  const double re = tmp_psi[2*k    ];
+                  const double im = tmp_psi[2*k + 1];
+
+                  orb_sum += g_u * g_s * (re*re + im*im);
+               }
+               asum += orb_sum;
+            }
+            Aus[u][s] += weight * asum;
+         }
+      }
+      indx1n += nsize * shift1;
+   }
+
+   // Symmetrize (the diagonal and upper triangle are already correct).
+   for (int u = 0; u < 3; ++u)
+      for (int s = u + 1; s < 3; ++s)
+         Aus[s][u] = Aus[u][s];
+
+   // Reduce across ranks.  SumAll takes and returns the summed value.
+   for (int i = 0; i < 3; ++i)
+      for (int j = 0; j < 3; ++j)
+         Aus[i][j] = mycneb->c3db::parall->SumAll(0, Aus[i][j]);
+
+   if (mycneb->ispin == 1)
+      for (int i = 0; i < 3; ++i)
+         for (int j = 0; j < 3; ++j)
+            Aus[i][j] *= 2.0;
+
+   // Reciprocal metric * 1/(2π).
+   const double pi   = 4.0 * std::atan(1.0);
+   const double scal = 1.0 / (2.0 * pi);
+
+   double hm[3][3];
+   for (int i = 0; i < 3; ++i)
+      for (int j = 0; j < 3; ++j)
+         hm[i][j] = scal * mycneb->lattice->unitg(i, j);
+
+   // euv = -Aus * hm  (matrix product).
+   for (int u = 0; u < 3; ++u)
+      for (int v = 0; v < 3; ++v)
+      {
+         double sum = 0.0;
+         for (int s = 0; s < 3; ++s)
+            sum += Aus[u][s] * hm[s][v];
+         euv[u][v] = -sum;
+      }
+}
+
+
+
+void cKinetic_Operator::euv(const double *psi, const double *occ,
+                            double euv[3][3])
+{
+   int nbqsize    = mycneb->nbrillq;
+   int nsize      = mycneb->neq[0] + mycneb->neq[1];
+   int npack1_max = mycneb->npack1_max();
+   int shift1     = 2*npack1_max;
+
+   double Aus[3][3] = {{0.0, 0.0, 0.0},
+                       {0.0, 0.0, 0.0},
+                       {0.0, 0.0, 0.0}};
+
+   int indx1n = 0;
+   for (int nbq = 0; nbq < nbqsize; ++nbq)
+   {
+      const int     npack1 = mycneb->npack(1 + nbq);
+      const double  weight = mycneb->pbrill_weight(nbq);
+      const double *Gpackx = mycneb->Gpackxyz(1 + nbq, 0);
+      const double *Gpacky = mycneb->Gpackxyz(1 + nbq, 1);
+      const double *Gpackz = mycneb->Gpackxyz(1 + nbq, 2);
+      const double *kv     = mycneb->pbrill_kvector(nbq);
+
+      const double kx = kv[0];
+      const double ky = kv[1];
+      const double kz = kv[2];
+
+      const double *occ_k = occ + nbq*nsize;
+
+      for (int u = 0; u < 3; ++u)
+      {
+         for (int s = u; s < 3; ++s)
+         {
+            double asum = 0.0;
+
+            for (int n = 0; n < nsize; ++n)
+            {
+               const double occ_n = occ_k[n];
+               if (occ_n == 0.0) continue;
+
+               const double *tmp_psi = psi + indx1n + n*shift1;
+
+               double orb_sum = 0.0;
+               for (int k = 0; k < npack1; ++k)
+               {
+                  const double gx = Gpackx[k] + kx;
+                  const double gy = Gpacky[k] + ky;
+                  const double gz = Gpackz[k] + kz;
+
+                  const double g_u = (u == 0) ? gx : (u == 1) ? gy : gz;
+                  const double g_s = (s == 0) ? gx : (s == 1) ? gy : gz;
+
+                  const double re = tmp_psi[2*k    ];
+                  const double im = tmp_psi[2*k + 1];
+
+                  orb_sum += g_u * g_s * (re*re + im*im);
+               }
+               asum += occ_n * orb_sum;
+            }
+            Aus[u][s] += weight * asum;
+         }
+      }
+      indx1n += nsize * shift1;
+   }
+
+   for (int u = 0; u < 3; ++u)
+      for (int s = u + 1; s < 3; ++s)
+         Aus[s][u] = Aus[u][s];
+
+   for (int i = 0; i < 3; ++i)
+      for (int j = 0; j < 3; ++j)
+         Aus[i][j] = mycneb->c3db::parall->SumAll(0, Aus[i][j]);
+
+   if (mycneb->ispin == 1)
+      for (int i = 0; i < 3; ++i)
+         for (int j = 0; j < 3; ++j)
+            Aus[i][j] *= 2.0;
+
+   const double pi   = 4.0 * std::atan(1.0);
+   const double scal = 1.0 / (2.0 * pi);
+
+   double hm[3][3];
+   for (int i = 0; i < 3; ++i)
+      for (int j = 0; j < 3; ++j)
+         hm[i][j] = scal * mycneb->lattice->unitg(i, j);
+
+   for (int u = 0; u < 3; ++u)
+      for (int v = 0; v < 3; ++v)
+      {
+         double sum = 0.0;
+         for (int s = 0; s < 3; ++s)
+            sum += Aus[u][s] * hm[s][v];
+         euv[u][v] = -sum;
+      }
+}
+
 } // namespace pwdft

@@ -97,7 +97,7 @@ enum class RelaxCombinedTask {
  */
 static bool update_unita_frozen(std::string& rtdbstring, std::ostream& coutput, const double lattice_tolerance, const bool oprint)
 {
-   std::cout << "HAS INTO UPDATE_UNITA_FROZEN" << std::endl;
+   //std::cout << "HAS INTO UPDATE_UNITA_FROZEN" << std::endl;
    if (lattice_tolerance < 0.0)
    {
       if (oprint) coutput << "driver_optimizer: negative lattice tolerance\n";
@@ -237,11 +237,11 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
    // Add unita_frozen in rtdb
    //  - This driver is the unit-cell/geometry optimization path,
    //  - so establish or validate unita_frozen before Control2 reads the RTDB.
-   constexpr double lattice_tolerance = 0.05;
+   //constexpr double lattice_tolerance = 0.05;
    //constexpr double lattice_tolerance = 0.00;
 
-   if (!update_unita_frozen(rtdbstring, coutput, lattice_tolerance, master))
-      return 1;
+   //if (!update_unita_frozen(rtdbstring, coutput, lattice_tolerance, master))
+   //   return 1;
 
 
    Control2 control(myparallel.np(),rtdbstring);
@@ -252,7 +252,17 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
 
    // Initialize relax_type to a safe default fallback
    RelaxCombinedTask driver_relax_type = static_cast<RelaxCombinedTask>(control.driver_relax_type());
+   //driver_relax_type = static_cast<RelaxCombinedTask>(control.driver_relax_type());
 
+   bool  use_frozen_lattice = control.driver_use_frozen_lattice();
+   double lattice_tolerance = control.driver_lattice_tolerance();
+
+   if (!update_unita_frozen(rtdbstring, coutput, lattice_tolerance, master))
+   {
+      if (master)
+         coutput << "driver_optimizer: failed to initialize unita_frozen\n";
+      return 1;
+   }
 
 
    /* reset Parallel base_stdio_print = lprint */
@@ -338,21 +348,46 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
        
       //coutput << tag << "  Cell optimization      : RTDB unita_frozen reference lattice\n";
       if (driver_relax_type == RelaxCombinedTask::GeometryOnly) coutput << tag << "  Geometry only optimization     : RTDB unita_frozen reference lattice\n";
-      if (driver_relax_type == RelaxCombinedTask::LatticeOnly)  coutput << tag << "  Lattice only optimization      : RTDB unita_frozen reference lattice\n";
-      if (driver_relax_type == RelaxCombinedTask::Alternating)  coutput << tag << "  Alternating Geometry and Cell optimization : RTDB unita_frozen reference lattice\n";
+
+      //if (driver_relax_type == RelaxCombinedTask::LatticeOnly)  coutput << tag << "  Lattice only optimization      : RTDB unita_frozen reference lattice\n";
+      if (driver_relax_type == RelaxCombinedTask::LatticeOnly) coutput << tag << "  Lattice only optimization      : "
+                                                                              << (use_frozen_lattice ? "RTDB unita_frozen reference lattice" 
+                                                                                                     : "basis rebuilt from current cell at each evaluation") << '\n';
+
+      if (driver_relax_type == RelaxCombinedTask::Alternating)  coutput << tag << "  Alternating Geometry and Cell optimization : "
+                                                                               << (use_frozen_lattice ? "RTDB unita_frozen reference lattice"
+                                                                                                      : "basis rebuilt from current cell at each evaluation") << '\n';
+
       if (driver_relax_type == RelaxCombinedTask::Combined)     coutput << tag << "  Combined Geometry and Cell optimization : RTDB unita_frozen reference lattice\n";
 
-      coutput << tag << "  Numerical grid                 : fixed during optimization stage\n"
+
+      coutput << tag << "  Numerical grid                 : " << (use_frozen_lattice ? "fixed during optimization stage" : "changes during optimization stage") << '\n'
+              << tag << "  use_frozen_lattice             : " << (use_frozen_lattice ? "true" : "false") << '\n'
               << tag << "  Lattice tolerance              : " << lattice_tolerance << '\n' 
               << tag << "  Date                           : " << util_date() << '\n'
-              << tag << '\n'
-              << tag << "  The current lattice will change during unit-cell optimization\n"
-              << tag << "  (use_frozen_lattice==false).  RTDB variable unita_frozen stores\n"
-              << tag << "  the reference lattice used to establish the numerical grid and\n"
-              << tag << "  basis-support policy. It is reset when the relative lattice change\n"
-              << tag << "  exceeds the configured tolerance or when a new optimization stage\n"
-              << tag << "  begins. Current energy, force, and stress evaluations use the\n"
-              << tag << "  current physical lattice, not unita_frozen.\n"
+              << tag << '\n';
+
+      if (use_frozen_lattice)
+      {
+         coutput << tag << "  The numerical grid and plane-wave basis are established\n"
+                 << tag << "  from unita_frozen. As long as the current lattice stays\n"
+                 << tag << "  within the lattice tolerance of unita_frozen, the grid\n"
+                 << tag << "  and basis remain fixed and the energy surface is smooth\n"
+                 << tag << "  in the cell coordinates.\n";
+      }
+      else
+      {
+         coutput << tag << "  The numerical grid and plane-wave basis are rebuilt from\n"
+                 << tag << "  the current lattice at every energy, force, and stress\n"
+                 << tag << "  evaluation. unita_frozen is not read by the energy path.\n";
+      }
+
+      coutput << tag << '\n'
+              << tag << "  In both modes, unita_frozen is a drift reference. When\n"
+              << tag << "  the current lattice differs from unita_frozen by more\n"
+              << tag << "  than the lattice tolerance, unita_frozen is reset to the\n"
+              << tag << "  current lattice; in the frozen mode this also triggers a\n"
+              << tag << "  rebuild of the grid and plane-wave basis.\n"
               << tag << '\n'
               << tag << std::string(width, '-') << '\n';
    }
@@ -631,6 +666,101 @@ int driver_optimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream
    if (driver_relax_type == RelaxCombinedTask::Combined)
    {
    }
+
+
+   if (oprint)
+   {
+      constexpr double bohr_to_angstrom_local = 0.529177;
+     
+      const json final_json = json::parse(rtdbstring);
+     
+      const std::string geomname =
+          (final_json.contains("geometry") &&
+           final_json["geometry"].is_string())
+              ? final_json["geometry"].get<std::string>()
+              : "geometry";
+     
+      if (final_json.contains("geometries") &&
+          final_json["geometries"].is_object() &&
+          final_json["geometries"].contains(geomname))
+      {
+          const json& geometry = final_json["geometries"].at(geomname);
+     
+          coutput << '\n'
+                  << tag << "==============================================\n"
+                  << tag << " Final lattice and geometry\n"
+                  << tag << "==============================================\n";
+     
+          // ... same body as the initial-print block, but on `geometry`
+          // and reading parameters from `rtdbstring` (which is current) ...
+     
+          // --- lattice vectors ---
+          std::array<double, 9> unita{};
+          if (read_unita(geometry.value("unita", json{}), unita))
+          {
+              coutput << tag << " Lattice vectors (bohr):\n";
+              for (int i = 0; i < 3; ++i)
+              {
+                  coutput << tag << "   a" << (i+1) << " = < "
+                          << std::fixed << std::setprecision(6)
+                          << std::setw(12) << unita[3*i + 0] << " "
+                          << std::setw(12) << unita[3*i + 1] << " "
+                          << std::setw(12) << unita[3*i + 2] << " >\n";
+              }
+     
+              const TriclinicLattice tl = read_triclinic_lattice(rtdbstring);
+     
+              coutput << tag << " Lattice parameters:\n";
+              coutput << tag << "   a     = " << std::fixed << std::setprecision(6)
+                      << tl.a << " bohr ("
+                      << tl.a * bohr_to_angstrom_local << " A)\n";
+              coutput << tag << "   b     = " << tl.b << " bohr ("
+                      << tl.b * bohr_to_angstrom_local << " A)\n";
+              coutput << tag << "   c     = " << tl.c << " bohr ("
+                      << tl.c * bohr_to_angstrom_local << " A)\n";
+              coutput << tag << "   alpha = " << std::fixed << std::setprecision(4)
+                      << tl.alpha_rad * 180.0 / M_PI << " deg\n";
+              coutput << tag << "   beta  = "
+                      << tl.beta_rad  * 180.0 / M_PI << " deg\n";
+              coutput << tag << "   gamma = "
+                      << tl.gamma_rad * 180.0 / M_PI << " deg\n";
+          }
+     
+          // --- atom positions ---
+          const bool has_coords =
+              geometry.contains("coords") && geometry["coords"].is_array();
+          const bool has_symbols =
+              geometry.contains("symbols") && geometry["symbols"].is_array();
+     
+          if (has_coords && geometry["coords"].size() % 3 == 0)
+          {
+              const std::size_t n_atoms = geometry["coords"].size() / 3;
+     
+              coutput << tag << " Final atom positions (bohr):\n";
+              for (std::size_t i = 0; i < n_atoms; ++i)
+              {
+                  const double x = geometry["coords"][3*i + 0].get<double>();
+                  const double y = geometry["coords"][3*i + 1].get<double>();
+                  const double z = geometry["coords"][3*i + 2].get<double>();
+     
+                  coutput << tag << "   " << std::setw(4) << (i + 1) << " ";
+                  if (has_symbols && i < geometry["symbols"].size())
+                      coutput << std::setw(2)
+                              << geometry["symbols"][i].get<std::string>() << " ";
+     
+                  coutput << "( "
+                          << std::fixed << std::setprecision(6)
+                          << std::setw(12) << x << " "
+                          << std::setw(12) << y << " "
+                          << std::setw(12) << z << " )\n";
+              }
+          }
+     
+          coutput << tag << "==============================================\n";
+      }
+   }
+
+
 
    return 0;
 

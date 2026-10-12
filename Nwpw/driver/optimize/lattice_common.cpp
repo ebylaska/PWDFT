@@ -68,53 +68,53 @@ void print_lattice_state(const json& rtdbjson,
         }
     }
 
-    if (current_unita != nullptr && current_unita->size() == 9)
-    {
-        coutput << tag << "Current unita:\n";
-        for (int j=0; j<3; ++j)
-        {
-            coutput << std::setprecision(10)
-                    << tag << "  "
-                    << (*current_unita)[3*j + 0].get<double>() << " "
-                    << (*current_unita)[3*j + 1].get<double>() << " "
-                    << (*current_unita)[3*j + 2].get<double>() << '\n';
-        }
-    }
+    //if (current_unita != nullptr && current_unita->size() == 9)
+    //{
+    //    //coutput << tag << "Current unita:\n";
+    //    for (int j=0; j<3; ++j)
+    //    {
+    //        //coutput << std::setprecision(10)
+    //        //        << tag << "  "
+    //        //        << (*current_unita)[3*j + 0].get<double>() << " "
+    //        //        << (*current_unita)[3*j + 1].get<double>() << " "
+    //        //        << (*current_unita)[3*j + 2].get<double>() << '\n';
+    //    }
+    //}
 
-    if (frozen_unita != nullptr && frozen_unita->size() == 9)
-    {
-        coutput << tag << "Frozen unita_frozen:\n";
-        for (int j = 0; j < 3; ++j)
-        {
-            coutput << std::setprecision(10)
-                    << tag << "  "
-                    << (*frozen_unita)[3*j + 0].get<double>() << " "
-                    << (*frozen_unita)[3*j + 1].get<double>() << " "
-                    << (*frozen_unita)[3*j + 2].get<double>() << '\n';
-        }
-    }
+    //if (frozen_unita != nullptr && frozen_unita->size() == 9)
+    //{
+    //    //coutput << tag << "Frozen unita_frozen:\n";
+    //    for (int j = 0; j < 3; ++j)
+    //    {
+    //        //coutput << std::setprecision(10)
+    //        //        << tag << "  "
+    //        //        << (*frozen_unita)[3*j + 0].get<double>() << " "
+    //        //        << (*frozen_unita)[3*j + 1].get<double>() << " "
+    //        //        << (*frozen_unita)[3*j + 2].get<double>() << '\n';
+    //    }
+    //}
 
-    if (rtdbjson.contains("driver") &&
-        rtdbjson["driver"].is_object() &&
-        rtdbjson["driver"].contains("numerical_grid") &&
-        rtdbjson["driver"]["numerical_grid"].is_object())
-    {
-        const json& grid = rtdbjson["driver"]["numerical_grid"];
+    //if (rtdbjson.contains("driver") &&
+    //    rtdbjson["driver"].is_object() &&
+    //    rtdbjson["driver"].contains("numerical_grid") &&
+    //    rtdbjson["driver"]["numerical_grid"].is_object())
+    //{
+    //    const json& grid = rtdbjson["driver"]["numerical_grid"];
+    //    //coutput << tag
+    //    //        << "FFT grid = " << grid.value("nx", -1)
+    //    //        << " x "         << grid.value("ny", -1)
+    //    //        << " x "         << grid.value("nz", -1)
+    //    //        << " waves0 = "  << grid.value("nwave0", -1)
+    //    //        << " waves1 = "  << grid.value("nwave1", -1)
+    //    //        << " npack0 = "  << grid.value("npack0", -1)
+    //    //        << " npack1 = "  << grid.value("npack1", -1)
+    //    //        << '\n';
+    //}
+    //else
+    //{
+    //    //coutput << tag << "Numerical grid: unavailable\n";
+    //}
 
-        coutput << tag
-                << "FFT grid = " << grid.value("nx", -1)
-                << " x "         << grid.value("ny", -1)
-                << " x "         << grid.value("nz", -1)
-                << " waves0 = "  << grid.value("nwave0", -1)
-                << " waves1 = "  << grid.value("nwave1", -1)
-                << " npack0 = "  << grid.value("npack0", -1)
-                << " npack1 = "  << grid.value("npack1", -1)
-                << '\n';
-    }
-    else
-    {
-        coutput << tag << "Numerical grid: unavailable\n";
-    }
 }
 
 // ---------------------------------------------------------------------------
@@ -275,21 +275,25 @@ json compute_egs_values(const int option,
     {
        request["current_task"] = "task pspw energy";
        request["nwpw"]["includestress"] = false;
+       request["driver"]["trial_evaluation"] = true;   // NEW
     }
     else if (option == 2)
     {
        request["current_task"] = "task pspw gradient";
        request["nwpw"]["includestress"] = false;
+       request["driver"]["trial_evaluation"] = false;
     }
     else // option == 3
     {
        request["current_task"] = "task pspw stress";
        request["nwpw"]["includestress"] = true;
+       request["driver"]["trial_evaluation"] = false;
     }
 
     request["driver"]["cell_optimization"] = true;
     //request["driver"]["use_frozen_lattice"] = true;
-    request["driver"]["use_frozen_lattice"] = false;
+    //request["driver"]["use_frozen_lattice"] = false;
+    //coutput << "USE_FROZEN:" << request["driver"]["use_frozen_lattice"] << std::endl;
 
     const std::string tag = "@";
     print_lattice_state(request, coutput, tag);
@@ -1100,6 +1104,24 @@ void set_triclinic_cell(std::string& rtdbstring,
     }
 
     rtdbstring = rtdb.dump();
+}
+
+// lattice_common.cpp
+bool read_unita_frozen(const std::string& rtdbstring, std::array<double, 9>& frozen)
+{
+    const json rtdb = json::parse(rtdbstring);
+
+    if (!rtdb.contains("nwpw") ||
+        !rtdb["nwpw"].is_object() ||
+        !rtdb["nwpw"].contains("simulation_cell") ||
+        !rtdb["nwpw"]["simulation_cell"].is_object())
+        return false;
+
+    const json& cell = rtdb["nwpw"]["simulation_cell"];
+    if (!cell.contains("unita_frozen"))
+        return false;
+
+    return read_unita(cell["unita_frozen"], frozen);
 }
 
 

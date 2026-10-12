@@ -221,7 +221,12 @@ int run_quasi_newton(std::string& rtdbstring,
    std::array<double, N> previous_g{};
 
    bool converged   = false;
+   bool stalled     = false;      // NEW
+   int  consecutive_rejections = 0; // NEW
    int  steps_taken = 0;
+
+   std::array<double, 9> last_frozen{};
+   bool have_last_frozen = false;
 
    if (oprint)
    {
@@ -233,11 +238,90 @@ int run_quasi_newton(std::string& rtdbstring,
 
    for (int istep = 0; istep < max_steps; ++istep)
    {
+      // Snapshot the current frozen reference.
+      std::array<double, 9> current_frozen{};
+      const bool have_current_frozen = read_unita_frozen(rtdbstring, current_frozen);
+
+      if (have_last_frozen && have_current_frozen)
+      {
+          bool frozen_changed = false;
+          for (int i = 0; i < 9; ++i)
+          {
+              if (std::abs(last_frozen[i] - current_frozen[i]) > 1.0e-12)
+              {
+                  frozen_changed = true;
+                  break;
+              }
+          }
+
+          if (frozen_changed)
+          {
+              have_previous_point = false;
+              B.reset_to_scaled_identity(0.1);
+              //trust_radius = std::abs(ctx.initial_step);
+              trust_radius = std::max(minimum_step, 0.5 * trust_radius);
+              if (trust_radius <= 0.0 || !std::isfinite(trust_radius))
+                  trust_radius = 1.0e-2;
+
+              if (oprint)
+                  coutput << tag << " Action        : frozen lattice reset "
+                          << "detected between steps; BFGS history cleared.\n";
+          }
+      }
+
+      if (have_current_frozen)
+      {
+         last_frozen = current_frozen;
+         have_last_frozen = true;
+      }
+
+
        const std::array<double, N> x = read_x(rtdbstring);
+
+       // Snapshot unita_frozen before the evaluation.
+       //std::array<double, 9> frozen_before{};
+       //const bool had_frozen = read_unita_frozen(rtdbstring, frozen_before);
+
 
        const json   current_result = compute_egs_values(3, comm, minimizer, rtdbstring, coutput);
        const double current_energy = current_result.at("energy").get<double>();
        const json&  lstress        = current_result.at("lstress");
+
+
+       // Did the drift check inside pspw_minimizer fire during this eval?
+       /*
+       std::array<double, 9> frozen_after{};
+       const bool has_frozen = read_unita_frozen(rtdbstring, frozen_after);
+
+       bool frozen_changed = false;
+       if (had_frozen && has_frozen)
+       {
+           for (int i = 0; i < 9; ++i)
+           {
+               if (std::abs(frozen_before[i] - frozen_after[i]) > 1.0e-12)
+               {
+                   frozen_changed = true;
+                   break;
+               }
+           }
+       }
+
+       if (frozen_changed)
+       {
+           // The reference basis has been re-pinned. The current gradient is
+           // evaluated on the new basis; any previously stored (x, g) pair is
+           // on the old one. Discard the BFGS history and the trust radius.
+           have_previous_point = false;
+           B.reset_to_scaled_identity(0.1);
+           trust_radius = std::abs(ctx.initial_step);
+           if (trust_radius <= 0.0 || !std::isfinite(trust_radius))
+               trust_radius = 1.0e-2;
+
+           if (oprint)
+               coutput << tag << " Action        : frozen lattice reset; "
+                              << "BFGS history cleared.\n";
+       }
+       */
 
        const std::array<double, N> g = compute_g(x, lstress);
 
@@ -401,7 +485,8 @@ int run_quasi_newton(std::string& rtdbstring,
           // Accept the step if the energy strictly decreases, OR if the energy change 
           // has stalled completely within numerical noise limits (e.g., machine epsilon).
           // This prevents infinite backtracking loops across ALL coordinates when near a minimum.
-          if (std::isfinite(trial_energy) && (trial_energy < current_energy || std::abs(delta_E) < 1.0e-12))
+          //if (std::isfinite(trial_energy) && (trial_energy < current_energy || std::abs(delta_E) < 1.0e-12))
+          if (std::isfinite(trial_energy) && trial_energy < current_energy)
           {
               accepted        = true;
               accepted_dx     = trial_dx;
@@ -412,14 +497,14 @@ int run_quasi_newton(std::string& rtdbstring,
 
           // === COMPLETE AND CORRECT FIX B: RESET INTERNALS ON BACKTRACK FAILURE ===
           // 1. Restore the rtdb string back to the current accepted baseline 'rtdbstring'
-          std::string reset_rtdb = rtdbstring;
+          //std::string reset_rtdb = rtdbstring;
           
           // 2. Explicitly force write_x to re-impose the initial coordinate constraints 'x'
-          write_x(reset_rtdb, x);
+          //write_x(reset_rtdb, x);
           
           // 3. Re-run an evaluation shot (flag=1 or 3 depending on state flags) 
           // to fully restore wavefunctions, grids, and densities to the baseline coordinates.
-          compute_egs_values(1, comm, minimizer, reset_rtdb, coutput);
+          //compute_egs_values(1, comm, minimizer, reset_rtdb, coutput);
 
 
           for (int i=0; i<N; ++i) trial_dx[i] *= 0.5;
@@ -433,6 +518,7 @@ int run_quasi_newton(std::string& rtdbstring,
 
            rtdbstring = std::move(accepted_rtdb);
            ++steps_taken;
+           consecutive_rejections = 0;   // NEW: any accepted step resets the counter
 
            // Trust-region update via rho
            const double sHs = B.inverse_quadratic_form(accepted_dx);
@@ -469,23 +555,32 @@ int run_quasi_newton(std::string& rtdbstring,
        }
        else
        {
-           trust_radius *= 0.5;
+          ++consecutive_rejections;    // NEW
 
-           if (oprint)
-               coutput << tag << " Method        : "
-                       << (used_bfgs ? "BFGS/quasi-Newton" : "gradient fallback")
-                       << '\n'
-                       << tag << " Action        : rejected; halve trust radius.\n"
-                       << tag << " New radius    : "
-                       << std::defaultfloat << std::setprecision(10)
-                       << trust_radius << '\n'
-                       << tag << "----------------------------------------------\n";
+          if (consecutive_rejections >= 3)
+          {
+             stalled = true;
+             break;
+          }
 
-           if (trust_radius < minimum_step)
-           {
-              converged = true; // Set convergence flag true
-              break;
-           }
+          trust_radius *= 0.5;
+
+          if (oprint)
+             coutput << tag << " Method        : "
+                     << (used_bfgs ? "BFGS/quasi-Newton" : "gradient fallback")
+                     << '\n'
+                     << tag << " Action        : rejected; halve trust radius.\n"
+                     << tag << " New radius    : "
+                     << std::defaultfloat << std::setprecision(10)
+                     << trust_radius << '\n'
+                     << tag << "----------------------------------------------\n";
+
+          if (trust_radius < minimum_step)
+          {
+             //converged = true; // Set convergence flag true
+             stalled = true;
+             break;
+          }
        }
    }
 
@@ -504,6 +599,14 @@ int run_quasi_newton(std::string& rtdbstring,
 
    if (oprint)
    {
+       std::string status;
+       if (converged)
+           status = "Converged";
+       else if (stalled)
+           status = "Stalled (no step improves the energy)";
+       else
+           status = "Stopped before gradient convergence";
+
        coutput << '\n'
                << tag << "==============================================\n"
                << tag << " PWDFT " << system_name
@@ -519,11 +622,21 @@ int run_quasi_newton(std::string& rtdbstring,
                       << std::defaultfloat << std::setprecision(10)
                       << final_max_g << '\n'
                << tag << " Accepted steps : " << steps_taken << '\n'
-               << tag << " Status         : "
-                      << (converged ? "Converged"
-                                    : "Stopped before gradient convergence")
-                      << '\n'
+               << tag << " Status         : " << status << '\n'
                << tag << "==============================================\n";
+
+       //coutput << tag << " Final energy   : "
+       //               << std::fixed << std::setprecision(8)
+       //               << final_energy << " Hartree\n"
+       //        << tag << " Max |gradient| : "
+       //               << std::defaultfloat << std::setprecision(10)
+       //               << final_max_g << '\n'
+       //        << tag << " Accepted steps : " << steps_taken << '\n'
+       //        << tag << " Status         : "
+       //               << (converged ? "Converged"
+       //                             : "Stopped before gradient convergence")
+       //               << '\n'
+       //        << tag << "==============================================\n";
    }
 
    return 0;

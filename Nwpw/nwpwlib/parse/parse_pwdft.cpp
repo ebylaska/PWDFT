@@ -2583,21 +2583,36 @@ static json parse_driver(json driverjson, int *curptr,
     line = mystring_lowercase(lines[cur]);
 
     if (mystring_contains(line, "lattice_maxiter")) {
-      ss = mystring_split0(line);
-      if (ss.size() > 1)
-        driverjson["lattice_maxiter"] = std::stoi(ss[1]);
+       ss = mystring_split0(line);
+       if (ss.size() > 1)
+          driverjson["lattice_maxiter"] = std::stoi(ss[1]);
     } else if (mystring_contains(line, "lattice_gmax")) {
-      ss = mystring_split0(line);
-      if (ss.size() == 2)
-        driverjson["lattice_gmax"] = std::stod(ss[1]);
+       ss = mystring_split0(line);
+       if (ss.size() == 2)
+          driverjson["lattice_gmax"] = std::stod(ss[1]);
     } else if (mystring_contains(line, "lattice_step")) {
       ss = mystring_split0(line);
       if (ss.size() == 2)
         driverjson["lattice_step"] = std::stod(ss[1]);
     } else if (mystring_contains(line, "lattice_xmin")) {
-      ss = mystring_split0(line);
-      if (ss.size() == 2)
-        driverjson["lattice_xmin"] = std::stod(ss[1]);
+       ss = mystring_split0(line);
+       if (ss.size() == 2)
+          driverjson["lattice_xmin"] = std::stod(ss[1]);
+
+    } else if (mystring_contains(line, "use_frozen_lattice")) {
+       bool flag = true;
+       ss = mystring_split0(line);
+       if (ss.size() > 1) {
+          std::string val = ss[1];
+          std::transform(val.begin(), val.end(), val.begin(), ::tolower);
+          if (val == "0" || val == "false" || val == "no" || val == "off" || val == "noprint")
+             flag = false;
+       }
+       driverjson["use_frozen_lattice"] = flag;
+       
+    } else if (mystring_contains(line, "lattice_tolerance")) {
+       ss = mystring_split0(line);
+       driverjson["lattice_tolerance"] = std::stod(ss[1]);
 
     } else if (mystring_contains(line, "combined_maxiter")) {
       ss = mystring_split0(line);

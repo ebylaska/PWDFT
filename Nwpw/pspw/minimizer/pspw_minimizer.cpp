@@ -71,6 +71,18 @@ int pspw_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
       E[ii] = 0.0;
  
    Control2 control(myparallel.np(), rtdbstring);
+   if (control.unita_frozen_changed())
+   {
+      double new_frozen[9];
+      control.get_unita_frozen(new_frozen);
+
+      json rtdb_out = json::parse(rtdbstring);
+      json arr = json::array();
+      for (int i = 0; i < 9; ++i) arr.push_back(new_frozen[i]);
+      rtdb_out["nwpw"]["simulation_cell"]["unita_frozen"] = arr;
+      rtdbstring = rtdb_out.dump();
+   }
+
    int flag = control.task();
 
    bool hprint = (myparallel.is_master() && control.print_level("high"));

@@ -84,6 +84,9 @@ class Control2 {
    double pdriver_combined_step  = 0.0025;
    double pdriver_combined_xmin  = 1.0e-5;
 
+   bool   pdriver_use_frozen_lattice = false;
+   double pdriver_lattice_tolerance = 0.05;
+
  
    bool pgeometry_optimize;
  
@@ -689,7 +692,12 @@ public:
    double thermo_temperature() { return ptemperature; }
    double thermo_freq_scale() { return pfreq_scale; }
 
-   int driver_relax_type() { return  pdriver_relax_type; }
+   int    driver_relax_type() { return  pdriver_relax_type; }
+   bool   driver_use_frozen_lattice() { return  pdriver_use_frozen_lattice; }
+   double driver_lattice_tolerance() { return  pdriver_lattice_tolerance; }
+
+   bool unita_frozen_changed() const { return punita_frozen_changed; }
+   void get_unita_frozen(double* out) const { std::memcpy(out, punita_frozen, 9*sizeof(double)); }
 
 };
 

@@ -352,24 +352,6 @@ void util_cell_lattice_gradient(const double stressin_f[9],
        }
      }
    }
-
-std::cout
-    << "@util_cell_lattice_gradient\n"
-    << "@  unita = "
-    << unita_f[0] << " "
-    << unita_f[4] << " "
-    << unita_f[8] << '\n'
-    << "@  stress diagonal = "
-    << stressin_f[0] << " "
-    << stressin_f[4] << " "
-    << stressin_f[8] << '\n'
-    << "@  lstress = "
-    << lstress[0] << " "
-    << lstress[1] << " "
-    << lstress[2] << '\n';
 }
-
-
-
 
 }
