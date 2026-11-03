@@ -805,7 +805,7 @@ static void cpp_write(CGrid *mygrid, char *fname, char *comment, int psp_type, i
    }
 
    /* write out brillouin zone */
-  int nbrillouin = mygrid->mybrillouin->nbrillouin;
+   int nbrillouin = mygrid->mybrillouin->nbrillouin;
    if (parall->is_master()) 
    {
       iwrite(6, &nbrillouin, 1);
@@ -1353,6 +1353,414 @@ static void cpp_generate(CGrid *mygrid, char *pspname, char *fname, char *commen
          coutput << "in cpp_generate Not finished, psp_type = " << *psp_type << std::endl;
    }
 }
+
+
+                        
+/*******************************************
+ *                                         *
+ *                cpp2_read                *
+ *                                         *
+ *******************************************/
+static void cpp2_read(CGrid *mygrid, char *fname2, char *comment, int *psp_type, int *version,
+                     int *nfft, double *unita, char *atom, double *amass, double *zv,
+                     int *lmmax, int *lmax, int *locp, int *nmax, double **rc, int *nprj,
+                     int **n_projector, int **l_projector, int **m_projector,
+                     int **b_projector, double **Gijl, double *rlocal, bool *semicore,
+                     double *rcore, double **ncore, double *dvl, double **dvnl,
+                     std::ostream &coutput)
+{
+   nwpw_timing_function ftimer(50);
+   int i, nn;
+   double *tmp2, *prj;
+   Parallel *parall = mygrid->c3db::parall;
+   int taskid   = parall->taskid();
+   int taskid_k = parall->taskid_k();
+
+   *rlocal = 0.0;
+
+   if (parall->base_stdio_print)
+      coutput << std::endl << " reading formatted psp filename: " << fname2 << std::endl;
+
+   if (parall->is_master())
+   {
+      openfile(5, fname2, "r");
+      cread(5, comment, 80);
+      comment[79] = '\0';
+      i = 78;
+      while (comment[i] == ' ')
+        comment[i--] = '\0';
+
+      iread(5, psp_type, 1);
+      iread(5, version, 1);
+      iread(5, nfft, 3);
+      dread(5, unita, 9);
+      cread(5, atom, 2);
+      dread(5, amass, 1);
+      dread(5, zv, 1);
+      iread(5, lmax, 1);
+      iread(5, locp, 1);
+      iread(5, nmax, 1);
+   }
+   parall->Brdcst_cValues(0, 0, 80, comment);
+   parall->Brdcst_iValue(0, 0, psp_type);
+   parall->Brdcst_iValue(0, 0, version);
+   parall->Brdcst_iValues(0, 0, 3, nfft);
+   parall->Brdcst_Values(0, 0, 9, unita);
+   parall->Brdcst_cValues(0, 0, 2, atom);
+   parall->Brdcst_Values(0, 0, 1, amass);
+   parall->Brdcst_Values(0, 0, 1, zv);
+   parall->Brdcst_iValue(0, 0, lmax);
+   parall->Brdcst_iValue(0, 0, locp);
+   parall->Brdcst_iValue(0, 0, nmax);
+   *lmmax = ((*lmax) + 1) * ((*lmax) + 1) - (2 * (*locp) + 1);
+
+   //if (*psp_type == 4)
+   //   *n1dbasis = *locp;
+   //else
+   //   *n1dbasis = *lmax + 1;
+
+   *rc = new (std::nothrow) double[*lmax + 1]();
+   if (parall->is_master())
+   {
+      dread(5, *rc, *lmax + 1);
+      iread(5, nprj, 1);
+   }
+   parall->Brdcst_Values(0, 0, *lmax + 1, *rc);
+   parall->Brdcst_iValue(0, 0, nprj);
+   if (*nprj > 0)
+   {
+      *n_projector = new int[*nprj]();
+      *l_projector = new int[*nprj]();
+      *m_projector = new int[*nprj]();
+      *b_projector = new int[*nprj]();
+      if (parall->is_master())
+      {
+         iread(5, *n_projector, *nprj);
+         iread(5, *l_projector, *nprj);
+         iread(5, *m_projector, *nprj);
+         //iread(5, *b_projector, *nprj);
+      }
+      parall->Brdcst_iValues(0, 0, *nprj, *n_projector);
+      parall->Brdcst_iValues(0, 0, *nprj, *l_projector);
+      parall->Brdcst_iValues(0, 0, *nprj, *m_projector);
+      //parall->Brdcst_iValues(0, 0, *nprj, *b_projector);
+
+      nn = (*nmax) * (*nmax) * (*lmax + 1);
+      if (*psp_type == 4)
+         nn *= 5;
+      *Gijl = new (std::nothrow) double[nn]();
+      if (parall->is_master())
+         dread(5, *Gijl, nn);
+      parall->Brdcst_Values(0, 0, nn, *Gijl);
+   }
+
+   if (parall->is_master())
+   {
+     dread(5, rcore, 1);
+   }
+   parall->Brdcst_Values(0, 0, 1, rcore);
+   if (*rcore > 0.0)
+     *semicore = true;
+   else
+     *semicore = false;
+
+   /* read in miscellaneous paw energies and 1d wavefunctions */
+
+  
+   /* readin kvectors and then ignore */
+   int nbrillouin;
+   if (parall->is_master()) 
+   {
+      double kv[3];
+      iread(5, &nbrillouin, 1);
+      for (auto nb=0; nb<nbrillouin; ++nb) 
+         dread(5, kv, 3);
+   }     
+   parall->Brdcst_iValue(0, 0, &nbrillouin);
+      
+   /* readin dvl 3d block */
+   tmp2 = new (std::nothrow) double[mygrid->nfft3d]();
+   mygrid->r_read(5, tmp2, -1, -1, true);
+   mygrid->r_pack(0, tmp2);
+   mygrid->rr_pack_copy(0, tmp2, dvl); 
+
+      
+   /* reading vnl 3d block */
+   if (*nprj > 0) 
+   {  
+      *dvnl = new (std::nothrow) double[mygrid->nbrillq * (*nprj) * (mygrid->npack1_max())]();
+      //prj = *dvnl;
+      for (auto nb=0; nb<nbrillouin; ++nb)
+      {  
+         int nbq = mygrid->ktoindex(nb);
+         int pk  = mygrid->ktop(nb);
+         int nbq1 = nbq + 1;
+
+         prj = *dvnl + nbq*(*nprj)*mygrid->npack1_max();
+
+         for (i=0; i<(*nprj); ++i)
+         {
+            mygrid->r_read(5, tmp2, -1, pk, true);
+            if (pk==taskid_k)
+            {
+               mygrid->r_pack(nbq1, tmp2);
+               mygrid->rr_pack_copy(nbq1, tmp2, prj + (i*mygrid->npack1_max()) );
+            }
+         }
+      }
+   }
+
+   if (*semicore) 
+   {
+     nn = 5 * mygrid->npack(0);
+     *ncore = new (std::nothrow) double[nn]();
+     prj = *ncore;
+
+     mygrid->r_read(5, tmp2, -1, -1, true);
+     mygrid->r_pack(0, tmp2);
+     mygrid->rr_pack_copy(0, tmp2, prj);
+   }
+
+   delete[] tmp2;
+
+   if (parall->is_master())
+     closefile(5);
+}
+
+
+
+
+/*******************************************
+ *                                         *
+ *                cpp2_write               *
+ *                                         *
+ *******************************************/
+static void cpp2_write(CGrid *mygrid, char *fname2, char *comment, int psp_type, int version,
+                       int *nfft, double *unita, char *atom, double amass, double zv, int lmmax,
+                       int lmax, int locp, int nmax, double *rc, int nprj, int *n_projector,
+                       int *l_projector, int *m_projector, int *b_projector, double *Gijl,
+                       bool semicore, double rcore, double *ncore, double *dvl, double *dvnl,
+                       std::ostream &coutput)
+{
+   nwpw_timing_function ftimer(50); 
+   int nn;
+   double *prj;
+   Parallel *parall = mygrid->c3db::parall;
+   int taskid   = parall->taskid();
+   int taskid_k = parall->taskid_k();
+         
+   // double tmp2[mygrid->nfft3d];
+   double *tmp2 = new (std::nothrow) double[mygrid->nfft3d]();
+            
+   if (parall->base_stdio_print)
+      coutput << std::endl
+              << " writing formatted psp filename: " << fname2 << std::endl;
+
+   if (parall->is_master())
+   {
+      openfile(6, fname2, "w");
+      comment[79] = '\0';
+      cwrite(6, comment, 80);
+
+      iwrite(6, &psp_type, 1);
+      iwrite(6, &version, 1);
+      iwrite(6, nfft, 3);
+      dwrite(6, unita, 9);
+      cwrite(6, atom, 2);
+      dwrite(6, &amass, 1);
+      dwrite(6, &zv, 1);
+      iwrite(6, &lmax, 1);
+
+      //if (psp_type == 4)
+      //   iwrite(6, &n1dbasis, 1);
+      //else
+         iwrite(6, &locp, 1);
+      iwrite(6, &nmax, 1);
+
+      dwrite(6, rc, lmax + 1);
+      iwrite(6, &nprj, 1);
+
+      if (nprj > 0)
+      {
+         iwrite(6, n_projector, nprj);
+         iwrite(6, l_projector, nprj);
+         iwrite(6, m_projector, nprj);
+         //iwrite(6, b_projector, nprj);
+      }
+      nn = nmax*nmax*(lmax + 1);
+      dwrite(6, Gijl, nn);
+
+      dwrite(6, &rcore, 1);
+      // double x = mygrid->parall->SumAll(0,1.0); // Probably not needed!!
+
+   }
+
+   /* write out brillouin zone */
+   int nbrillouin = mygrid->mybrillouin->nbrillouin;
+   if (parall->is_master())
+   {
+      iwrite(6, &nbrillouin, 1);
+      for (auto nb=0; nb<nbrillouin; ++nb)
+         dwrite(6, mygrid->mybrillouin->kvector+3*nb, 3);
+   }
+
+   /* write out vl 3d block */
+   mygrid->tt_pack_copy(0, dvl, tmp2);
+   mygrid->t_unpack(0, tmp2);
+   mygrid->t_write_buffer(6, tmp2, 0,0);
+
+   /* write out vnl 3d block */
+   if (nprj > 0)
+   {
+      //prj = vnl;
+      for (auto nb=0; nb<nbrillouin; ++nb)
+      {
+
+         int nbq = mygrid->ktoindex(nb);
+         int pk  = mygrid->ktop(nb);
+
+         prj = dvnl + nbq*(nprj)*mygrid->npack1_max();
+         for (auto i=0; i<(nprj); ++i)
+         {
+            if (pk==taskid_k)
+            {
+               mygrid->tt_pack_copy(nbq+1, prj+i*mygrid->npack1_max(), tmp2);
+               mygrid->t_unpack(nbq+1, tmp2);
+            }
+            mygrid->t_write_buffer(6, tmp2,0,pk);
+         }
+      }
+   }
+
+   /* write out semicore 3d block */
+   if (semicore)
+   {
+      prj = ncore;
+
+      mygrid->tt_pack_copy(0, prj, tmp2);
+      mygrid->t_unpack(0, tmp2);
+      mygrid->t_write_buffer(6, tmp2, 0,0);
+   }
+
+   delete[] tmp2;
+
+   if (parall->is_master())
+      closefile(6);
+}
+
+
+
+
+
+
+/*******************************************
+ *                                         *
+ *              cpp2_generate              *
+ *                                         *
+ *******************************************/
+
+static void cpp2_generate(// input
+                          CGrid* mygrid, 
+                          char* pspname,
+                          char* fname2,     // <-- *.vpp2
+                          int psp_type,
+                          int version,
+                          int nfft[3],
+                          double* unita,
+                          bool semicore,
+                          int nprj,
+                          // output
+                          double *dvl,
+                          double **dvnl,
+                          double **dncore,
+                          std::ostream& coutput)
+{
+   int i, nn;
+   double *tmp2, *prj;
+   Parallel *myparall = mygrid->c3db::parall;
+
+   if ((psp_type == 0) || (psp_type == 9))
+   {
+      int nray = mygrid->n_ray();          
+      Psp1d_Hamann psp1d(myparall,pspname,version);
+ 
+      //atom[0] = psp1d.atom[0];
+      //atom[1] = psp1d.atom[1];
+      double amass = psp1d.amass;
+      double zv = psp1d.zv;
+      //for (auto i = 0; i < 80; ++i)
+      //   comment[i] = psp1d.comment[i];
+ 
+      //psp_type = psp1d.psp_type;
+      //version = psp1d.version;
+ 
+      int lmax = psp1d.lmax;
+      int locp = psp1d.locp;
+      int nmax = psp1d.nmax;
+      int lmmax = ((lmax) + 1) * ((lmax) + 1) - (2 * (locp) + 1);
+ 
+
+      int nprj      = psp1d.nprj;
+      double rcore  = psp1d.rcore;
+      double rlocal = psp1d.rlocal;
+
+      /*  allocate and generate ray formatted grids */
+      double *G_ray = mygrid->generate_G_ray();
+      double *dvl_ray = new (std::nothrow) double[nray]();
+      double *dvnl_ray = new (std::nothrow) double[2*(psp1d.lmax + 1 + psp1d.n_extra) * nray]();
+      double *rho_sc_k_ray = new (std::nothrow) double[2 * nray]();
+
+      psp1d.cpp2_generate_stress_ray(myparall, nray, G_ray, dvl_ray, dvnl_ray, rho_sc_k_ray);
+
+
+      /* filter the ray formatted grids */
+      double ecut = mygrid->lattice->ecut();
+      double wcut = mygrid->lattice->wcut();
+      util_filter(nray, G_ray, ecut, dvl_ray);
+
+      int nchan = (psp1d.lmax + 1 + psp1d.n_extra);
+      for (int l=0; l<nchan; ++l)
+      {
+         util_filter(nray, G_ray, wcut, &(dvnl_ray[l*nray]));
+         util_filter(nray, G_ray, wcut, &(dvnl_ray[1*nchan*nray + l*nray]));
+      }
+      if (semicore)
+      {
+         util_filter(nray, G_ray, ecut, rho_sc_k_ray);
+         util_filter(nray, G_ray, ecut, &(rho_sc_k_ray[nray]));
+      }
+
+      /* allocate dvnl and  generate formated grids */
+      *dvnl = new (std::nothrow) double[(mygrid->nbrillq)*(psp1d.nprj) * (mygrid->npack1_max())]();
+      if (semicore)
+         *dncore = new (std::nothrow) double[4 * mygrid->npack(0)]();
+      
+
+      /*  generate formatted grids using splines */
+      psp1d.cpp2_generate_stress_local_spline(mygrid, nray, G_ray, dvl_ray, rho_sc_k_ray, dvl, *dncore);
+
+
+
+      /*  generate formatted grids using splines */
+      for (auto nbq=0; nbq<(mygrid->nbrillq); ++nbq)
+         psp1d.cpp2_generate_stress_nonlocal_spline(mygrid,nbq,mygrid->pbrill_kvector(nbq),nray,G_ray,dvnl_ray,*dvnl);
+
+
+
+      //psp1d.cpp2_generate_stress_spline(mygrid, nray, G_ray, dvl_ray, dvnl_ray,
+      //                                  rho_sc_k_ray, dvl, *dvnl, *dncore);
+
+      /* deallocate ray formatted grids */
+      delete[] rho_sc_k_ray;
+      delete[] dvnl_ray;
+      delete[] dvl_ray;
+      delete[] G_ray;
+
+   }
+}
+
+
+
 
 
 /* Constructors */
