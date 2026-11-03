@@ -24,6 +24,11 @@ public:
   double ecoulomb(const double *);
   // void   vcoulomb_dielec(const double *, double *);
   // void   vcoulomb_dielec2(const double *, double *, double *);
+
+
+  void euv(const double *, double *);
+
+ 
 };
 
 } // namespace pwdft
