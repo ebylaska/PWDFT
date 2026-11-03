@@ -4660,4 +4660,130 @@ void CGrid::rrrr_FD_laplacian(const double *rho, double *rhoxx, double *rhoyy, d
    }
 }
 
+
+/************************************
+ *                                  *
+ *     CGrid::crr_pack_SqrMul2      *
+ *                                  *
+ ************************************/
+/**
+ * @brief Compute squared-magnitude density coefficients weighted by
+ *        the squared volume element for one grid block.
+ *
+ * For each grid point @c i in the block selected by @p nb, this
+ * function evaluates
+ *
+ * @f[
+ *     c_i = \left(a_{1,i}^2 + a_{2,i}^2\right) v_i^2
+ * @f]
+ *
+ * where @f$(a_{1,i}, a_{2,i})@f$ are the real and imaginary parts of
+ * the complex density amplitude and @f$v_i@f$ is the real volume
+ * weight at that point.  Equivalently, with
+ * @f$\rho_i = (a_{1,i} + i\,a_{2,i})\,v_i@f$, the output is
+ * @f$c_i = |\rho_i|^2@f$, stored as a real array.
+ *
+ * This routine is used where the Coulomb or exchange-correlation
+ * quadrature requires the density magnitude squared on the
+ * real-space grid.
+ *
+ * @param[in]  nb   Block index.  Selects the packed array length
+ *                  @c nidb[nb] for this block.  Must satisfy
+ *                  @c 0 <= nb < n_nb; checked by @c assert in debug
+ *                  builds only.
+ * @param[in]  dng  Packed complex density amplitudes for the block,
+ *                  interleaved as @c (real, imag):
+ *                  @c dng[2*i] = Re, @c dng[2*i+1] = Im.
+ *                  Length is @c 2*nidb[nb].
+ * @param[in]  vg   Real volume weight per grid point for the block.
+ *                  Length is @c nidb[nb].
+ * @param[out] c    Output array of squared-magnitude weighted
+ *                  coefficients.  Length is @c nidb[nb].  Every
+ *                  entry is real and non-negative.
+ *
+ * @note No aliasing is assumed between @p c and either input; the
+ *       caller must not pass overlapping buffers.
+ * @note The loop has no cross-iteration dependencies and is safe
+ *       for compiler auto-vectorization.
+ * @note @p nb is assumed to be a valid block index.  In release
+ *       builds no bounds check is performed.
+ *
+ * @see nidb
+ */
+void CGrid::crr_pack_SqrMul2(const int nb,
+                             const double * __restrict dng,
+                             const double * __restrict vg,
+                             double * __restrict c) const
+{
+   assert(nb >= 0);
+   const size_t k_size = static_cast<size_t>(nidb[nb]);
+
+   const double *d  = dng;
+   const double *vv = vg;
+   double       *cc = c;
+
+   for (size_t i=0; i<k_size; ++i, d += 2, ++vv, ++cc)
+   {
+      const double a1 = d[0];
+      const double a2 = d[1];
+      const double v  = *vv;
+      *cc = (a1*a1 + a2*a2) * v * v;
+   }
+}
+
+/************************************
+ *                                  *
+ *     CGrid::rrr_pack_MulDot       *
+ *                                  *
+ ************************************/
+/**
+ * @brief Compute the globally reduced three-way dot product of three
+ *        real packed arrays for one grid block.
+ *
+ * For the block selected by @p nb, this function evaluates
+ *
+ * @f[
+ *     S = \sum_{k=0}^{N_{\mathrm{idb}}(nb)-1} a_k \, b_k \, c_k
+ * @f]
+ *
+ * and returns the result summed across all MPI ranks, so the value
+ * is identical on every rank.  All three inputs are real; the
+ * @c rrr_ prefix indicates a real-real-real packed operand set.
+ *
+ * @param[in]  nb   Block index.  Selects the packed array length
+ *                  @c nidb[nb] for this block.  Must satisfy
+ *                  @c 0 <= nb < n_nb.
+ * @param[in]  a    First real coefficient array for the block.
+ *                  Length is @c nidb[nb].
+ * @param[in]  b    Second real coefficient array for the block.
+ *                  Length is @c nidb[nb].
+ * @param[in]  c    Third real coefficient array for the block.
+ *                  Length is @c nidb[nb].
+ *
+ * @return The MPI-reduced scalar @f$\sum_k a_k b_k c_k@f$.  The
+ *         same value is returned on every rank.
+ *
+ * @note The per-rank partial sum is accumulated in @c double; if the
+ *       total magnitude is expected to approach the limits of double
+ *       precision, the caller should consider scaling the inputs.
+ * @note The reduction is performed by
+ *       @c c3db::parall->SumAll(1, tsum); the argument @c 1 selects
+ *       the communicator/level used for this grid.
+ *
+ * @see nidb
+ * @see c3db::parall
+ */
+double CGrid::rrr_pack_MulDot(const int nb, const double *a, const double *b, const double *c)
+{
+   size_t ng = nidb[nb];
+
+   double tsum = 0.0;
+
+   for (size_t k = 0; k < ng; ++k)
+      tsum += a[k] * b[k] * c[k];
+
+   return c3db::parall->SumAll(1, tsum);
+}
+   
+
 } // namespace pwdft

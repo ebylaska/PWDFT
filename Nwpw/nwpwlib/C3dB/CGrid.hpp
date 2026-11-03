@@ -240,8 +240,7 @@ public:
    void cc_pack_Sum2(const int, const double *, double *);
    void cccc_pack_Sum(const int, const double *, const double *, const double *,
                       double *);
-   void rcc_pack_aMulAdd(const int, const double, const double *, const double *,
-                         double *);
+   void rcc_pack_aMulAdd(const int, const double, const double *, const double *, double *);
  
    void c_pack_addzero(const int, const double, double *);
    void c_pack_noimagzero(const int, double *);
@@ -255,6 +254,9 @@ public:
    void ccr_pack_iconjgMulb(const int, const double *, const double *, double *);
 
    void zccr_pack_iconjgMul(const int, const double *, const double *, const double *, double *);
+
+   void crr_pack_SqrMul2(const int, const double *, const double *, double *) const;
+   double rrr_pack_MulDot(const int, const double *, const double *, const double *);
 
    void cc_pack_zaxpy(const int, const std::complex<double>, const double *, double *);
  
