@@ -2065,6 +2065,60 @@ CPseudopotential::CPseudopotential(Ion *myionin, Cneb *mycnebin,
       //                 int_mb(m_projector(1)),
       //                 int_mb(b_projector(1)))
    }
+
+
+   // stressexist
+   bool need_stress = control.compute_stress() || control.cell_optimize() || control.parrinello_rahman();
+
+   if (need_stress)
+   {
+      double *dvnl_ptr, *dncore_ptr;;
+
+      dvl  = new (std::nothrow) double *[npsp]();
+      for (auto ia=0; ia<npsp; ++ia)
+         dvl[ia]  = new (std::nothrow) double[mycneb->npack(0)]();
+
+      dvnl        = new (std::nothrow) double *[npsp]();
+      dncore_atom = new (std::nothrow) double *[npsp]();
+      for (auto ia = 0; ia < npsp; ++ia)
+      {
+         strcpy(fname2, myion->atom(ia));
+         strcat(fname2, ".cpp2");
+         control.add_permanent_dir(fname2);
+
+         if (cpp_formatter_check(mycneb, fname2, psp_version))
+         {
+   //std::cout << " into cpp2_generate" << std::endl;
+            strcpy(pspname, myion->atom(ia));
+            strcat(pspname, ".psp");
+            control.add_permanent_dir(pspname);
+
+            cpp2_generate(mycneb, pspname, fname2,
+                          psp_type[ia], psp_version,
+                          nfft, unita, semicore[ia], nprj[ia],
+                          dvl[ia], &dvnl_ptr, &dncore_ptr, coutput);
+
+            cpp2_write(mycneb, fname2, comment[ia], psp_type[ia], psp_version,
+                       nfft, unita, aname, amass[ia], zv[ia], lmmax[ia],
+                       lmax[ia], locp[ia], nmax[ia], rc[ia], nprj[ia],
+                       n_projector[ia], l_projector[ia], m_projector[ia], b_projector[ia],
+                       Gijl[ia], semicore[ia], rcore[ia], dncore_ptr,
+                       dvl[ia], dvnl_ptr, coutput);
+         }
+         else
+         {
+            int version_local = 0;
+            //cpp2_read(mycneb, fname2, comment[ia], &psp_type[ia], &version_local, nfft, unita,
+            //          aname, &amass[ia], &zv[ia], &lmmax[ia], &lmax[ia], &locp[ia],
+            //          &nmax[ia],&rc_ptr, &nprj[ia], &n_ptr, &l_ptr, &m_ptr, &b_ptr,
+            //          &G_ptr, &semicore[ia], &rcore[ia], &dncore_ptr,
+            //          dvl[ia], &dvnl_ptr, coutput);
+         }
+         dvnl[ia] = dvnl_ptr;
+         dncore_atom[ia] = dncore_ptr;
+      }
+   }
+
 }
 
 void CPseudopotential::apply_pspspin_scaling(double* zsw2, int nn, int jstart, int jend)

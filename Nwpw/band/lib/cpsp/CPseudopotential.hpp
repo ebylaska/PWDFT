@@ -64,6 +64,13 @@ public:
   double *semicore_density;
   char **comment;
 
+  // stress variables
+  bool stressexist = false;
+  double **dvl  = nullptr;   // [ia][ng] local-stress kernel in G-space (matches vl layout)
+  double **dvnl = nullptr;   // [ia][nprj*(something)] nonlocal-stress pieces (matches vnl layout)
+  double **dncore_atom = nullptr;
+  double *dsemicore_density = nullptr;
+
   // paw variables
   bool pawexist = false;
   double **hartree_matrix, **comp_charge_matrix, **comp_pot_matrix;
@@ -91,6 +98,7 @@ public:
      {
         delete[] vl[ia];
         delete[] vlpaw[ia];
+        if (dvl != nullptr) delete[] dvl[ia];
         delete[] comment[ia];
         delete[] rc[ia];
         if (nprj[ia] > 0) 
@@ -101,9 +109,13 @@ public:
            delete[] b_projector[ia];
            delete[] Gijl[ia];
            delete[] vnl[ia];
+           if (dvnl != nullptr) delete[] dvnl[ia];
         }
         if (semicore[ia])
+        {
            delete[] ncore_atom[ia];
+           if (dncore_atom != nullptr) delete[] dncore_atom[ia];
+        }
         
         if (psp_type[ia] == 4) 
         {
@@ -148,6 +160,10 @@ public:
      delete[] rcore;
      delete[] ncore_sum;
      delete[] rc;
+
+     if (dvl !=nullptr) delete[] dvl;
+     if (dvnl!=nullptr) delete[] dvnl;
+     if (dncore_atom!=nullptr) delete[] dncore_atom;
      
      // *** paw data ***
      delete[] hartree_matrix;
@@ -188,6 +204,7 @@ public:
      //delete myapc;
      //delete mydipole;
      mycneb->r_dealloc(semicore_density);
+     if (dsemicore_density != nullptr) mycneb->r_dealloc(dsemicore_density);
   }
 
   bool has_semicore() { return semicore[npsp]; }
