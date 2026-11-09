@@ -773,6 +773,64 @@ void CGrid::cc_pack_inzdot(const int nb, const int nn, double *a, double *b, dou
 }
 
 
+
+/********************************
+ *                              *
+ *      CGrid:cc_pack_nzdot     *
+ *                              *
+ ********************************/
+/**
+ * @brief Packed complex inner product, conjugated on the first
+ *        argument, globally reduced across MPI ranks.
+ *
+ * Computes the same arithmetic as @c cc_pack_inzdot
+ *
+ * @f[
+ *    \mathrm{sum}_i = \sum_{G} \overline{a_i(G)} \, b(G)
+ *    \qquad i = 0, \dots, nn-1
+ * @f]
+ *
+ * and then, if running on more than one rank, additionally
+ * performs an all-rank sum so that every rank holds the same
+ * globally reduced value.  This is the C++ equivalent of NWChem's
+ * @c Cram_cc_nzdot, which calls @c C3dB_Vector_SumAll internally.
+ *
+ * @note This differs from @c cc_pack_inzdot only in the MPI
+ *       reduction.  Callers that use @c cc_pack_inzdot must do
+ *       their own @c Vector_SumAll; callers that use
+ *       @c cc_pack_nzdot must not, or the reduction will be
+ *       applied twice.
+ *
+ * @param[in]  nb   Block index.  Selects the length @c nidb[nb].
+ * @param[in]  nn   Number of wavefunctions (bands) in @p a.
+ * @param[in]  a    Packed complex wavefunctions, interleaved.
+ *                  Band @c i starts at @c a+i*2*nidb[nb].
+ * @param[in]  b    Packed complex projector array, interleaved.
+ * @param[out] sum  Packed complex dot products, interleaved.
+ *                  Length @c 2*nn.
+ *
+ * @see CGrid::cc_pack_inzdot
+ * @see util_zdotc
+ */
+void CGrid::cc_pack_nzdot(const int nb, const int nn, double *a, double *b, double *sum)
+{
+   const int one = 1;
+   const int ng  = nidb[nb];
+
+   for (int i = 0; i < nn; ++i)
+   {
+      std::complex<double> tsum = util_zdotc(ng, a + i*2*ng, one, b, one);
+      sum[2*i]   = tsum.real();
+      sum[2*i+1] = tsum.imag();
+   }
+
+   // NWChem Cram_cc_nzdot performs the sum-all internally
+   if (c3db::parall->np() > 1)
+      c3db::parall->Vector_SumAll(2, 2*nn, sum);
+}
+
+
+
 /********************************
  *                              * 
  *   CGrid:cc_pack_inprjzdot    *
@@ -3874,6 +3932,64 @@ void CGrid::tcc_pack_iMul(const int nb, const double *a, const double *b, double
 }
 */
 
+
+/********************************
+ *                              *
+ *      CGrid:rr_pack_Mul2      *
+ *                              *
+ ********************************/
+void CGrid::rr_pack_Mul2(const int nb, const double *a, double *c) 
+{
+   int ng = nidb[nb];
+
+   for (int i=0; i<ng; ++i) 
+      c[i] *= a[i];
+}
+
+
+/********************************
+ *                              *
+ *      CGrid::rrr_pack_Mul     *
+ *                              *
+ ********************************/
+/**
+ * @brief Element-wise product of two packed real arrays.
+ *
+ * For the block selected by @p nb, computes
+ *
+ * @f[
+ *     c_i = a_i \, b_i \qquad i = 0, \dots, N_{\mathrm{idb}}(nb)-1
+ * @f]
+ *
+ * This is the C++ equivalent of NWChem's @c Cram_rr_Mul with three
+ * distinct arguments.  All three arrays are real and have the same
+ * length, @c nidb[nb].
+ *
+ * @param[in]  nb  Block index.  Selects the array length
+ *                @c nidb[nb].  Must satisfy @c 0 <= nb < n_nb.
+ * @param[in]  a   First packed real input array.  Length @c nidb[nb].
+ * @param[in]  b   Second packed real input array.  Length @c nidb[nb].
+ * @param[out] c   Output packed real array.  On exit, @c c[i] = a[i]*b[i].
+ *                 Length @c nidb[nb].
+ *
+ * @note No aliasing is guaranteed.  If @p c overlaps @p a or @p b,
+ *       the result depends on the direction of overlap; callers
+ *       should use distinct buffers unless the in-place form is
+ *       explicitly intended.
+ * @note The loop has no cross-iteration dependencies and is safe
+ *       for compiler auto-vectorization.
+ *
+ * @see CGrid::rrr_pack_MulDot
+ * @see CGrid::rrr_pack_SqrMul2
+ */
+void CGrid::rrr_pack_Mul(const int nb, const double *a, const double *b, double *c)
+{
+   const int ng = nidb[nb];
+
+   for (int i = 0; i < ng; ++i)
+      c[i] = a[i] * b[i];
+}
+
 /********************************
  *                              *
  *      CGrid:zccr_pack_iMul    *
@@ -4098,6 +4214,19 @@ void CGrid::cc_pack_SMul(const int nb, const double alpha, const double *a, doub
 
 /********************************
  *                              *
+ *     CGrid:rr_pack_SMul       *
+ *                              *
+ ********************************/
+void CGrid::rr_pack_SMul(const int nb, const double alpha, const double *a, double *b) 
+{
+   int ng = (nidb[nb]);
+ 
+   for (auto i=0; i<ng; ++i)
+      b[i] = alpha*a[i];
+}
+
+/********************************
+ *                              *
  *      CGrid:cc_pack_daxpy     *
  *                              *
  ********************************/
@@ -4289,6 +4418,32 @@ void CGrid::cct_pack_iconjgMulb(const int nb, const double *a, const double *b, 
    for (auto i=0; i<(nidb[nb]); ++i)
       c[i] = a[2*i+1]*b[2*i] - a[2*i]*b[2*i+1];
 }
+
+/********************************
+ *                              * 
+ *   CPGrid:ccr_pack_conjgMul   *
+ *                              *
+ ********************************/
+void CGrid::ccr_pack_conjgMul(const int nb, const double *a, const double *b, double *c)
+{  
+   // c = Real[(ar-i*ai)*(br+i*bi)] = Real[ar*br + ai*bi + i*(ar*bi-ai*br)]
+   for (auto i=0; i<nidb[nb]; ++i)
+      c[i] =  a[2*i]*b[2*i] + a[2*i+1]*b[2*i+1];
+   
+}  
+
+/********************************
+ *                              * 
+ *   CPGrid:cct_pack_conjgMul   *
+ *                              *
+ ********************************/
+void CGrid::cct_pack_conjgMul(const int nb, const double *a, const double *b, double *c)
+{  
+   // c = Real[(ar-i*ai)*(br+i*bi)] = Real[ar*br + ai*bi + i*(ar*bi-ai*br)]
+   for (auto i=0; i<nidb[nb]; ++i)
+      c[i] =  a[2*i]*b[2*i] + a[2*i+1]*b[2*i+1];
+   
+}  
 
 
 /********************************
@@ -4730,6 +4885,58 @@ void CGrid::crr_pack_SqrMul2(const int nb,
       *cc = (a1*a1 + a2*a2) * v * v;
    }
 }
+
+
+/************************************
+ *                                  *
+ *     CGrid::r_pack_Sqrt1          *
+ *                                  *
+ ************************************/
+/**
+ * @brief Replace each packed real value with its square root,
+ *        in place.
+ *
+ * For the block selected by @p nb, computes
+ *
+ * @f[
+ *     c_k \leftarrow \sqrt{c_k}
+ * @f]
+ *
+ * for every @f$k = 0, \dots, N_{\mathrm{idb}}(nb)-1@f$.  This is
+ * the C++ equivalent of NWChem's @c Cram_rr_Sqrt1.
+ *
+ * @param[in]     nb  Block index.  Selects the array length
+ *                    @c nidb[nb].  Must satisfy @c 0 <= nb < n_nb;
+ *                    checked by @c assert in debug builds only.
+ * @param[in,out] c   Packed real array, modified in place.  On entry
+ *                    it holds the values to be square-rooted; on
+ *                    exit each entry is replaced by its non-negative
+ *                    square root.  Length is @c nidb[nb].
+ *
+ * @note All input values must be non-negative; negative entries
+ *       produce NaN.  No check is performed in release builds.
+ * @note The array is declared @c __restrict; the caller must not
+ *       pass a buffer that aliases other live data in the same
+ *       expression.
+ * @note The loop has no cross-iteration dependencies and is safe
+ *       for compiler auto-vectorization.
+ *
+ * @see nidb
+ */
+void CGrid::r_pack_Sqrt1(const int nb, double * __restrict c) const
+{
+   assert(nb >= 0);
+   const size_t k_size = static_cast<size_t>(nidb[nb]);
+
+   double *cc = c;
+
+   for (size_t i = 0; i < k_size; ++i, ++cc)
+   {
+      const double v = *cc;
+      *cc = std::sqrt(v);
+   }
+}
+
 
 /************************************
  *                                  *

@@ -199,6 +199,7 @@ public:
 
    std::complex<double> cc_pack_zdot(const int, double *, double *);
    std::complex<double> cc_pack_izdot(const int, double *, double *);
+   void cc_pack_nzdot(const int, const int, double *, double *, double *);
    void cc_pack_inzdot(const int, const int, double *, double *, double *);
    void cc_pack_inprjzdot(const int, int, int, double *, double *, double *);
 
@@ -226,6 +227,8 @@ public:
    void tcc_pack_Mul(const int, const double *, const double *, double *);
    void tcc_pack_iMul(const int, const double *, const double *, double *);
    void tc_pack_iMul(const int, const double *, double *);
+
+   void rr_pack_Mul2(const int, const double *, double *);
  
    void rc_pack_copy(const int, double *, double *);
    void tc_pack_copy(const int, double *, double *);
@@ -252,16 +255,23 @@ public:
    void cc_pack_daxpy(const int, const double, const double *, double *);
    void ccr_pack_iconjgMul(const int, const double *, const double *, double *);
    void ccr_pack_iconjgMulb(const int, const double *, const double *, double *);
+   void ccr_pack_conjgMul(const int, const double *, const double *, double *);
 
    void zccr_pack_iconjgMul(const int, const double *, const double *, const double *, double *);
 
    void crr_pack_SqrMul2(const int, const double *, const double *, double *) const;
+
+   void rr_pack_SMul(const int, const double, const double *, double *);
    double rrr_pack_MulDot(const int, const double *, const double *, const double *);
+   void r_pack_Sqrt1(const int, double *) const;
+   void rrr_pack_Mul(const int, const double *, const double *, double *);
 
    void cc_pack_zaxpy(const int, const std::complex<double>, const double *, double *);
  
    void cct_pack_iconjgMul(const int, const double *, const double *, double *);
    void cct_pack_iconjgMulb(const int, const double *, const double *, double *);
+   void cct_pack_conjgMul(const int, const double *, const double *, double *);
+
 
    void i_pack(const int, int *);
    void ii_pack_copy(const int, int *, int *);

@@ -223,7 +223,7 @@ public:
 
   void v_nonlocal_orb(const int, double *, double *);
 
-  void v_local(double *, const bool, double *, double *);
+  void v_local(double *, const bool, const double *, double *);
   void f_local(double *, double *);
 
   void v_lr_local(double *);
@@ -233,6 +233,14 @@ public:
   double e_nonlocal(double *psi, double *occ = nullptr);
 
   double sphere_radius(const int ia) { return rgrid[ia][icut[ia] - 1]; }
+
+  bool has_stress() const { return stressexist; }
+  void semicore_gen_Aus(const int, const int, double *);
+  void semicore_xc_euv(const double *, double *);
+  void v_local_euv(const double *, const double *,  double *);
+  void v_nonlocal_euv(const double *psi, double *stress, double *occ = nullptr);
+ 
+
 
   std::string print_pspall();
 

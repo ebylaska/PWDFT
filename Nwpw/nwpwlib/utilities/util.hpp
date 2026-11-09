@@ -100,9 +100,8 @@ extern void util_matprint(std::string, int, double *);
 #endif
 
 
-extern std::complex<double> util_zdotc(int n,
-                                       const double* x, int incx,
-                                       const double* y, int incy);
+extern std::complex<double> util_zdotc(int n, const double* x, int incx, const double* y, int incy);
+extern std::complex<double> util_zdot(int n, const double* x, int incx, const double* y, int incy);
 
 
 extern bool util_is_integer(const std::string&);

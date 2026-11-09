@@ -1726,6 +1726,31 @@ std::complex<double> util_zdotc(int n,
 
 /**************************************
  *                                    *
+ *             util_zdotc             *
+ *                                    *
+ **************************************/
+std::complex<double> util_zdot(int n, const double* x, int incx, const double* y, int incy)
+{
+    std::complex<double> sum(0.0, 0.0);
+    int ix = 0, iy = 0;
+
+    for (int i = 0; i < n; ++i) {
+        std::complex<double> cx(x[ix], x[ix + 1]);
+        std::complex<double> cy(y[iy], y[iy + 1]);
+        sum += cx * cy;
+        ix += 2 * incx;
+        iy += 2 * incy;
+    }
+
+    return sum;
+}
+
+ 
+
+
+
+/**************************************
+ *                                    *
  *             util_is_integer        *
  *                                    *
  **************************************/

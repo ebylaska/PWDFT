@@ -1365,7 +1365,7 @@ static void cpp2_read(CGrid *mygrid, char *fname2, char *comment, int *psp_type,
                      int *nfft, double *unita, char *atom, double *amass, double *zv,
                      int *lmmax, int *lmax, int *locp, int *nmax, double **rc, int *nprj,
                      int **n_projector, int **l_projector, int **m_projector,
-                     int **b_projector, double **Gijl, double *rlocal, bool *semicore,
+                     int **b_projector, double **Gijl,  bool *semicore,
                      double *rcore, double **ncore, double *dvl, double **dvnl,
                      std::ostream &coutput)
 {
@@ -1376,7 +1376,7 @@ static void cpp2_read(CGrid *mygrid, char *fname2, char *comment, int *psp_type,
    int taskid   = parall->taskid();
    int taskid_k = parall->taskid_k();
 
-   *rlocal = 0.0;
+   //*rlocal = 0.0;
 
    if (parall->base_stdio_print)
       coutput << std::endl << " reading formatted psp filename: " << fname2 << std::endl;
@@ -1438,12 +1438,12 @@ static void cpp2_read(CGrid *mygrid, char *fname2, char *comment, int *psp_type,
          iread(5, *n_projector, *nprj);
          iread(5, *l_projector, *nprj);
          iread(5, *m_projector, *nprj);
-         //iread(5, *b_projector, *nprj);
+         iread(5, *b_projector, *nprj);
       }
       parall->Brdcst_iValues(0, 0, *nprj, *n_projector);
       parall->Brdcst_iValues(0, 0, *nprj, *l_projector);
       parall->Brdcst_iValues(0, 0, *nprj, *m_projector);
-      //parall->Brdcst_iValues(0, 0, *nprj, *b_projector);
+      parall->Brdcst_iValues(0, 0, *nprj, *b_projector);
 
       nn = (*nmax) * (*nmax) * (*lmax + 1);
       if (*psp_type == 4)
@@ -1585,7 +1585,7 @@ static void cpp2_write(CGrid *mygrid, char *fname2, char *comment, int psp_type,
          iwrite(6, n_projector, nprj);
          iwrite(6, l_projector, nprj);
          iwrite(6, m_projector, nprj);
-         //iwrite(6, b_projector, nprj);
+         iwrite(6, b_projector, nprj);
       }
       nn = nmax*nmax*(lmax + 1);
       dwrite(6, Gijl, nn);
@@ -2108,11 +2108,11 @@ CPseudopotential::CPseudopotential(Ion *myionin, Cneb *mycnebin,
          else
          {
             int version_local = 0;
-            //cpp2_read(mycneb, fname2, comment[ia], &psp_type[ia], &version_local, nfft, unita,
-            //          aname, &amass[ia], &zv[ia], &lmmax[ia], &lmax[ia], &locp[ia],
-            //          &nmax[ia],&rc_ptr, &nprj[ia], &n_ptr, &l_ptr, &m_ptr, &b_ptr,
-            //          &G_ptr, &semicore[ia], &rcore[ia], &dncore_ptr,
-            //          dvl[ia], &dvnl_ptr, coutput);
+            cpp2_read(mycneb, fname2, comment[ia], &psp_type[ia], &version_local, nfft, unita,
+                      aname, &amass[ia], &zv[ia], &lmmax[ia], &lmax[ia], &locp[ia],
+                      &nmax[ia],&rc_ptr, &nprj[ia], &n_ptr, &l_ptr, &m_ptr, &b_ptr,
+                      &G_ptr, &semicore[ia], &rcore[ia], &dncore_ptr,
+                      dvl[ia], &dvnl_ptr, coutput);
          }
          dvnl[ia] = dvnl_ptr;
          dncore_atom[ia] = dncore_ptr;
@@ -2261,7 +2261,7 @@ void CPseudopotential::v_nonlocal(double *psi, double *Hpsi)
          parall->Vector_SumAll(1, 2*nn*nprjall, zsw1);
 
 
-         /* sw2 = Gijl*sw1 */
+         /* zsw2 = Gijl*sw1 */
          ll = 0;
          for (jj = jstart; jj < jend; ++jj) {
            ia = myion->katm[jj];
@@ -2297,7 +2297,7 @@ void CPseudopotential::v_nonlocal(double *psi, double *Hpsi)
            /* structure factor */
            mystrfac->strfac_pack(1, ii, exi);
         
-           /* generate sw1's and projectors */
+           /* generate zsw1's and projectors */
            for (l = 0; l < nprj[ia]; ++l) {
              sd_function = !(l_projector[ia][l] & 1);
              prj = &(prjtmp[l * nshift]);
@@ -2309,16 +2309,16 @@ void CPseudopotential::v_nonlocal(double *psi, double *Hpsi)
              // mycneb->cc_pack_indot(1,nn,psi,prj,&(sw1[l*nn]));
            }
            ntmp = nprj[ia];
-           mycneb->cc_pack_inprjdot(1, nn, ntmp, psi, prjtmp, sw1);
-           parall->Vector_SumAll(1, nn * nprj[ia], sw1);
+           mycneb->cc_pack_inprjdot(1, nn, ntmp, psi, prjtmp, zsw1);
+           parall->Vector_SumAll(1, nn * nprj[ia], zsw1);
         
            /* sw2 = Gijl*sw1 */
            Multiply_Gijl_sw1(nn, nprj[ia], nmax[ia], lmax[ia], n_projector[ia],
-                             l_projector[ia], m_projector[ia], Gijl[ia], sw1, sw2);
+                             l_projector[ia], m_projector[ia], Gijl[ia], zsw1, zsw2);
         
            /* do Kleinman-Bylander Multiplication */
            ntmp = nn * nprj[ia];
-           DSCAL_PWDFT(ntmp, scal, sw2, one);
+           DSCAL_PWDFT(ntmp, scal, zsw2, one);
         
            ntmp = nprj[ia];
         
@@ -3329,7 +3329,7 @@ double CPseudopotential::e_nonlocal(double *psi, double *occ)
  * @note This function performs matrix multiplications and vector operations to calculate the energy
  * and forces.
  */
-void CPseudopotential::v_local(double *vout, const bool move, double *dng, double *fion) 
+void CPseudopotential::v_local(double *vout, const bool move, const double *dng, double *fion) 
 {
    nwpw_timing_function ftimer(5);
 
@@ -3589,6 +3589,542 @@ void CPseudopotential::semicore_xc_fion(double *vxc, double *fion)
    // delete [] Gy;
    // delete [] Gz;
 }
+
+
+/*******************************************
+ *                                         *
+ *    CPseudopotential::semicore_gen_Aus   *
+ *                                         *
+ *******************************************/
+/**
+ * @brief Generate the semicore auxiliary field A_us(r).
+ *
+ * Mirrors NWChem's cpsp_semicore_gen_Aus.  For Cartesian directions
+ * (u, s), computes
+ *
+ * @f[
+ *    A_{us}(r) = \sum_I \phi_I(r) \;
+ *       \mathcal{F}^{-1}\!\left[
+ *          \frac{G_u G_s}{|G|} \,
+ *          \frac{\partial \tilde\phi_I(G)}{\partial |G|} \,
+ *          e^{-i G \cdot R_I}
+ *       \right]
+ * @f]
+ *
+ * where @f$\tilde\phi_I(G)@f$ is the Fourier transform of the
+ * semicore radial function for atom @f$I@f$, @f$R_I@f$ is its
+ * position, and @f$\phi_I(r)@f$ is the real-space radial function
+ * placed at @f$R_I@f$.  The result is multiplied by
+ * @f$1/\omega^2@f$ (two FFT normalization factors, as in the
+ * Fortran), where @f$\omega@f$ is the cell volume.
+ *
+ * The G = 0 singularity of @f$G_u G_s / |G|@f$ is removed by
+ * explicitly zeroing that component before the multiplication.
+ *
+ * @param[in]  u    First Cartesian direction, 0 <= u <= 2.
+ * @param[in]  s    Second Cartesian direction, 0 <= s <= 2.
+ * @param[out] Aus  Real-space output array, length @c n2ft3d.
+ *                  Overwritten on entry.
+ *
+ * @note @c Aus is zeroed at the start, so the caller does not need
+ *       to clear it.
+ * @note @c ncore_atom[ia] must hold the packed radial function
+ *       @f$\tilde\phi(G)@f$ in the first @c npack(0) doubles, and
+ *       @c dncore_atom[ia] must hold @f$\partial\tilde\phi/
+ *       \partial|G|@f$ in the same layout.  If your @c cpp2 file
+ *       stores @f$|G|\,\partial\tilde\phi/\partial|G|@f$ instead,
+ *       drop the @f$1/|G|@f$ factor in the @c GuGs_over_G loop.
+ * @note Returns silently for atoms with @c semicore[ia] == false.
+ * @note The output is symmetric in @p u and @p s; callers typically
+ *       compute only the upper triangle.
+ * @note No-op if the stress kernels have not been loaded
+ *       (has_stress() == false), because @c dncore_atom is
+ *       nullptr otherwise.
+ *
+ * @see CPseudopotential::semicore_xc_euv
+ * @see CPseudopotential::has_semicore
+ */
+void CPseudopotential::semicore_gen_Aus(const int u, const int s, double *Aus)
+{
+   if (u < 0 || u >= 3 || s < 0 || s >= 3)
+      throw std::out_of_range("semicore_gen_Aus: Cartesian index out of range");
+   if (Aus == nullptr)
+      throw std::invalid_argument("semicore_gen_Aus: null output array");
+   if (!has_stress() || !has_semicore()) return;
+
+   const int    npack0 = mycneb->npack(0);
+   const int    n2ft3d = mycneb->n2ft3d;
+   const double omega  = mycneb->lattice->omega();
+   const double scale  = 1.0 / (omega * omega);
+
+   const double *Gu = mycneb->Gpackxyz(0, u);
+   const double *Gs = mycneb->Gpackxyz(0, s);
+   const double *Gx = mycneb->Gpackxyz(0, 0);
+   const double *Gy = mycneb->Gpackxyz(0, 1);
+   const double *Gz = mycneb->Gpackxyz(0, 2);
+
+   std::vector<double> GuGs_over_G(npack0);
+   std::vector<double> phi(n2ft3d);
+   std::vector<double> dphi(n2ft3d);
+   std::vector<double> weighted(n2ft3d);
+   std::vector<double> exi_vec(2 * npack0);
+
+   double *exi = exi_vec.data();
+
+   // Build G_u G_s / |G|, with G = 0 component forced to zero
+   for (int k = 0; k < npack0; ++k)
+   {
+      const double gx = Gx[k];
+      const double gy = Gy[k];
+      const double gz = Gz[k];
+      const double g2 = gx*gx + gy*gy + gz*gz;
+      GuGs_over_G[k] = (g2 > 0.0) ? Gu[k] * Gs[k] / std::sqrt(g2) : 0.0;
+   }
+
+   std::fill(Aus, Aus + n2ft3d, 0.0);
+
+   for (int ii = 0; ii < myion->nion; ++ii)
+   {
+      const int ia = myion->katm[ii];
+      if (!semicore[ia]) continue;
+
+      // structure factor exi_I(G)
+      mystrfac->strfac_pack(0, ii, exi);
+
+      // phi_I(G) = phi(G) * exi(G)
+      mycneb->tcc_pack_Mul(0, ncore_atom[ia], exi, phi.data());
+
+      // dphi_I(G) = (G_u G_s / |G|) * (dphi/d|G|) * exi(G)
+      mycneb->tcc_pack_Mul(0, dncore_atom[ia], exi, dphi.data());
+      mycneb->tcc_pack_Mul(0, GuGs_over_G.data(), dphi.data(), weighted.data());
+
+      // transform both to real space
+      mycneb->c_unpack(0, phi.data());
+      mycneb->c_unpack(0, weighted.data());
+      mycneb->cr_fft3d(phi.data());
+      mycneb->cr_fft3d(weighted.data());
+
+      // A_us += phi_I(r) * F^{-1}[G_u G_s / |G| * dphi/d|G| * exi]
+      mycneb->rr_Mul(phi.data(), weighted.data());
+      mycneb->rr_Sum(weighted.data(), Aus);
+   }
+
+   mycneb->r_SMul(scale, Aus);
+}
+
+
+
+/********************************************
+ *                                          *
+ *    CPseudopotential::semicore_xc_euv     *
+ *                                          *
+ ********************************************/
+/**
+ * @brief Semicore exchange-correlation contribution to the stress
+ *        tensor.
+ *
+ * Mirrors NWChem's cpsp_semicore_xc_euv.  The stress has two parts:
+ *
+ *  - An isotropic piece
+ *    @f[
+ *       VV = -s \sum_r n_{sc}(r) \, v_{xc}(r) \, \Delta V
+ *    @f]
+ *    where @f$s = (3 - ispin)@f$ is the spin-degeneracy factor,
+ *    @f$n_{sc}@f$ is the semicore density, @f$v_{xc}@f$ is the
+ *    exchange-correlation potential, and @f$\Delta V@f$ is the
+ *    real-space volume element.
+ *
+ *  - An anisotropic piece built from the auxiliary field
+ *    @f$A_{us}(r)@f$ generated by @c semicore_gen_Aus:
+ *    @f[
+ *       W_{us} = -s \sum_r A_{us}(r) \, v_{xc}(r) \, \Delta V
+ *    @f]
+ *
+ * The final stress is
+ * @f[
+ *    \sigma_{uv} = VV \, h_{uv} + \sum_s W_{us} \, h_{sv}
+ * @f]
+ * with @f$h_{uv} = \frac{1}{2\pi} u_{uv}@f$ the reciprocal metric.
+ *
+ * @param[in]  xcp     Exchange-correlation potential on the real-space
+ *                     grid.  For spin-polarized calculations this is
+ *                     stored as two consecutive blocks of @c n2ft3d
+ *                     doubles (up then down).
+ * @param[out] stress  3x3 stress tensor, row-major (stress[u+3*v]).
+ *
+ * @note No-op if the pseudopotential has no semicore states
+ *       (has_semicore() == false); in that case @p stress is left
+ *       zeroed.
+ * @note @c hm is the reciprocal metric, not the identity.  The
+ *       isotropic term @f$VV \cdot h_{uv}@f$ is correct; see
+ *       cCoulomb_Operator::euv for the same convention.
+ * @note The spin-degeneracy factor is @f$(3 - ispin)@f$, i.e. 2 for
+ *       unpolarized and 1 for polarized calculations.
+ */
+void CPseudopotential::semicore_xc_euv(const double *xcp, double *stress)
+{
+   std::fill(stress, stress + 9, 0.0);
+   if (!has_semicore()) return;
+
+   constexpr double pi   = units::PI;
+   const double     scal = 1.0 / (2.0 * pi);
+
+   const int    ispin     = mycneb->ispin;
+   const int    ispinscale = 3 - ispin;             // 2 if unpolarized, 1 if polarized
+   const int    n2ft3d    = mycneb->n2ft3d;
+   const double omega     = mycneb->lattice->omega();
+   const double scal1     = 1.0 / ((double)(mycneb->nx) *
+                                   (double)(mycneb->ny) *
+                                   (double)(mycneb->nz));
+   const double dv        = omega * scal1;
+
+   // reciprocal metric, row-major at index [u + 3*v]
+   double hm[9];
+   for (int v = 0; v < 3; ++v)
+      for (int u = 0; u < 3; ++u)
+         hm[u + 3*v] = scal * mycneb->lattice->unitg(u, v);
+
+   // ---- isotropic part: VV = -s * ∫ n_sc * v_xc dV -------------------
+   double VV = ispinscale * dv * mycneb->rr_dot(semicore_density, xcp);
+   if (ispin == 2)
+      VV += dv * mycneb->rr_dot(semicore_density, xcp + n2ft3d);
+   VV = -VV;
+
+   // ---- anisotropic part: W_us = -s * ∫ A_us * v_xc dV --------------
+   std::array<double, 9> WW{};
+   std::vector<double>   Aus_buffer(n2ft3d);
+
+   for (int u = 0; u < 3; ++u)
+      for (int s = u; s < 3; ++s)
+      {
+         // Build A_us in real space.  semincore_gen_Aus is symmetric
+         // in (u,s), so only the upper triangle is computed.
+         this->semicore_gen_Aus(u, s, Aus_buffer.data());
+
+         double wus = -ispinscale * dv *
+                      mycneb->rr_dot(Aus_buffer.data(), xcp);
+         if (ispin == 2)
+            wus -= dv * mycneb->rr_dot(Aus_buffer.data(), xcp + n2ft3d);
+
+         WW[u + 3*s] = wus;
+         WW[s + 3*u] = wus;   // symmetrize
+      }
+
+   // ---- final stress: σ_uv = VV·hm + Σ_s WW_us·hm_sv ---------------
+   for (int v = 0; v < 3; ++v)
+      for (int u = 0; u < 3; ++u)
+      {
+         double val = VV * hm[u + 3*v];
+         for (int s = 0; s < 3; ++s)
+            val += WW[u + 3*s] * hm[s + 3*v];
+         stress[u + 3*v] = val;
+      }
+}
+
+      
+
+
+
+
+/*******************************************
+ *                                         *
+ *     CPseudopotential::v_local_euv       *
+ *                                         *
+ *******************************************/
+/**
+ * @brief Local pseudopotential contribution to the stress tensor.
+ *
+ * Mirrors NWChem's cpsp_v_local_euv.  For each ion, forms
+ *     tmp2(G) = Re[ conjg(dng(G)) * exi_I(G) ] * dvl_I(G) / |G|
+ * and accumulates
+ *     Bus(u,s) -= sum_G tmp2(G) * G_u * G_s .
+ * The final stress is
+ *     stress(u,v) = -elocal * hm(u,v) + sum_s Bus(u,s) * hm(s,v)
+ * with hm = (1/2pi) * unitg.
+ *
+ * @param[in]  dng     Packed complex density (length 2*npack(0)).
+ * @param[in]  vc      Packed 4*pi/G^2 Coulomb kernel (length npack(0)).
+ * @param[out] stress  3x3 stress tensor, row-major (stress[u+3*v]).
+ *
+ * @note hm is the reciprocal metric, not the identity.  The
+ *       isotropic-looking term -elocal*hm is correct; see
+ *       cCoulomb_Operator::euv for the same convention.
+ * @note No-op if stress kernels were not loaded (has_stress() == false).
+ * @note The old version aliased @c vl and @c exi to the same buffer
+ *       (tmpc_vec), which clobbered @c vl before use; fixed here by
+ *       giving each array its own storage.
+ */
+void CPseudopotential::v_local_euv(const double *dng, const double *vc, double *stress)
+{
+   std::fill(stress, stress + 9, 0.0);
+   if (!has_stress()) return;
+
+   constexpr double pi     = units::PI;
+   constexpr double fourpi = 4.0 * pi;
+   const double     scal   = 1.0 / (2.0 * pi);
+
+   const int    nion   = myion->nion;
+   const int    npack0 = mycneb->npack(0);
+   const double omega  = mycneb->lattice->omega();
+   const double ss     = 1.0 / fourpi;
+
+   // separate buffers -- previous version aliased vl and exi
+   std::vector<double> vl_vec(2 * npack0);   // complex-packed, holds v_local(G)
+   std::vector<double> exi_vec(2 * npack0);  // complex-packed structure factor
+   std::vector<double> tmp1_vec(npack0);
+   std::vector<double> tmp2_vec(npack0);
+
+   double *vl   = vl_vec.data();
+   double *exi  = exi_vec.data();
+   double *tmp1 = tmp1_vec.data();
+   double *tmp2 = tmp2_vec.data();
+
+   double hm[9];
+   for (int j = 0; j < 3; ++j)
+      for (int i = 0; i < 3; ++i)
+         hm[i + 3*j] = scal * mycneb->lattice->unitg(i, j);
+
+   // average Kohn-Sham v_local energy: elocal = <dng | vl>
+   double fion[3];
+   this->v_local(vl, false, dng, fion);
+   const double elocal = mycneb->cc_pack_dot(0, const_cast<double*>(dng), vl);
+
+   const double *g_segments[3] = {
+      mycneb->Gpackxyz(0, 0),
+      mycneb->Gpackxyz(0, 1),
+      mycneb->Gpackxyz(0, 2)
+   };
+
+   std::array<double, 9> Bus{};
+
+   for (int ii = 0; ii < nion; ++ii)
+   {
+      const int ia = myion->katm[ii];
+
+      mystrfac->strfac_pack(0, ii, exi);
+
+      // tmp2 = Re[ conjg(dng) * exi ]
+      mycneb->ccr_pack_conjgMul(0, const_cast<double*>(dng), exi, tmp2);
+
+      // tmp2 *= dvl[ia]^2   (rr_pack_Mul2 squares the second argument)
+      mycneb->rr_pack_Mul2(0, dvl[ia], tmp2);
+
+      // tmp1 = (1/(4pi)) vc = 1/G^2 ; tmp2 *= sqrt(tmp1)^2 = tmp1 = 1/G^2
+      mycneb->rr_pack_SMul(0, ss, const_cast<double*>(vc), tmp1);
+      mycneb->r_pack_Sqrt1(0, tmp1);
+      mycneb->rr_pack_Mul2(0, tmp1, tmp2);
+
+      for (int u = 0; u < 3; ++u)
+         for (int s = u; s < 3; ++s)
+            Bus[u + 3*s] -= mycneb->rrr_pack_MulDot(0, g_segments[u],
+                                                    g_segments[s], tmp2);
+   }
+
+   for (int u = 0; u < 3; ++u)
+      for (int s = u + 1; s < 3; ++s)
+         Bus[s + 3*u] = Bus[u + 3*s];
+
+   for (int v = 0; v < 3; ++v)
+      for (int u = 0; u < 3; ++u)
+      {
+         double e = -elocal * hm[u + 3*v];
+         for (int s = 0; s < 3; ++s)
+            e += Bus[u + 3*s] * hm[s + 3*v];
+         stress[u + 3*v] = e;
+      }
+}
+
+
+/*******************************************
+ *                                         *
+ *    CPseudopotential::v_nonlocal_euv     *
+ *                                         *
+ *******************************************/
+/**
+ * @brief Nonlocal pseudopotential contribution to the stress tensor.
+ *
+ * Mirrors NWChem's cpsp_v_nonlocal_euv_2.  For each ion, k-point,
+ * and projector, forms
+ *     F^(lm)_I = <psi | vnl(nlm)>
+ * then propagates it through the Gijl coupling matrix, and finally
+ * accumulates
+ *     Bus(u,s) -= w_k * scale * Re[ F * dF/dhus ]
+ * where dF/dhus is the derivative projector contracted with G_u.
+ * The final stress is
+ *     stress(u,v) = sum_s Bus(u,s) * hm(s,v)
+ * (no isotropic term for the nonlocal part).
+ *
+ * @param[in]  psi     Packed wavefunctions, laid out as
+ *                     [nbq][band][2*npack1_max].
+ * @param[out] stress  3x3 stress tensor, row-major.
+ * @param[in]  occ     Optional band occupations, laid out as
+ *                     [nbq][spin][band].  If nullptr, all bands
+ *                     are weighted equally.
+ *
+ * @note hm is the reciprocal metric (not the identity), same
+ *       convention as cCoulomb_Operator::euv.
+ * @note No-op if stress kernels were not loaded (has_stress() == false).
+ * @note This version loops over all k-points (nbq).  The previous
+ *       version only handled nbq = 0 and used a dvnl layout that
+ *       was correct only for nbrillq == 1.
+ */
+void CPseudopotential::v_nonlocal_euv(const double *psi, double *stress, double *occ)
+{
+   std::fill(stress, stress + 9, 0.0);
+   if (!has_stress()) return;
+
+   constexpr double pi   = units::PI;
+   const double     scal = 1.0 / (2.0 * pi);
+
+   const int    nn      = mycneb->neq[0] + mycneb->neq[1];
+   const int    ispin   = mycneb->ispin;
+   const int    nbrillq = mycneb->nbrillq;
+   const int    nshift0 = mycneb->npack1_max();
+   const int    nshift  = 2 * nshift0;
+   const double omega   = mycneb->lattice->omega();
+   const double scal2   = 1.0 / omega;
+
+   // scale_factor = (2/omega) * (3 - ispin)  -- same as the existing code
+   const double scale_factor = 2.0 * scal2 * (3 - ispin);
+
+   std::vector<double> exi_vec(nshift);
+   std::vector<double> prjtmp_vec(nprj_max * nshift);
+   std::vector<double> tmp2_vec(nshift0);
+   std::vector<double> zsw1_vec(2 * nn * nprj_max);
+   std::vector<double> zsw2_vec(2 * nn * nprj_max);
+   std::vector<double> zsw3_vec(2 * 9 * nn);
+
+   double *exi    = exi_vec.data();
+   double *prjtmp = prjtmp_vec.data();
+   double *tmp2   = tmp2_vec.data();
+   double *zsw1    = zsw1_vec.data();
+   double *zsw2    = zsw2_vec.data();
+   double *zsw3    = zsw3_vec.data();
+
+   double hm[9];
+   for (int j=0; j<3; ++j)
+   for (int i=0; i<3; ++i)
+      hm[i+3*j] = scal * mycneb->lattice->unitg(i,j);
+
+   std::array<double, 9> Bus{};
+
+   for (int nbq = 0; nbq < nbrillq; ++nbq)
+   {
+      const int nbq1  = nbq + 1;
+      const int npack1 = mycneb->npack(nbq1);
+      const double weight_k = mycneb->pbrill_weight(nbq);
+
+      // G-vectors for this k-point (1-based index into CGrid)
+      const double *g_seg[3] = {
+         mycneb->Gpackxyz(nbq1, 0),
+         mycneb->Gpackxyz(nbq1, 1),
+         mycneb->Gpackxyz(nbq1, 2)
+      };
+
+      const double *psi_k = psi + nbq * nshift * nn;
+
+      for (int ii = 0; ii < myion->nion; ++ii)
+      {
+         const int ia = myion->katm[ii];
+         if (nprj[ia] <= 0) continue;
+
+         mystrfac->strfac_pack_cxr(nbq1, nbq, ii, exi);
+
+         // ---- prjtmp(l) = vnl(nbq, l) * exi ----
+         for (int l = 0; l < nprj[ia]; ++l)
+         {
+            const bool sd_function = !(l_projector[ia][l] & 1);
+            double *prj   = prjtmp + l * nshift;
+            double *vnlprj = vnl[ia] + (l + nbq * nprj[ia]) * nshift0;
+            if (sd_function)
+               mycneb->tcc_pack_Mul(nbq1, vnlprj, exi, prj);
+            else
+               mycneb->tcc_pack_iMul(nbq1, vnlprj, exi, prj);
+         }
+
+         // ---- zsw1(l, n) = <psi_n | prj_l> ----
+         mycneb->cc_pack_inprjzdot(nbq1, nn, nprj[ia], const_cast<double*>(psi_k), prjtmp, zsw1);
+         mycneb->c3db::parall->Vector_SumAll(1, 2 * nn * nprj[ia], zsw1);
+
+         // ---- sw2 = Gijl * sw1 ----
+         Multiply_Gijl_zsw1(nn, nprj[ia], nmax[ia], lmax[ia],
+                            n_projector[ia], l_projector[ia], m_projector[ia],
+                            Gijl[ia], zsw1, zsw2);
+
+         // ---- dF/dhus and Bus accumulation ----
+         for (int l = 0; l < nprj[ia]; ++l)
+         {
+            const bool sd_function = !(l_projector[ia][l] & 1);
+
+            for (int s = 0; s < 3; ++s)
+               for (int u = 0; u < 3; ++u)
+               {
+                  // dvnl layout: (nbq, 3*l+s, G)
+                  const double *dvnlprj =
+                     dvnl[ia] + nbq * (3 * nprj[ia] * nshift0)
+                              + (3 * l + s) * nshift0;
+
+                  // tmp2 = dvnlprj * G_u
+                  mycneb->rrr_pack_Mul(nbq1, dvnlprj,
+                                       const_cast<double*>(g_seg[u]), tmp2);
+
+                  // prj = tmp2 * exi (or i*tmp2*exi)
+                  double *prj = prjtmp + u * nprj[ia] * nshift
+                                        + s * 3 * nprj[ia] * nshift;
+                  if (sd_function)
+                     mycneb->tcc_pack_Mul(nbq1, tmp2, exi, prj);
+                  else
+                     mycneb->tcc_pack_iMul(nbq1, tmp2, exi, prj);
+
+                  // sw3(u, s) = <psi | prj>  (complex-packed into sw3)
+                  mycneb->cc_pack_nzdot(nbq1, nn,
+                                        const_cast<double*>(psi_k), prj,
+                                        zsw3 + u * nn + s * 3 * nn);
+               }
+
+            // Bus(s,u) -= weight * Re[ sw2(l,n) * conj? sw3(n,u,s) ]
+            // Match NWChem: sum over n of Re( sw2 * sw3 ), where sw2
+            // was already conjugated in Fortran (zsw1 = conjg(zsw2)).
+            // Here sw2 is used directly and the complex product is
+            // taken as Re[ sw2 * sw3 ].
+            for (int n = 0; n < nn; ++n)
+            {
+               const double occ_n = (occ != nullptr)
+                                    ? occ[n + nbq * nn] * weight_k
+                                    : weight_k;
+               const double prefac = occ_n * scale_factor;
+               const double re_s2 = zsw2[2 * (n + l * nn)];
+               const double im_s2 = zsw2[2 * (n + l * nn) + 1];
+
+               for (int u=0; u<3; ++u)
+               for (int s=0; s<3; ++s)
+               {
+                  // sw3 stored as complex-packed (2*nn per (u,s))
+                  const double re_s3 = zsw3[2 * (n + u * nn + s * 3 * nn)];
+                  const double im_s3 = zsw3[2 * (n + u * nn + s * 3 * nn) + 1];
+                  // Fortran: Re( conj(zsw2) * zsw3 )
+                  Bus[u+3*s] -= prefac * (re_s2 * re_s3 + im_s2 * im_s3);
+               }
+            }
+         }
+      }
+   }
+
+   for (int v=0; v<3; ++v)
+   for (int u=0; u<3; ++u)
+   {
+      double e = 0.0;
+      for (int s=0; s<3; ++s)
+         e += Bus[u+3*s] * hm[s+3*v];
+      stress[u+3*v] = e;
+   }
+}
+
+
+
+
+
+
 
 
 /*******************************************
