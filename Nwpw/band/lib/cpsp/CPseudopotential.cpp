@@ -1488,7 +1488,7 @@ static void cpp2_read(CGrid *mygrid, char *fname2, char *comment, int *psp_type,
    /* reading vnl 3d block */
    if (*nprj > 0) 
    {  
-      *dvnl = new (std::nothrow) double[mygrid->nbrillq * (*nprj) * (mygrid->npack1_max())]();
+      *dvnl = new (std::nothrow) double[mygrid->nbrillq * 3 * (*nprj) * (mygrid->npack1_max())]();
       //prj = *dvnl;
       for (auto nb=0; nb<nbrillouin; ++nb)
       {  
@@ -1496,9 +1496,9 @@ static void cpp2_read(CGrid *mygrid, char *fname2, char *comment, int *psp_type,
          int pk  = mygrid->ktop(nb);
          int nbq1 = nbq + 1;
 
-         prj = *dvnl + nbq*(*nprj)*mygrid->npack1_max();
+         prj = *dvnl + nbq*3*(*nprj)*mygrid->npack1_max();
 
-         for (i=0; i<(*nprj); ++i)
+         for (i=0; i<3*(*nprj); ++i)
          {
             mygrid->r_read(5, tmp2, -1, pk, true);
             if (pk==taskid_k)
@@ -1619,8 +1619,8 @@ static void cpp2_write(CGrid *mygrid, char *fname2, char *comment, int psp_type,
          int nbq = mygrid->ktoindex(nb);
          int pk  = mygrid->ktop(nb);
 
-         prj = dvnl + nbq*(nprj)*mygrid->npack1_max();
-         for (auto i=0; i<(nprj); ++i)
+         prj = dvnl + nbq*3*(nprj)*mygrid->npack1_max();
+         for (auto i=0; i<3*(nprj); ++i)
          {
             if (pk==taskid_k)
             {
@@ -1731,7 +1731,7 @@ static void cpp2_generate(// input
       }
 
       /* allocate dvnl and  generate formated grids */
-      *dvnl = new (std::nothrow) double[(mygrid->nbrillq)*(psp1d.nprj) * (mygrid->npack1_max())]();
+      *dvnl = new (std::nothrow) double[(mygrid->nbrillq)*3*(psp1d.nprj) * (mygrid->npack1_max())]();
       if (semicore)
          *dncore = new (std::nothrow) double[4 * mygrid->npack(0)]();
       
@@ -3419,7 +3419,7 @@ void CPseudopotential::f_local(double *dng, double *fion)
    nshift = 2 * npack0;
    exi = new (std::nothrow) double[nshift]();
    vtmp = new (std::nothrow) double[nshift]();
-   for (ii = 0; ii < (myion->nion); ++ii) 
+   for (ii=0; ii<(myion->nion); ++ii) 
    {
       ia = myion->katm[ii];
       mystrfac->strfac_pack(0, ii, exi);
@@ -3432,9 +3432,9 @@ void CPseudopotential::f_local(double *dng, double *fion)
       mycneb->cct_pack_iconjgMulb(0, dng, vtmp, xtmp);
       // double zz =  mycneb->tt_pack_dot(0,xtmp,xtmp);
      
-      fion[3 * ii]     = mycneb->tt_pack_dot(0, Gx, xtmp);
-      fion[3 * ii + 1] = mycneb->tt_pack_dot(0, Gy, xtmp);
-      fion[3 * ii + 2] = mycneb->tt_pack_dot(0, Gz, xtmp);
+      fion[3*ii]   = mycneb->tt_pack_dot(0, Gx, xtmp);
+      fion[3*ii+1] = mycneb->tt_pack_dot(0, Gy, xtmp);
+      fion[3*ii+2] = mycneb->tt_pack_dot(0, Gz, xtmp);
    }
    delete[] exi;
    delete[] vtmp;
@@ -3464,7 +3464,6 @@ void CPseudopotential::f_local(double *dng, double *fion)
  */
 void CPseudopotential::semicore_density_update() 
 {
-   int ii, ia;
    double omega = mycneb->lattice->omega();
    double scal2 = 1.0 / omega;
    // double scal1 = 1.0/((double) ((mycneb->nx)*(mycneb->ny)*(mycneb->nz)));
@@ -3474,20 +3473,22 @@ void CPseudopotential::semicore_density_update()
    double *tmpr = mycneb->r_alloc();
  
    mycneb->r_zero(semicore_density);
-   for (ii = 0; ii < (myion->nion); ++ii) {
-     ia = myion->katm[ii];
-     if (semicore[ia]) {
-       mystrfac->strfac_pack(0, ii, exi);
-       mycneb->tcc_pack_Mul(0, ncore_atom[ia], exi, tmp);
- 
-       /* Put put tmp into real space */
-       mycneb->c_unpack(0, tmp);
-       mycneb->cr_fft3d(tmp);
- 
-       /*  square it  */
-       mycneb->cr_sqr(tmp,tmpr);
-       mycneb->rr_Sum(tmpr, semicore_density);
-     }
+   for (int ii=0; ii<(myion->nion); ++ii) 
+   {
+      int ia = myion->katm[ii];
+      if (semicore[ia]) 
+      {
+         mystrfac->strfac_pack(0, ii, exi);
+         mycneb->tcc_pack_Mul(0, ncore_atom[ia], exi, tmp);
+        
+         /* Put put tmp into real space */
+         mycneb->c_unpack(0, tmp);
+         mycneb->cr_fft3d(tmp);
+        
+         /*  square it  */
+         mycneb->cr_sqr(tmp,tmpr);
+         mycneb->rr_Sum(tmpr, semicore_density);
+      }
    }
    mycneb->r_SMul(scal2 * scal2, semicore_density);
  
@@ -3547,7 +3548,7 @@ void CPseudopotential::semicore_xc_fion(double *vxc, double *fion)
  
    mycneb->rrc_Sum(vxc, vxc + (ispin-1)*nfft3d, vxcG);
  
-   for (int ii = 0; ii < (myion->nion); ++ii) 
+   for (int ii=0; ii<(myion->nion); ++ii) 
    {
       ia = myion->katm[ii];
       if (semicore[ia]) 
@@ -3672,7 +3673,7 @@ void CPseudopotential::semicore_gen_Aus(const int u, const int s, double *Aus)
    double *exi = exi_vec.data();
 
    // Build G_u G_s / |G|, with G = 0 component forced to zero
-   for (int k = 0; k < npack0; ++k)
+   for (int k=0; k<npack0; ++k)
    {
       const double gx = Gx[k];
       const double gy = Gy[k];
@@ -3683,7 +3684,7 @@ void CPseudopotential::semicore_gen_Aus(const int u, const int s, double *Aus)
 
    std::fill(Aus, Aus + n2ft3d, 0.0);
 
-   for (int ii = 0; ii < myion->nion; ++ii)
+   for (int ii=0; ii<myion->nion; ++ii)
    {
       const int ia = myion->katm[ii];
       if (!semicore[ia]) continue;
@@ -3767,7 +3768,7 @@ void CPseudopotential::semicore_xc_euv(const double *xcp, double *stress)
    if (!has_semicore()) return;
 
    constexpr double pi   = units::PI;
-   const double     scal = 1.0 / (2.0 * pi);
+   const double     scal = 1.0/(2.0*pi);
 
    const int    ispin     = mycneb->ispin;
    const int    ispinscale = 3 - ispin;             // 2 if unpolarized, 1 if polarized
@@ -3776,7 +3777,7 @@ void CPseudopotential::semicore_xc_euv(const double *xcp, double *stress)
    const double scal1     = 1.0 / ((double)(mycneb->nx) *
                                    (double)(mycneb->ny) *
                                    (double)(mycneb->nz));
-   const double dv        = omega * scal1;
+   const double dv        = omega*scal1;
 
    // reciprocal metric, row-major at index [u + 3*v]
    double hm[9];
@@ -3794,8 +3795,8 @@ void CPseudopotential::semicore_xc_euv(const double *xcp, double *stress)
    std::array<double, 9> WW{};
    std::vector<double>   Aus_buffer(n2ft3d);
 
-   for (int u = 0; u < 3; ++u)
-      for (int s = u; s < 3; ++s)
+   for (int u=0; u<3; ++u)
+      for (int s=u; s<3; ++s)
       {
          // Build A_us in real space.  semincore_gen_Aus is symmetric
          // in (u,s), so only the upper triangle is computed.
@@ -3811,13 +3812,13 @@ void CPseudopotential::semicore_xc_euv(const double *xcp, double *stress)
       }
 
    // ---- final stress: σ_uv = VV·hm + Σ_s WW_us·hm_sv ---------------
-   for (int v = 0; v < 3; ++v)
-      for (int u = 0; u < 3; ++u)
+   for (int v=0; v<3; ++v)
+      for (int u=0; u<3; ++u)
       {
-         double val = VV * hm[u + 3*v];
-         for (int s = 0; s < 3; ++s)
-            val += WW[u + 3*s] * hm[s + 3*v];
-         stress[u + 3*v] = val;
+         double val = VV * hm[u+3*v];
+         for (int s=0; s<3; ++s)
+            val += WW[u+3*s] * hm[s+3*v];
+         stress[u+3*v] = val;
       }
 }
 
@@ -3869,8 +3870,8 @@ void CPseudopotential::v_local_euv(const double *dng, const double *vc, double *
    const double ss     = 1.0 / fourpi;
 
    // separate buffers -- previous version aliased vl and exi
-   std::vector<double> vl_vec(2 * npack0);   // complex-packed, holds v_local(G)
-   std::vector<double> exi_vec(2 * npack0);  // complex-packed structure factor
+   std::vector<double> vl_vec(2*npack0);   // complex-packed, holds v_local(G)
+   std::vector<double> exi_vec(2*npack0);  // complex-packed structure factor
    std::vector<double> tmp1_vec(npack0);
    std::vector<double> tmp2_vec(npack0);
 
@@ -3880,9 +3881,9 @@ void CPseudopotential::v_local_euv(const double *dng, const double *vc, double *
    double *tmp2 = tmp2_vec.data();
 
    double hm[9];
-   for (int j = 0; j < 3; ++j)
-      for (int i = 0; i < 3; ++i)
-         hm[i + 3*j] = scal * mycneb->lattice->unitg(i, j);
+   for (int j=0; j<3; ++j)
+      for (int i=0; i<3; ++i)
+         hm[i+3*j] = scal * mycneb->lattice->unitg(i, j);
 
    // average Kohn-Sham v_local energy: elocal = <dng | vl>
    double fion[3];
@@ -3897,7 +3898,7 @@ void CPseudopotential::v_local_euv(const double *dng, const double *vc, double *
 
    std::array<double, 9> Bus{};
 
-   for (int ii = 0; ii < nion; ++ii)
+   for (int ii=0; ii<nion; ++ii)
    {
       const int ia = myion->katm[ii];
 
@@ -3914,24 +3915,23 @@ void CPseudopotential::v_local_euv(const double *dng, const double *vc, double *
       mycneb->r_pack_Sqrt1(0, tmp1);
       mycneb->rr_pack_Mul2(0, tmp1, tmp2);
 
-      for (int u = 0; u < 3; ++u)
-         for (int s = u; s < 3; ++s)
-            Bus[u + 3*s] -= mycneb->rrr_pack_MulDot(0, g_segments[u],
-                                                    g_segments[s], tmp2);
+      for (int u=0; u<3; ++u)
+      for (int s=u; s<3; ++s)
+         Bus[u+3*s] -= mycneb->rrr_pack_MulDot(0, g_segments[u], g_segments[s], tmp2);
    }
 
-   for (int u = 0; u < 3; ++u)
-      for (int s = u + 1; s < 3; ++s)
+   for (int u=0; u<3; ++u)
+      for (int s=u+1; s<3; ++s)
          Bus[s + 3*u] = Bus[u + 3*s];
 
-   for (int v = 0; v < 3; ++v)
-      for (int u = 0; u < 3; ++u)
-      {
-         double e = -elocal * hm[u + 3*v];
-         for (int s = 0; s < 3; ++s)
-            e += Bus[u + 3*s] * hm[s + 3*v];
-         stress[u + 3*v] = e;
-      }
+   for (int v=0; v<3; ++v)
+   for (int u=0; u<3; ++u)
+   {
+      double e = -elocal * hm[u + 3*v];
+      for (int s=0; s<3; ++s)
+         e += Bus[u+3*s] * hm[s+3*v];
+      stress[u+3*v] = e;
+   }
 }
 
 
@@ -4056,8 +4056,8 @@ void CPseudopotential::v_nonlocal_euv(const double *psi, double *stress, double 
          {
             const bool sd_function = !(l_projector[ia][l] & 1);
 
-            for (int s = 0; s < 3; ++s)
-               for (int u = 0; u < 3; ++u)
+            for (int s=0; s<3; ++s)
+               for (int u=0; u<3; ++u)
                {
                   // dvnl layout: (nbq, 3*l+s, G)
                   const double *dvnlprj =
@@ -4070,7 +4070,7 @@ void CPseudopotential::v_nonlocal_euv(const double *psi, double *stress, double 
 
                   // prj = tmp2 * exi (or i*tmp2*exi)
                   double *prj = prjtmp + u * nprj[ia] * nshift
-                                        + s * 3 * nprj[ia] * nshift;
+                                       + s * 3 * nprj[ia] * nshift;
                   if (sd_function)
                      mycneb->tcc_pack_Mul(nbq1, tmp2, exi, prj);
                   else
@@ -4118,10 +4118,8 @@ void CPseudopotential::v_nonlocal_euv(const double *psi, double *stress, double 
          e += Bus[u+3*s] * hm[s+3*v];
       stress[u+3*v] = e;
    }
+
 }
-
-
-
 
 
 
