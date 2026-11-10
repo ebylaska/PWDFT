@@ -28,8 +28,11 @@ public:
    // euv(u,v) = -sum_s Aus(u,s) * hm(s,v)
    // where hm = (1/2π) * unitg and Aus is the k- and G-weighted
    // second moment of the density.
-   void euv(const double *psi, double euv[3][3]);
-   void euv(const double *psi, const double *occ, double euv[3][3]);
+   //void euv(const double *psi, double euv[3][3]);
+   //void euv(const double *psi, const double *occ, double euv[3][3]);
+
+   void ke_euv(const double *psi, double *stress, double *occ = nullptr);
+
 
 };
 

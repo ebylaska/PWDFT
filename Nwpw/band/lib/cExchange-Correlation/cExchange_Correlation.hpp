@@ -76,6 +76,7 @@ public:
     void   meta_gga_Hpsik(const int, const int[2], const double *, double *);
     double meta_gga_pxc(const int, const int[2], const double *);
     bool   meta_gga_on() { return use_mgga; }
+    bool   gga_on() { return use_gga; }
  
     //output routine
     friend std::ostream &operator<<(std::ostream &os, const cXC_Operator &xc) 

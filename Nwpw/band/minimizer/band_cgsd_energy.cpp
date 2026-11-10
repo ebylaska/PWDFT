@@ -772,4 +772,124 @@ void band_cgsd_energy_gradient(Solid &mysolid, double *grad_ion)
    }
 }
 
+/******************************************
+ *                                        *
+ *        band_cgsd_energy_stress         *
+ *                                        *
+ ******************************************/
+void band_cgsd_energy_stress(Solid &mysolid, double *stress, bool doprint, std::ostream &coutput)
+{
+   Parallel *parall = mysolid.mygrid->c3db::parall;
+
+   bool oprint = (parall->is_master() && doprint);
+
+   // Initialize master array to zero
+   std::memset(stress,0,9*sizeof(double));
+
+   // The Lambda Definitions
+   auto print_stress_array = [&](std::string_view name, const double* data) {
+       // 1. Configuration
+       const int total_width = 23;
+       const int dim = 3; // Assuming 3x3 for this specific implementation
+ 
+       // 2. Centering Logic (Corrected Math)
+       int l = static_cast<int>(name.size());
+       int pad_left = (total_width - l) / 2;
+       int pad_right = total_width - l - pad_left;
+ 
+       // 3. Construct the header decoration
+       std::string decoration = "     ===== "; 
+       decoration += std::string(pad_left, ' ') + std::string(name);
+       // Note: We adjust padding to ensure we stay within a reasonable visual width
+       
+       coutput << "\n" << decoration << "   =====" << std::endl;
+ 
+       // 4. Print the Matrix Rows
+       for (int i = 0; i < dim; ++i) {
+           // Prefix logic: First row is different from others
+           coutput << (i == 0 ? " S =  ( " : "      ( ");
+ 
+           for (int j = 0; j < dim; ++j) {
+               // Indexing the pointer using the provided data address
+               coutput <<  Ffmt(10,5) << data[i * dim + j] << " ";
+           }
+           coutput << ")" << std::endl;
+       }
+       coutput << "     ======================================" << std::endl << std::endl;
+   };
+
+   // Helper lambda/function to add a temporary array to the master array
+   auto accumulate = [&](double* temp) {
+      for (int i=0; i<9; ++i) stress[i] += temp[i];
+   };
+ 
+   double tstress[9];
+
+
+   //**** Kinetic energy component : dE_kin/dhuv ****
+   std::memset(tstress,0.0,9*sizeof(double));
+   mysolid.psi_1ke_stress(tstress);
+   if (oprint) print_stress_array("  kinetic stress (au)   ", tstress);
+   accumulate(tstress);
+
+   //**** Coulomb energy component : dE_Coul/dhuv ****
+   std::memset(tstress,0.0,9*sizeof(double));
+   mysolid.dng_1coulomb_stress(tstress);
+   if (oprint) print_stress_array("  coulomb stress (au)   ", tstress);
+   accumulate(tstress);
+
+   //**** Local pseudo energy component : dE_local/dhuv ****
+   std::memset(tstress,0.0,9*sizeof(double));
+   mysolid.dng_1local_stress(tstress);
+   if (oprint) print_stress_array(" local psp stress (au)  ", tstress);
+   accumulate(tstress);
+
+   //**** Nonlocal pseudo energy component : dE_nolocal/dhuv ****
+   std::memset(tstress,0.0,9*sizeof(double));
+   mysolid.psi_1nonlocal_stress(tstress);
+   if (oprint) print_stress_array("nonlocal psp stress (au)", tstress);
+   accumulate(tstress);
+
+   //**** xc energy component : dE_xc/dhuv ****
+   std::memset(tstress,0.0,9*sizeof(double));
+   mysolid.rho_1xc_stress(tstress);
+   if (oprint) print_stress_array("    xc stress (au)      ", tstress);
+   accumulate(tstress);
+
+   //**** Core-correction xcb energy component : dE_core/dhuv ****
+   std::memset(tstress,0.0,9*sizeof(double));
+   mysolid.rho_1semicore_stress(tstress);
+   if (oprint) print_stress_array("   semicore stress (au) ", tstress);
+   accumulate(tstress);
+
+
+   //**** Ewald energy component : dE_ewald/dhuv ****
+   std::memset(tstress,0.0,9*sizeof(double));
+   mysolid.ewald_stress(tstress);
+   if (oprint) print_stress_array("   ewald stress (au)    ", tstress);
+   accumulate(tstress);
+
+
+   //**** SIC energy component : dE_SIC/dhuv ****
+   //mymolecule.electron_SIC_stress(tstress);
+   //accumulate(tstress);
+
+   //**** HFX energy component : dE_HFX/dhuv ****
+   //mymolecule.electron_HFX_stress(tstress);
+   //accumulate(tstress);
+
+   //**** DFT+U energy component : dE_dftu/dhuv ****
+   //mymolecule.psi_1dftu_stress(tstress);
+   //accumulate(tstress);
+
+   //**** Dispersion energy component : dE_disp/dhuv ****
+   //mymolecule.ion_disp_stress(tstress);
+   //accumulate(tstress);
+
+
+
+
+}
+
+
 } // namespace pwdft

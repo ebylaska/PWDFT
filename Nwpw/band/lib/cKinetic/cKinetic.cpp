@@ -283,6 +283,7 @@ inline int gxyz_component(int u, double gx, double gy, double gz)
 
 } // namespace
 
+/*
 void cKinetic_Operator::euv(const double *psi, double euv[3][3])
 {
    int nbqsize    = mycneb->nbrillq;
@@ -376,12 +377,20 @@ void cKinetic_Operator::euv(const double *psi, double euv[3][3])
          euv[u][v] = -sum;
       }
 }
+*/
 
 
 
-void cKinetic_Operator::euv(const double *psi, const double *occ,
-                            double euv[3][3])
+/*******************************************
+ *                                         *
+ *       cKinetic_Operator::ke_euv         *
+ *                                         *
+ *******************************************/
+void cKinetic_Operator::ke_euv(const double *psi, double *stress, double *occ)
 {
+   //Initialize the master stress array to zero safely
+   std::fill(stress, stress + 9, 0.0);
+
    int nbqsize    = mycneb->nbrillq;
    int nsize      = mycneb->neq[0] + mycneb->neq[1];
    int npack1_max = mycneb->npack1_max();
@@ -415,7 +424,8 @@ void cKinetic_Operator::euv(const double *psi, const double *occ,
 
             for (int n = 0; n < nsize; ++n)
             {
-               const double occ_n = occ_k[n];
+               double occ_n = (occ_k != nullptr) ? occ_k[n] : 1.0;
+               //const double occ_n = occ_k[n];
                if (occ_n == 0.0) continue;
 
                const double *tmp_psi = psi + indx1n + n*shift1;
@@ -470,7 +480,7 @@ void cKinetic_Operator::euv(const double *psi, const double *occ,
          double sum = 0.0;
          for (int s = 0; s < 3; ++s)
             sum += Aus[u][s] * hm[s][v];
-         euv[u][v] = -sum;
+         stress[u+3*v] = -sum;
       }
 }
 

@@ -927,6 +927,89 @@ public:
       myion->add_contraint_force(grad_ion);
    }
 
+   void psi_1ke_stress(double *tstress)
+   {
+      auto myke = myelectron->get_myke();
+      myke->ke_euv(psi1,tstress,occ1);
+   }
+
+   void dng_1local_stress(double *tstress)
+   {
+      auto mycoul = myelectron->get_mycoulomb();
+      double *vc = mycoul->get_vc();
+      mypsp->v_local_euv(dng1,vc,tstress);
+   }
+
+   void psi_1nonlocal_stress(double *tstress)
+   {
+      mypsp->v_nonlocal_euv(psi1,tstress,occ1);
+
+      constexpr double pi = units::PI;
+      const double scal = 1.0/(2.0*pi);
+      double hm[9];
+      for (size_t i=0; i<3; ++i)
+      for (size_t j=0; j<3; ++j)
+         hm[i+3*j] = scal*mygrid->lattice->unitg(i,j);
+
+      const double evnl = this->vnl_ave();
+
+      for (size_t v=0; v<3; ++v)
+      for (size_t u=0; u<3; ++u)
+      {
+         tstress[u+3*v] -= (evnl)*hm[u+3*v];
+      }
+   }
+
+
+   void dng_1coulomb_stress(double *tstress)
+   {
+      auto mycoul = myelectron->get_mycoulomb();
+      mycoul->euv(dng1,tstress);
+   }
+
+
+   void rho_1xc_stress(double *tstress)
+   {
+      double exc0 = exc();
+      double pxc0 = pxc();
+
+      constexpr double pi     = units::PI;
+      double scal = 1.0/(2.0*pi);
+      double hm[9];
+      for (size_t i=0; i<3; ++i)
+      for (size_t j=0; j<3; ++j)
+         hm[i+3*j] = scal*mygrid->lattice->unitg(i,j);
+   
+      
+      for (size_t v=0; v<3; ++v)
+      for (size_t u=0; u<3; ++u)
+      { 
+         tstress[u+3*v] = (exc0-pxc0)*hm[u+3*v];
+      }  
+      
+      auto myxc = myelectron->get_myxc();
+
+      if (myxc->gga_on())
+      {  
+         double tstress2[9] = {0};
+         //myxc->v_exc_euv(ispin,rho1_all,tstress2);
+   
+         for (auto uv=0; uv<9; ++uv)
+            tstress[uv] += tstress2[uv];
+      }
+   }  
+
+   void rho_1semicore_stress(double *tstress)
+   {  
+      //myelectron->semicore_xc_stress(tstress);                                 
+   }  
+
+   void ewald_stress(double *tstress)
+   {  
+       myewald->stress(tstress);
+   }  
+   
+
    std::string print_virtual() 
    {
       std::stringstream stream;

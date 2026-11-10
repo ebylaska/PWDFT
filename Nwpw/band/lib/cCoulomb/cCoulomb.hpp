@@ -28,6 +28,8 @@ public:
 
   void euv(const double *, double *);
 
+  double *get_vc() { return vg;}
+
  
 };
 
