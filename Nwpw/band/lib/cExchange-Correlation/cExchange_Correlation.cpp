@@ -260,6 +260,16 @@ void cXC_Operator::v_exc_all(int ispin, double *dn, double *xcp, double *xce)
 }
 
 
+/*******************************************
+ *                                         *
+ *        XC_Operator::v_exc_euv           *
+ *                                         *
+ *******************************************/
+void cXC_Operator::v_exc_euv(const int ispin, const double *dn, double *tstress)
+{
+   v_cwexc_euv(gga,mycneb,myvdw,dn, 1.0,1.0,tstress);
+}
+
 
 /*******************************************
  *                                         *

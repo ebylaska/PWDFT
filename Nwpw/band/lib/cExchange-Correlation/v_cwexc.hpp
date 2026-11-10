@@ -9,5 +9,10 @@ namespace pwdft {
 extern void v_cwexc(const int, Cneb *, cvdw_DF *, const double *, const double,
                     const double, double *, double *, double *, double *,
                     double *, double *, double *, double *, double *);
+
+void v_cwexc_euv(const int, Cneb *, cvdw_DF *,  const double *,
+                 const double, const double, double *);
+
 }
+
 #endif

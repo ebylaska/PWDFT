@@ -70,6 +70,9 @@ public:
    }
  
     void v_exc_all(int, double *, double *, double *);
+    void v_exc_euv(int, const double *, double *);
+
+
  
     // meta gga routines
     void   gga_gen_tau(const int, const int[2], const double *);
