@@ -671,8 +671,6 @@ public:
       }
 
 
-
-
       /* generate dipole */
       //mypsp->mydipole->gen_dipole(rho1);
       
@@ -701,13 +699,17 @@ public:
    void get_vall(double *vall_out) { myelectron->get_vall(vall_out); }
    void set_vall(const double *vall_in) { myelectron->set_vall(vall_in); }
    void gen_rho1() { myelectron->genrho(psi1,rho1,occ1); }
-   void gen_densities1() { myelectron->gen_psi_r(psi1);
-                           myelectron->gen_densities(rho1,dng1,rho1_all,occ1); }
+   void gen_densities1() 
+   { 
+      myelectron->gen_psi_r(psi1);
+      myelectron->gen_densities(rho1,dng1,rho1_all,occ1);
+   }
    void gen_scf_potentials_from_rho1() { myelectron->scf_update_from_dn(rho1,dng1,rho1_all);}
 
  
    /* solid - diagonalize the current hamiltonian */
    void diagonalize() { mygrid->w_diagonalize(hml, eig); }
+
    void rotate1to2() 
    { 
       int nshift0 = 2*(mygrid->neq[0]+mygrid->neq[1])*mygrid->CGrid::npack1_max();
@@ -728,16 +730,18 @@ public:
 
  
    /* solid - call phafacs and gen_vl_potential and semicore */
-   void phafacs_vl_potential_semicore() {
+   void phafacs_vl_potential_semicore() 
+   {
       mystrfac->phafac();
       myewald->phafac();
       myelectron->gen_vl_potential();
       myelectron->semicore_density_update();
    }
+
  
    /* apply psi2 = psi1 - dte*Hpsi1 + lmbda*psi1*/
-   void sd_update(double dte) {
- 
+   void sd_update(double dte) 
+   {
       /* apply psi2 = psi1 + dte*Hpsi1 */
       myelectron->run(psi1, rho1, dng1, rho1_all);
       
@@ -754,8 +758,8 @@ public:
    }
  
    /* apply psi2 = psi1 - dte*Hpsi1 + lmbda*psi1*/
-   void sd_update_sic(double dte) {
- 
+   void sd_update_sic(double dte) 
+   {
       /* apply psi2 = psi1 + dte*Hpsi1 */
       myelectron->run(psi1, rho1, dng1, rho1_all);
       
@@ -771,9 +775,10 @@ public:
       psi1 = t2;
    }
 
+
    /***********************************************
     *                                             *
-    *              _psi_1_get_Tgradient           *
+    *               psi_1_get_Tgradient           *
     *                                             *
     ***********************************************/
    /**
@@ -856,7 +861,68 @@ public:
    }
 
 
- 
+   /***********************************************
+    *                                             *
+    *             psi_1_get_TSgradient0  (member) *
+    *                                             *
+    ***********************************************/
+   /**
+    * @brief Run one SCF step, evaluate the total energy, and compute
+    *        the gradient of the electronic entropy functional with
+    *        respect to the orbital coefficients.
+    *
+    * This routine performs the following sequence:
+    *
+    *  1. **SCF step** (@c Electron::run) — advances the wavefunctions
+    *     @c psi1 one step toward the self-consistent solution, updating
+    *     @c rho1, @c dng1, and @c rho1_all in place.
+    *
+    *  2. **Total energy** (@c Electron::energy) — evaluates the
+    *     electronic energy of the current wavefunctions and densities
+    *     and adds the Ewald (ion-ion) energy from @c myewald->energy().
+    *
+    *  3. **Hamiltonian** (@c Electron::gen_hmlt) — builds the Kohn-Sham
+    *     Hamiltonian @c hml for the current wavefunctions and densities.
+    *
+    *  4. **Gradient** (@c Electron::get_Tgradient) — computes the
+    *     gradient of the electronic free-energy functional with respect
+    *     to the orbital coefficients, including the entropy
+    *     contribution, and writes it into @p G1.
+    *
+    * @param[out] G1  Gradient of the free-energy functional with
+    *                 respect to the orbital coefficients, in the same
+    *                 packed layout as @c psi1.  Overwritten on exit.
+    *                 The caller must allocate it to match @c psi1's
+    *                 size (@c 2*nn*npack1_max*nbrillq doubles).
+    *
+    * @return The total energy (electronic + Ewald) evaluated at the
+    *         post-SCF-step wavefunctions, in Hartree (or whatever
+    *         energy unit @c Electron::energy returns).
+    *
+    * @note The SCF step in @c Electron::run is **in-place**: after
+    *       this call, @c psi1, @c rho1, @c dng1, and @c rho1_all
+    *       hold the updated quantities.  If the caller wants the
+    *       pre-step state, it must save it before calling.
+    * @note The energy returned is evaluated **after** the SCF step,
+    *       not at the caller's input wavefunctions.  This matches the
+    *       usual line-search pattern: the routine tries a step, then
+    *       returns the energy and gradient at the new point so the
+    *       caller can accept or reject.
+    * @note @c gen_hmlt is called before @c get_Tgradient because
+    *       @c get_Tgradient uses @c hml (the Hamiltonian) as an
+    *       input.  If a future refactor folds these together, update
+    *       the ordering note.
+    * @note The name @c psi_1_get_TSgradient refers to the
+    *       **T**otal energy plus **S** (entropy) gradient.  The
+    *       "T" is not for "kinetic"; the gradient includes the
+    *       orbital, potential, and entropic contributions.
+    *
+    * @see Electron::run
+    * @see Electron::energy
+    * @see Electron::gen_hmlt
+    * @see Electron::get_Tgradient
+    * @see Ewald::energy
+    */
    double psi_1get_TSgradient(double *G1) 
    {
       double total_energy;
@@ -867,7 +933,13 @@ public:
       
       return total_energy;
    }
+
  
+   /***********************************************
+    *                                             *
+    *            swap_psi1_psi2     (member)      *
+    *                                             *
+    ***********************************************/
    void swap_psi1_psi2() {
       /* pointer swap of psi2 and psi1 */
       double *t2 = psi2;
@@ -875,6 +947,11 @@ public:
       psi1 = t2;
    }
  
+   /***********************************************
+    *                                             *
+    *            rho_error        (member)        *
+    *                                             *
+    ***********************************************/
    /* calculates the difference squared  error between rho1 and rho2 */
    double rho_error() 
    {
@@ -889,7 +966,13 @@ public:
       return mygrid->c3db::parall->SumAll(1,sumxx) * dv;
    }
  
-   std::vector<double> eig_vector() {
+   /***********************************************
+    *                                             *
+    *            eig_vector       (member)        *
+    *                                             *
+    ***********************************************/
+   std::vector<double> eig_vector() 
+   {
       int localsize = nbrillq * (ne[0] + ne[1]);
       int globalsize = mygrid->c3db::parall->np_k() * localsize;
       int totalsize = nbrillouin*(ne[0] + ne[1]);
@@ -906,17 +989,268 @@ public:
          return {};
    }
  
+   /***********************************************
+    *                                             *
+    *            psi_1local_force    (member)     *
+    *                                             *
+    ***********************************************/
+   /**
+    * @brief Add the local pseudopotential contribution to the ionic
+    *        force array.
+    *
+    * Forwards to @c Electron::vl_force with the packed complex total
+    * density @c dng1.  The local pseudopotential is a sum of
+    * ion-centered radial functions, so the force is the
+    * Hellmann-Feynman derivative of the density with respect to ion
+    * positions:
+    * @f[
+    *    \mathbf{F}_I^{\mathrm{loc}}
+    *       = -\int n(\mathbf r)\,\frac{\partial v_l^I(\mathbf r - \mathbf R_I)}
+    *                                {\partial \mathbf R_I}\,d\mathbf r
+    * @f]
+    * evaluated in reciprocal space as the overlap of @c dng1 with
+    * the derivative kernel @c dvl[ia] times the appropriate
+    * structure factor.
+    *
+    * @param[in,out] grad_ion  Ionic force array, 3*nion doubles,
+    *                          laid out as @c grad_ion[3*ii + u].  On
+    *                          entry it holds whatever force
+    *                          contributions the caller has already
+    *                          accumulated; on exit the local
+    *                          pseudopotential piece has been added.
+    *
+    * @note @c Electron::vl_force accumulates into @p grad_ion; it
+    *       does not overwrite.  The order of force assembly does not
+    *       matter numerically, but the full chain is typically
+    *       (electronic) + (local) + (nonlocal) + (semicore) +
+    *       (classical ion-ion) + (dispersion) + (constraints).
+    * @note This routine does **not** include the Pulay (basis-set
+    *       incompleteness) correction to the local pseudopotential
+    *       force.  For plane-wave bases the local Pulay term
+    *       vanishes; if a non-plane-wave basis is ever added, the
+    *       local force will need a correction here.
+    *
+    * @see Electron::vl_force
+    * @see psi_1nonlocal_force
+    * @see dng_1local_stress
+    */
    void psi_1local_force(double *grad_ion) {
       myelectron->vl_force(dng1, grad_ion);
    }
  
+
+   /***********************************************
+    *                                             *
+    *            psi_1nonlocal_force  (member)    *
+    *                                             *
+    ***********************************************/
+   /**
+    * @brief Add the nonlocal pseudopotential contribution to the
+    *        ionic force array.
+    *
+    * Forwards to @c Electron::vnl_force with the occupied orbitals
+    * @c psi1.  The nonlocal pseudopotential force is the
+    * Hellmann-Feynman derivative of the projector matrix elements
+    * with respect to ion positions:
+    * @f[
+    *    \mathbf{F}_I^{\mathrm{nl}}
+    *       = -2\,\mathrm{Re}\sum_{n\mathbf k} w_{\mathbf k}
+    *          f_{n\mathbf k}
+    *          \langle \psi_{n\mathbf k} |
+    *             \frac{\partial \hat V_{nl}^I}{\partial \mathbf R_I}
+    *          | \psi_{n\mathbf k} \rangle
+    * @f]
+    * evaluated in reciprocal space using the derivative projectors
+    * @c dvnl (from the @c .cpp2 stress file) contracted with @c G.
+    *
+    * @param[in,out] grad_ion  Ionic force array, 3*nion doubles,
+    *                          laid out as @c grad_ion[3*ii + u].  On
+    *                          entry it holds whatever force
+    *                          contributions the caller has already
+    *                          accumulated; on exit the nonlocal
+    *                          pseudopotential piece has been added.
+    *
+    * @note @c Electron::vnl_force accumulates into @p grad_ion.
+    * @note The nonlocal force has an explicit dependence on the ion
+    *       positions through the structure factor
+    *       @f$e^{-i\mathbf G\cdot\mathbf R_I}@f$, and an implicit
+    *       dependence through the orbitals @c psi1.  For a
+    *       converged self-consistent calculation the implicit part
+    *       cancels with the corresponding term in the Hamiltonian
+    *       (Hellmann-Feynman theorem), so only the explicit part is
+    *       needed here.  If the calculation is not SCF-converged, an
+    *       additional term proportional to the density residual
+    *       would be required.
+    * @note @c dvnl is only allocated when the pseudopotential's
+    *       stress kernels are loaded (@c has_stress()).  If
+    *       @c vnl_force depends on @c dvnl and @c has_stress() is
+    *       false, the routine should be a no-op or return zero for
+    *       the nonlocal piece; verify against the implementation.
+    *
+    * @see Electron::vnl_force
+    * @see psi_1local_force
+    * @see psi_1nonlocal_stress
+    */
    void psi_1nonlocal_force(double *grad_ion) {
       myelectron->vnl_force(psi1, grad_ion);
    }
+
+
+   /***********************************************
+    *                                             *
+    *            semicore_force    (member)       *
+    *                                             *
+    ***********************************************/
+   /**
+    * @brief Add the semicore (nonlinear core correction)
+    *        exchange-correlation contribution to the ionic force
+    *        array.
+    *
+    * Forwards to @c Electron::semicore_force.  The semicore density
+    * @f$n_{sc}(\mathbf r) = \sum_I n_{sc}^I(\mathbf r - \mathbf R_I)@f$
+    * is a sum of ion-centered radial functions, and it enters the
+    * exchange-correlation energy through the total density
+    * @f$n + n_{sc}@f$.  The force is the Hellmann-Feynman derivative
+    * with respect to ion positions:
+    * @f[
+    *    \mathbf{F}_I^{\mathrm{sc}}
+    *       = -\int v_{xc}(n + n_{sc})\,
+    *              \frac{\partial n_{sc}^I(\mathbf r - \mathbf R_I)}
+    *                   {\partial \mathbf R_I}\,d\mathbf r
+    * @f]
+    * analogous to @c semicore_xc_fion but evaluated on the ion-
+    * centered semicore density rather than the Kohn-Sham density.
+    *
+    * @param[in,out] grad_ion  Ionic force array, 3*nion doubles,
+    *                          laid out as @c grad_ion[3*ii + u].  On
+    *                          entry it holds whatever force
+    *                          contributions the caller has already
+    *                          accumulated; on exit the semicore XC
+    *                          piece has been added.
+    *
+    * @note @c Electron::semicore_force accumulates into @p grad_ion.
+    * @note No-op if the pseudopotential has no semicore states
+    *       (@c has_semicore() == false), because @c ncore_atom is
+    *       null in that case.  The routine should return without
+    *       touching @p grad_ion.
+    * @note This is the force counterpart of
+    *       @c rho_1semicore_stress / @c semicore_xc_euv.  If the
+    *       stress piece has been checked against finite differences
+    *       but the force has not, verify that the force routine uses
+    *       the same sign convention for @f$v_{xc}@f$ — the two should
+    *       agree on a strained cell.
+    *
+    * @see Electron::semicore_force
+    * @see CPseudopotential::semicore_xc_fion
+    * @see rho_1semicore_stress
+    * @see CPseudopotential::semicore_xc_euv
+    */
    void semicore_force(double *grad_ion) {
       myelectron->semicore_force(grad_ion);
    }
+
+    
+   /*******************************************
+    *                                         *
+    *     ewald_fion             (member)     *
+    *                                         *
+    *******************************************/
+   /**
+    * @brief Add the Ewald (long-range ion-ion) contribution to the
+    *        ionic force array.
+    *
+    * Unconditional forwarding wrapper for @c Ewald::force.  Unlike
+    * @c ion_fion, this routine does **not** check @c is_periodic():
+    * the Ewald force is added regardless of whether the system is
+    * treated as periodic by the rest of the code.
+    *
+    * @param[in,out] grad_ion  Ionic force array, 3*nion doubles,
+    *                          laid out as @c grad_ion[3*ii + u].  On
+    *                          entry it holds whatever force
+    *                          contributions the caller has already
+    *                          accumulated; on exit the Ewald piece
+    *                          has been added.
+    *
+    * @note The Ewald force is **added** to @p grad_ion, not assigned
+    *       or subtracted.  The caller is responsible for zeroing the
+    *       array if only the Ewald piece is wanted.
+    * @note Use this routine instead of @c ion_fion when only the
+    *       Ewald force is needed (for example, in a diagnostic or a
+    *       partial-force calculation).  @c ion_fion also adds the
+    *       dispersion and constraint forces and guards the Ewald
+    *       call with @c is_periodic().
+    *
+    * @see Ewald::force
+    * @see ion_fion
+    * @see ewald_stress
+    */
    void ewald_fion(double *grad_ion) { myewald->force(grad_ion); }
+
+
+   /*******************************************
+    *                                         *
+    *     ion_fion               (member)     *
+    *                                         *
+    *******************************************/
+   /**
+    * @brief Assemble the ionic force array from the classical
+    *        ion-ion, dispersion, and constraint contributions.
+    *
+    * The force array @p grad_ion is **accumulated into**, not
+    * overwritten.  The three contributions are added in this order:
+    *
+    *  1. **Ewald** (@c Ewald::force) — periodic long-range ion-ion
+    *     Coulomb force.  Applied only when @c myelectron->is_periodic()
+    *     returns true; for isolated (aperiodic) systems there is no
+    *     periodic image sum to include.
+    *
+    *  2. **Dispersion** (@c Ion::disp_force) — van der Waals /
+    *     dispersion force between ions.  Applied only when the ion
+    *     object has dispersion data (@c Ion::has_ion_disp()).
+    *
+    *  3. **Constraints** (@c Ion::add_contraint_force) — harmonic
+    *     restraints, fixed-atom constraints, or similar position-
+    *     dependent penalties.  Applied unconditionally, but the
+    *     routine is expected to be a no-op when no constraints are
+    *     defined.
+    *
+    * @param[in,out] grad_ion  Ionic force array, 3*nion doubles,
+    *                          laid out as @c grad_ion[3*ii + u] for
+    *                          ion @c ii and Cartesian direction
+    *                          @c u.  On entry it holds whatever
+    *                          force contributions the caller has
+    *                          already accumulated; on exit the
+    *                          classical ion-ion, dispersion, and
+    *                          constraint pieces have been added.
+    *
+    * @note The Ewald contribution is added **only** for periodic
+    *       systems.  For isolated molecules the ion-ion Coulomb
+    *       force should already have been added by the calling code
+    *       (e.g. a direct pair sum in real space); if that's not the
+    *       case, the caller must add it explicitly.  Compare with
+    *       @c ewald_fion, which adds the Ewald force unconditionally.
+    * @note The Ewald, dispersion, and constraint forces are all
+    *       **added** to @p grad_ion.  This routine does not zero the
+    *       array, and it does not subtract any contribution.  A
+    *       caller that wants only one of the three should call the
+    *       underlying routine (@c Ewald::force, @c Ion::disp_force,
+    *       or @c Ion::add_contraint_force) or @c ewald_fion directly
+    *       rather than this wrapper.
+    * @note The typo @c add_contraint_force (missing "s" in
+    *       "constraint") is preserved from the underlying @c Ion
+    *       API.  Do not "fix" it here without also fixing it in the
+    *       @c Ion class, or the call will fail to link.
+    * @note The order of accumulation does not matter numerically for
+    *       a sum, but the order above is documented so that a reader
+    *       can trace which routine contributed which part if the
+    *       final force looks wrong.
+    *
+    * @see Ewald::force
+    * @see Ion::disp_force
+    * @see Ion::add_contraint_force
+    * @see ewald_fion
+    * @see ewald_stress
+    */
    void ion_fion(double *grad_ion) {
       if (myelectron->is_periodic())
          myewald->force(grad_ion);
@@ -927,12 +1261,121 @@ public:
       myion->add_contraint_force(grad_ion);
    }
 
+
+   /*******************************************
+    *                                         *
+    *     psi_1ke_stress         (member)     *
+    *                                         *
+    *******************************************/
+   /**
+    * @brief Add the kinetic-energy contribution to the total stress
+    *        tensor.
+    *
+    * Forwarding wrapper for @c KE::ke_euv.  Accumulates the stress
+    * arising from the kinetic-energy operator applied to the occupied
+    * orbitals, summed over bands and k-points with the appropriate
+    * occupation weights, into the caller-owned total stress array.
+    *
+    * @param[in,out] tstress  Total 3x3 stress tensor, row-major
+    *                         (tstress[u+3*v]).  On entry it holds the
+    *                         accumulated stress from other
+    *                         contributions; on exit the kinetic-energy
+    *                         piece has been added.
+    *
+    * @note The physics lives in @c KE::ke_euv.  For a plane-wave
+    *       basis, the kinetic stress has the simple diagonal form
+    *       @f[
+    *          \sigma_{uv}^{\mathrm{ke}}
+    *             = 2\,T\,\delta_{uv}
+    *       @f]
+    *       where @f$T@f$ is the kinetic energy, because the kinetic
+    *       operator carries no explicit position dependence and the
+    *       only strain dependence is through the volume.  If the
+    *       underlying routine includes nonlocal pseudopotential
+    *       kinetic terms or other corrections, the form will be more
+    *       general; see the @c KE::ke_euv documentation.
+    * @note @c ke_euv performs its own band and k-point reductions.
+    *       Do not add an outer @c Vector_SumAll around this call, or
+    *       the kinetic piece will be counted multiple times.
+    * @note This wrapper keeps the orbital layer (@c psi) independent
+    *       of the kinetic-energy operator class, mirroring
+    *       @c dng_1coulomb_stress and @c rho_1xc_stress.
+    *
+    * @see KE::ke_euv
+    * @see dng_1coulomb_stress
+    * @see rho_1xc_stress
+    * @see psi_1nonlocal_stress
+    */
    void psi_1ke_stress(double *tstress)
    {
       auto myke = myelectron->get_myke();
       myke->ke_euv(psi1,tstress,occ1);
    }
 
+
+   /*******************************************
+    *                                         *
+    *     dng_1local_stress      (member)     *
+    *                                         *
+    *******************************************/
+   /**
+    * @brief Add the local pseudopotential contribution to the total
+    *        stress tensor.
+    *
+    * Forwards to @c CPseudopotential::v_local_euv with the packed
+    * complex total density @c dng1 and the Coulomb kernel @c vc
+    * obtained from the Coulomb operator.  The Coulomb kernel
+    * @f$v_c(G) = 4\pi/G^2@f$ supplies the @f$1/|G|@f$ weight that the
+    * local pseudopotential stress requires; the derivative kernel
+    * @c dvl[ia] is used internally by @c v_local_euv.
+    *
+    * @param[in,out] tstress  Total 3x3 stress tensor, row-major
+    *                         (tstress[u+3*v]).  On entry it holds the
+    *                         accumulated stress from other
+    *                         contributions; on exit the local
+    *                         pseudopotential piece has been added.
+    *
+    * @note The physics lives in @c CPseudopotential::v_local_euv.
+    *       For each ion @f$I@f$, it forms
+    *       @f[
+    *          \tilde n_I(G) = \mathrm{Re}\!\left[
+    *             \overline{n(G)}\,e^{-iG\cdot R_I}
+    *          \right] \, \frac{\partial v_l^I(G)}{\partial |G|}
+    *          \,\frac{1}{|G|}
+    *       @f]
+    *       and accumulates
+    *       @f[
+    *          B_{us} = -\frac{\omega}{4\pi}\sum_G \tilde n_G^2 G_u G_s,
+    *       @f]
+    *       so that the final stress is
+    *       @f[
+    *          \sigma_{uv}^{\mathrm{loc}}
+    *             = -E_{\mathrm{loc}}\,h_{uv}
+    *             + \sum_s B_{us}\,h_{sv}
+    *       @f]
+    *       with @f$E_{\mathrm{loc}}@f$ the local pseudopotential energy
+    *       and @f$h_{uv} = \frac{1}{2\pi}u_{uv}@f$ the reciprocal
+    *       metric.  (Note the square on @f$\tilde n_G@f$: it comes
+    *       from the deliberate use of @c rr_pack_Mul2 in
+    *       @c v_local_euv, matching NWChem's @c cpsp_v_local_euv.)
+    * @note @c v_local_euv performs its own MPI reductions over the
+    *       G-vector set.  Do not add an outer @c Vector_SumAll around
+    *       this call, or the local piece will be counted multiple
+    *       times.
+    * @note @c v_local_euv is a no-op if the stress kernels were not
+    *       loaded (@c has_stress() == false); in that case @p tstress
+    *       is left unchanged.
+    * @note This wrapper keeps the density layer (@c dng) independent
+    *       of the pseudopotential class, mirroring
+    *       @c psi_1nonlocal_stress.  Note that @c psi_1nonlocal_stress
+    *       handles the nonlocal part; this routine handles only the
+    *       local part.
+    *
+    * @see CPseudopotential::v_local_euv
+    * @see psi_1nonlocal_stress
+    * @see dng_1coulomb_stress
+    * @see cCoulomb_Operator::euv
+    */
    void dng_1local_stress(double *tstress)
    {
       auto mycoul = myelectron->get_mycoulomb();
@@ -940,6 +1383,56 @@ public:
       mypsp->v_local_euv(dng1,vc,tstress);
    }
 
+   /*******************************************
+    *                                         *
+    *      psi_1nonlocal_stress  (member)     *
+    *                                         *
+    *******************************************/
+   /**
+    * @brief Add the nonlocal pseudopotential contribution to the total
+    *        stress tensor.
+    *
+    * The stress has two pieces:
+    *
+    *  - The explicit strain dependence of the nonlocal projectors,
+    *    computed by @c CPseudopotential::v_nonlocal_euv, which
+    *    accumulates into @p tstress directly (row-major,
+    *    @c tstress[u+3*v]).
+    *
+    *  - An isotropic correction
+    *    @f[
+    *       \sigma_{uv}^{\mathrm{iso}} = -E_{nl} \, h_{uv}
+    *    @f]
+    *    where @f$E_{nl}@f$ is the average nonlocal energy
+    *    (@c vnl_ave) and @f$h_{uv} = \frac{1}{2\pi} u_{uv}@f$ is the
+    *    reciprocal metric.
+    *
+    * @param[in,out] tstress  Total 3x3 stress tensor, row-major
+    *                         (tstress[u+3*v]).  On entry it holds the
+    *                         accumulated stress from other
+    *                         contributions; on exit the nonlocal
+    *                         pseudopotential piece has been added.
+    *
+    * @note @c hm is the reciprocal metric, not the identity.  The
+    *       isotropic term @f$-E_{nl}\,h_{uv}@f$ is correct for the
+    *       same reason as in @c rho_1xc_stress and
+    *       @c cCoulomb_Operator::euv: the metric carries the
+    *       reciprocal basis, and the textbook @f$\delta_{uv}@f$ form
+    *       only applies in Cartesian coordinates.
+    * @note @c v_nonlocal_euv already applies the band and k-point
+    *       reductions internally.  Do not add an outer
+    *       @c Vector_SumAll around this call, or the nonlocal piece
+    *       will be counted multiple times.
+    * @note If the pseudopotential has no projectors
+    *       (@c nprj[ia] == 0 for all @c ia), @c v_nonlocal_euv is a
+    *       no-op for the projector sum, but @c vnl_ave is still
+    *       expected to return zero.  In that case only the isotropic
+    *       correction is skipped trivially.
+    *
+    * @see CPseudopotential::v_nonlocal_euv
+    * @see cCoulomb_Operator::euv
+    * @see rho_1xc_stress
+    */
    void psi_1nonlocal_stress(double *tstress)
    {
       mypsp->v_nonlocal_euv(psi1,tstress,occ1);
@@ -961,6 +1454,53 @@ public:
    }
 
 
+   /*******************************************
+    *                                         *
+    *     dng_1coulomb_stress    (member)     *
+    *                                         *
+    *******************************************/
+   /**
+    * @brief Add the Coulomb (Hartree) contribution to the total stress
+    *        tensor.
+    *
+    * Forwarding wrapper for @c cCoulomb_Operator::euv.  Accumulates
+    * the stress arising from the long-range electron-electron Coulomb
+    * interaction, computed in reciprocal space from the total density
+    * @c dng1, into the caller-owned total stress array.
+    *
+    * @param[in,out] tstress  Total 3x3 stress tensor, row-major
+    *                         (tstress[u+3*v]).  On entry it holds the
+    *                         accumulated stress from other
+    *                         contributions; on exit the Coulomb piece
+    *                         has been added.
+    *
+    * @note The physics lives in @c cCoulomb_Operator::euv, which
+    *       evaluates
+    *       @f[
+    *          \sigma_{uv}^{\mathrm{coul}}
+    *             = -E_{\mathrm{coul}}\,h_{uv}
+    *             + \sum_s B_{us}\,h_{sv}
+    *       @f]
+    *       where @f$E_{\mathrm{coul}}@f$ is the Hartree energy,
+    *       @f$B_{us} = \frac{\omega}{4\pi}\sum_G \tilde n_G^2 G_u G_s@f$
+    *       is the reciprocal-space density-weighted tensor, and
+    *       @f$h_{uv} = \frac{1}{2\pi}u_{uv}@f$ is the reciprocal
+    *       metric.  This wrapper keeps the density layer (@c rho)
+    *       independent of the Coulomb operator class.
+    * @note @c euv performs its own MPI reduction over the G-vector
+    *       set via @c CGrid::rrr_pack_MulDot.  Do not add an outer
+    *       @c Vector_SumAll around this call, or the Coulomb piece
+    *       will be counted multiple times.
+    * @note @c hm in @c cCoulomb_Operator::euv is the reciprocal
+    *       metric, not the identity; see the documentation of
+    *       @c cCoulomb_Operator::euv for why
+    *       @f$-E_{\mathrm{coul}}\,h_{uv}@f$ is correct even though
+    *       the textbook form uses @f$\delta_{uv}@f$.
+    *
+    * @see cCoulomb_Operator::euv
+    * @see CGrid::crr_pack_SqrMul2
+    * @see CGrid::rrr_pack_MulDot
+    */
    void dng_1coulomb_stress(double *tstress)
    {
       auto mycoul = myelectron->get_mycoulomb();
@@ -968,6 +1508,50 @@ public:
    }
 
 
+   /*******************************************
+    *                                         *
+    *        rho_1xc_stress   (member)        *
+    *                                         *
+    *******************************************/
+   /**
+    * @brief Add the exchange-correlation contribution to the total
+    *        stress tensor.
+    *
+    * Two pieces are added to @p tstress:
+    *
+    *  - An isotropic LDA piece built from the difference between the
+    *    XC energy density @c exc and the XC potential @c pxc:
+    *    @f[
+    *       \sigma_{uv}^{\mathrm{LDA}} = (E_{xc} - V_{xc}) \, h_{uv}
+    *    @f]
+    *    with @f$h_{uv} = \frac{1}{2\pi} u_{uv}@f$ the reciprocal
+    *    metric.
+    *
+    *  - A GGA piece computed by @c XC::v_exc_euv when
+    *    @c myxc->gga_on() is true, added to @p tstress element-wise.
+    *
+    * @param[in,out] tstress  Total 3x3 stress tensor, row-major
+    *                         (tstress[u+3*v]).  On entry it holds the
+    *                         accumulated stress from other
+    *                         contributions; on exit the XC piece has
+    *                         been added.
+    *
+    * @note @c hm is the reciprocal metric, not the identity.  The
+    *       isotropic term @f$(E_{xc} - V_{xc})\,h_{uv}@f$ is correct;
+    *       the standard textbook form uses @f$\delta_{uv}@f$ only
+    *       because it works in Cartesian coordinates where the metric
+    *       is the identity.  Here the metric carries the reciprocal
+    *       basis, exactly as in @c cCoulomb_Operator::euv.
+    * @note When @c myxc->gga_on() is false, only the LDA term is
+    *       added; the GGA block is skipped.
+    * @note The GGA contribution is accumulated into a temporary
+    *       @c tstress2 and then added, so the LDA piece is not
+    *       overwritten by @c v_exc_euv.
+    *
+    * @see Electron::get_myxc
+    * @see XC::v_exc_euv
+    * @see CPseudopotential::semicore_xc_euv
+    */
    void rho_1xc_stress(double *tstress)
    {
       double exc0 = exc();
@@ -992,24 +1576,89 @@ public:
       if (myxc->gga_on())
       {  
          double tstress2[9] = {0};
-         //myxc->v_exc_euv(ispin,rho1_all,tstress2);
+         myxc->v_exc_euv(ispin,rho1_all,tstress2);
    
          for (auto uv=0; uv<9; ++uv)
             tstress[uv] += tstress2[uv];
       }
    }  
 
+   /*******************************************
+    *                                         *
+    *   rho_1semicore_stress  (member)        *
+    *                                         *
+    *******************************************/
+   /**
+    * @brief Add the semicore exchange-correlation contribution to the
+    *        total stress tensor.
+    *
+    * Forwarding wrapper for @c Electron::semicore_xc_stress.  Accumulates
+    * the stress arising from the exchange-correlation interaction of the
+    * semicore (nonlinear core correction) density with the Kohn-Sham XC
+    * potential into the caller-owned total stress array.
+    *
+    * @param[in,out] tstress  Total 3x3 stress tensor, row-major
+    *                         (tstress[u+3*v]).  On entry it holds the
+    *                         accumulated stress from other contributions;
+    *                         on exit the semicore XC piece has been added.
+    *
+    * @note No-op if the pseudopotential has no semicore states; @p tstress
+    *       is then left unchanged.
+    * @note The physics lives in @c Electron::semicore_xc_stress, which in
+    *       turn calls @c CPseudopotential::semicore_xc_euv.  This wrapper
+    *       keeps the density layer (@c rho) independent of the
+    *       pseudopotential class.
+    *
+    * @see Electron::semicore_xc_stress
+    * @see CPseudopotential::semicore_xc_euv
+    */
    void rho_1semicore_stress(double *tstress)
    {  
-      //myelectron->semicore_xc_stress(tstress);                                 
+      myelectron->semicore_xc_stress(tstress);                                 
    }  
 
+
+   /*******************************************
+    *                                         *
+    *        ewald_stress  (member)           *
+    *                                         *
+    *******************************************/
+    /**
+     * @brief Add the Ewald (long-range ion-ion) contribution to the total
+     *        stress tensor.
+     *
+     * Forwarding wrapper for @c Ewald::stress.  Accumulates the stress
+     * arising from the periodic Ewald summation of the ion-ion Coulomb
+     * interaction into the caller-owned total stress array.
+     *
+     * @param[in,out] tstress  Total 3x3 stress tensor, row-major
+     *                         (tstress[u+3*v]).  On entry it holds the
+     *                         accumulated stress from other contributions;
+     *                         on exit the Ewald piece has been added.
+     *
+     * @note The physics lives in @c Ewald::stress, which handles the
+     *       reciprocal-space sum, the real-space sum, and the self-energy
+     *       correction.  This wrapper keeps the calling layer independent
+     *       of the Ewald class.
+     * @note The Ewald stress includes both the explicit dependence on the
+     *       Ewald parameter and the implicit dependence through the ion
+     *       positions.  It does not include the electron-ion or
+     *       electron-electron contributions, which are added separately.
+     *
+     * @see Ewald::stress
+     */
    void ewald_stress(double *tstress)
    {  
        myewald->stress(tstress);
    }  
    
 
+
+   /*******************************************
+    *                                         *
+    *        print_virtual (member)           *
+    *                                         *
+    *******************************************/
    std::string print_virtual() 
    {
       std::stringstream stream;
