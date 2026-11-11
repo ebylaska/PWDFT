@@ -8,6 +8,7 @@
 //
 #include "Parallel.hpp"
 #include "iofmt.hpp"
+#include "util_cell.hpp"
 #include "util_linesearch.hpp"
 #include "Control2.hpp"
 #include "Ewald.hpp"
@@ -663,7 +664,7 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
    rtdbjson["band"]["eigenvalues"] = mysolid.eig_vector();
 
    // calculate fion
-   if (flag == 2) 
+   if ((flag == 2) || (flag==11))
    {
       // double *fion = new double[3*myion.nion];
       double fion[3*myion.nion];
@@ -684,6 +685,119 @@ int band_minimizer(MPI_Comm comm_world0, std::string &rtdbstring, std::ostream &
      
       // delete [] fion;
    }  
+
+
+
+
+   // calculate stress
+   if ((flag == 10) || (flag==11))
+   {
+      // --- 1. Data Initialization ---
+      double stress[9] = {0.0};
+      double stress_sym[9] = {0.0};
+      double lstress[6] = {0.0};
+      double sigma[9]  = {0.0};
+      double trace = 0.0;
+      double pressure_au = 0.0;
+      double sum_sq = 0.0;
+      double normS = 0.0;
+
+      // Conversion constants
+      const double au_to_gpa   = 2941.46;
+      const double gpa_to_mbar = 0.01;
+      const double gpa_to_atm  = 9869.23;
+
+      // --- 2. Computation ---
+      band_cgsd_energy_stress(mysolid, stress, hprint, coutput);
+      mysolid.myion->symmetrize_stress(stress, stress_sym);
+      util_cell_lattice_gradient(stress_sym, mylattice.unita_ptr(), lstress);
+
+      // Transform stress: sigma = -1/Omega * (Stress * Unita)
+      double scal = -1.0 / mylattice.omega();
+      for (int v = 0; v < 3; ++v) {        // Column index (Fortran order)
+          for (int u = 0; u < 3; ++u) {    // Row index
+              double sum = 0.0;
+              for (int s = 0; s < 3; ++s) { // Summation index
+                  sum += stress_sym[u + 3*s] * mylattice.unita(s, v);
+              }
+              sigma[u + 3*v] = scal * sum;
+          }
+      }
+
+
+      if (lprint) 
+      {
+         // --- 3. Printing Logic (Encapsulated to prevent duplication) ---
+         // This lambda handles the repetitive task of printing tensors and their physics
+         auto print_tensor_stats = [&](const std::string& label, const double* Acol) {
+             coutput << "\n == " << label << " ==" << std::endl << std::endl;
+             coutput << "     =========  tensor (au)  =========" << std::endl;
+  
+             // Column-major storage: A(i,j) is Acol[i + 3*j]
+             auto A = [&](int i, int j) -> double { return Acol[i + 3*j]; };
+  
+             // Print as rows (i) and columns (j)
+             for (int i = 0; i < 3; ++i) {
+                 coutput << (i == 0 ? " S =  ( " : "      ( ");
+                 for (int j = 0; j < 3; ++j) {
+                     coutput << Ffmt(10, 5) << A(i, j) << " ";
+                 }
+                 coutput << ")" << std::endl;
+             }
+             coutput << "     =====================================" << std::endl;
+  
+             // Frobenius norm: independent of layout, can sum raw storage
+             double s_sq = 0.0;
+             for (int k = 0; k < 9; ++k) s_sq += Acol[k] * Acol[k];
+             double norm = std::sqrt(s_sq);
+  
+             // Trace: same indices for both layouts in 3x3 flat (0,4,8)
+             double tr = Acol[0] + Acol[4] + Acol[8];
+             double pres = tr / 3.0;
+  
+             coutput << "     |S|      = " << norm << std::endl;
+             coutput << "     pressure = " << pres << " au" << std::endl;
+             coutput << "              = " << (pres * au_to_gpa * gpa_to_mbar) << " Mbar" << std::endl;
+             coutput << "              = " << (pres * au_to_gpa) << " GPa" << std::endl;
+             coutput << "              = " << (pres * au_to_gpa * gpa_to_atm) << " atm" << std::endl;
+         };
+
+         // --- 4. Execution of Prints ---
+         coutput << std::scientific << std::setprecision(5);
+
+         // Print Primary Stress
+         print_tensor_stats("Total Stress", stress);
+         print_tensor_stats("Total Symmetrize Stress", stress_sym);
+       
+         // Print Lattice Derivatives (L-Stress)
+         coutput << "\n == Lattice Energy Derivatives ==" << std::endl;
+         coutput << Ffmt(11, 5);
+         coutput << " dE/da     = " << lstress[0] << "\n";
+         coutput << " dE/db     = " << lstress[1] << "\n";
+         coutput << " dE/dc     = " << lstress[2] << "\n";
+         coutput << " dE/dalpha = " << lstress[3] << "\n";
+         coutput << " dE/dbeta  = " << lstress[4] << "\n";
+         coutput << " dE/dgamma = " << lstress[5] << "\n";
+
+         // Print Transformed (Internal) Stress
+         print_tensor_stats("Internal Symmetrized Stress (Transformed)", sigma);
+    
+         coutput << std::endl;
+      }
+
+      rtdbjson["pspw"]["stress"]     = std::vector<double>(stress, stress+9);
+      rtdbjson["pspw"]["stress_sym"] = std::vector<double>(stress_sym, stress_sym+9);
+      rtdbjson["pspw"]["lstress"]    = std::vector<double>(lstress, lstress+6);
+
+      rtdbjson["driver"]["numerical_grid"]["nx"] = mygrid.nx;
+      rtdbjson["driver"]["numerical_grid"]["ny"] = mygrid.ny;
+      rtdbjson["driver"]["numerical_grid"]["nz"] = mygrid.nz;
+      rtdbjson["driver"]["numerical_grid"]["nwave0"] = mygrid.npack_all(0);
+      rtdbjson["driver"]["numerical_grid"]["nwave1"] = mygrid.npack_all(1);
+      rtdbjson["driver"]["numerical_grid"]["npack0"] = mygrid.npack(0);
+      rtdbjson["driver"]["numerical_grid"]["npack1"] = mygrid.npack(1);
+   }
+
 
 
    // calculate excited state orbitals 

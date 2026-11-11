@@ -10,6 +10,8 @@ namespace pwdft {
 extern double band_cgsd_noit_energy(Solid &, bool, std::ostream &);
 extern double band_cgsd_energy(Control2 &, Solid &, bool, std::ostream &);
 extern void band_cgsd_energy_gradient(Solid &, double *);
+extern void band_cgsd_energy_stress(Solid &, double *, bool, std::ostream &);
+
 
 } // namespace pwdft
 #endif
