@@ -348,13 +348,13 @@ void v_cwexc(const int gga, Cneb *mycneb,  cvdw_DF *vdw, const double *dn,
 
 
 /********************************
- *				                    *
+ *                              *
  *         v_cwexc_euv          *
  *                              *
  ********************************/
 void v_cwexc_euv(const int gga, Cneb *mycneb, cvdw_DF *vdw,  const double *dn,
-             const double x_parameter, const double c_parameter,
-             double *stress)
+                const double x_parameter, const double c_parameter,
+                double *stress)
 {
 
    constexpr double pi     = units::PI;
@@ -364,6 +364,7 @@ void v_cwexc_euv(const int gga, Cneb *mycneb, cvdw_DF *vdw,  const double *dn,
    const size_t n2ft3d = mycneb->n2ft3d;
    const double scal1 = 1.0 / ((double)((mycneb->nx) * (mycneb->ny) * (mycneb->nz)));
    const double omega = mycneb->lattice->omega();
+   std::cout << "N2FT3d/NFFT3d  = " << mycneb->n2ft3d << " " << mycneb->nfft3d << std::endl;
 
    // define hm
    double hm[9];
@@ -413,7 +414,7 @@ void v_cwexc_euv(const int gga, Cneb *mycneb, cvdw_DF *vdw,  const double *dn,
       /*ccalculate rho tmp1=rho(g) */
       mycneb->rr_copy(dn, rho);
       mycneb->rr_Sum(dn, rho);
-      mycneb->rr_SMul(scal1, rho, rhog);
+      mycneb->rc_SMul(scal1, rho, rhog);
       mycneb->rc_fft3d(rhog);
       mycneb->c_pack(0, rhog);
 
@@ -429,10 +430,11 @@ void v_cwexc_euv(const int gga, Cneb *mycneb, cvdw_DF *vdw,  const double *dn,
       mycneb->cr_fft3d(grz);
 
       /* calculate agr = |grad n| */
-      mycneb->rr_sqr(grx, agr);
-      mycneb->rr_addsqr(gry, agr);
-      mycneb->rr_addsqr(grz, agr);
+      mycneb->cr_sqr(grx, agr);
+      mycneb->cr_addsqr(gry, agr);
+      mycneb->cr_addsqr(grz, agr);
       mycneb->r_sqrt(agr);
+
 
       switch (gga) {
       case 10:
@@ -480,16 +482,16 @@ void v_cwexc_euv(const int gga, Cneb *mycneb, cvdw_DF *vdw,  const double *dn,
       }
 
       /* calculate df/d|grad n| *(grad n)/|grad n| */
-      mycneb->rr_Divide(agr, grx);
-      mycneb->rr_Divide(agr, gry);
-      mycneb->rr_Divide(agr, grz);
-      mycneb->rr_Mul(fdn, grx);
-      mycneb->rr_Mul(fdn, gry);
-      mycneb->rr_Mul(fdn, grz);
+      mycneb->rc_Divide(agr, grx);
+      mycneb->rc_Divide(agr, gry);
+      mycneb->rc_Divide(agr, grz);
+      mycneb->rc_Mul(fdn, grx);
+      mycneb->rc_Mul(fdn, gry);
+      mycneb->rc_Mul(fdn, grz);
 
-      mycneb->r_SMul(scal1, grx);
-      mycneb->r_SMul(scal1, gry);
-      mycneb->r_SMul(scal1, grz);
+      mycneb->c_SMul(scal1, grx);
+      mycneb->c_SMul(scal1, gry);
+      mycneb->c_SMul(scal1, grz);
 
       mycneb->rc_fft3d(grx);
       mycneb->rc_fft3d(gry);
@@ -591,7 +593,7 @@ void v_cwexc_euv(const int gga, Cneb *mycneb, cvdw_DF *vdw,  const double *dn,
 
       //***** calculate rhoup  ****
       mycneb->rr_copy(dn, rhoup);
-      mycneb->rr_SMul(scal1, rhoup, rhoupg);
+      mycneb->rc_SMul(scal1, rhoup, rhoupg);
       mycneb->rc_fft3d(rhoupg);
       mycneb->c_pack(0, rhoupg);
 
@@ -607,9 +609,9 @@ void v_cwexc_euv(const int gga, Cneb *mycneb, cvdw_DF *vdw,  const double *dn,
       mycneb->cr_fft3d(grupz);
 
       //***** calculate agrup = |grad nup| ****
-      mycneb->rr_sqr(grupx, agrup);
-      mycneb->rr_addsqr(grupy, agrup);
-      mycneb->rr_addsqr(grupz, agrup);
+      mycneb->cr_sqr(grupx, agrup);
+      mycneb->cr_addsqr(grupy, agrup);
+      mycneb->cr_addsqr(grupz, agrup);
       mycneb->r_sqrt(agrup);
 
       //***** calculate rhodn  ****
@@ -630,9 +632,9 @@ void v_cwexc_euv(const int gga, Cneb *mycneb, cvdw_DF *vdw,  const double *dn,
       mycneb->cr_fft3d(grdnz);
 
       //***** calculate agrdn = |grad ndn| ****
-      mycneb->rr_sqr(grdnx, agrdn);
-      mycneb->rr_addsqr(grdny, agrdn);
-      mycneb->rr_addsqr(grdnz, agrdn);
+      mycneb->cr_sqr(grdnx, agrdn);
+      mycneb->cr_addsqr(grdny, agrdn);
+      mycneb->cr_addsqr(grdnz, agrdn);
       mycneb->r_sqrt(agrdn);
 
       //***** calculate agr = |grad nup +grad ndn| ****
@@ -715,12 +717,12 @@ void v_cwexc_euv(const int gga, Cneb *mycneb, cvdw_DF *vdw,  const double *dn,
       mycneb->rr_Sum(grally, grdny);
       mycneb->rr_Sum(grallz, grdnz);
 
-      mycneb->r_SMul(scal1, grupx);
-      mycneb->r_SMul(scal1, grupy);
-      mycneb->r_SMul(scal1, grupz);
-      mycneb->r_SMul(scal1, grdnx);
-      mycneb->r_SMul(scal1, grdny);
-      mycneb->r_SMul(scal1, grdnz);
+      mycneb->c_SMul(scal1, grupx);
+      mycneb->c_SMul(scal1, grupy);
+      mycneb->c_SMul(scal1, grupz);
+      mycneb->c_SMul(scal1, grdnx);
+      mycneb->c_SMul(scal1, grdny);
+      mycneb->c_SMul(scal1, grdnz);
 
       /* put sums by G-space */
       mycneb->rc_fft3d(grupx);

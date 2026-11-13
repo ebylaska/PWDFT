@@ -1032,7 +1032,6 @@ public:
     *
     * @see Electron::vl_force
     * @see psi_1nonlocal_force
-    * @see dng_1local_stress
     */
    void psi_1local_force(double *grad_ion) {
       myelectron->vl_force(dng1, grad_ion);
@@ -1378,6 +1377,7 @@ public:
     */
    void dng_1local_stress(double *tstress)
    {
+      std::cout << "IN DNG_1local_stess!!!!!!" << std::endl;
       auto mycoul = myelectron->get_mycoulomb();
       double *vc = mycoul->get_vc();
       mypsp->v_local_euv(dng1,vc,tstress);

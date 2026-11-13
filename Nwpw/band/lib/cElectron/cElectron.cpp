@@ -722,7 +722,6 @@ double cElectron_Operators::exc(double *dnall)
  ********************************************/
 double cElectron_Operators::pxc(double *dn, double *psi) 
 {
-   std::cout << "FERA" << std::endl;
    double pxcsum = mygrid->rr_dot(dn, xcp);
    if (ispin==1) 
    {
@@ -733,12 +732,14 @@ double cElectron_Operators::pxc(double *dn, double *psi)
       pxcsum += mygrid->rr_dot(dn+nfft3d, xcp+nfft3d);
    }
    pxcsum *= dv;
+   std::cout << "FERA pxcsum=" << pxcsum << std::endl;
 
    // meta_GGA energy
    if (myxc->meta_gga_on())
    {
       pxcsum +=  myxc->meta_gga_pxc(ispin, mygrid->neq, psi);
    }
+   std::cout << "FERA2 pxcsum=" << pxcsum << std::endl;
 
 
  

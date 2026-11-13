@@ -4082,6 +4082,11 @@ void Pseudopotential::v_nonlocal_euv(const double *psi, double *stress, double *
          }
          mypneb->cc_pack_inprjdot(1, nn, nprj[ia], const_cast<double*>(psi), prjtmp, sw1);
 
+         std::cout << "ii=" << ii << " ia=" << ia << " sw1: ";
+         for (auto q=0; q<(nn*nprj[ia]); ++q)
+             std::cout << sw1[q] << " ";
+         std::cout << std::endl << std::endl;
+
          // sw2 = Gijl*sw1 
          Multiply_Gijl_sw1(nn, nprj[ia], nmax[ia], lmax[ia], n_projector[ia],
                             l_projector[ia], m_projector[ia], Gijl[ia],

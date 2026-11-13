@@ -1123,6 +1123,7 @@ int main(int argc, char *argv[]) {
            std::cout << std::endl
                      << "Running band energy calculation - rtdbstr = " << rtdbstr
                      << std::endl
+                     << "TASK=" << task 
                      << std::endl;
         MPI_Barrier(MPI_COMM_WORLD);
         ierr += pwdft::band_minimizer(MPI_COMM_WORLD, rtdbstr, std::cout);

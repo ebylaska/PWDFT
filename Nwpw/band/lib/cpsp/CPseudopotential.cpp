@@ -1662,7 +1662,7 @@ static void cpp2_write(CGrid *mygrid, char *fname2, char *comment, int psp_type,
 static void cpp2_generate(// input
                           CGrid* mygrid, 
                           char* pspname,
-                          char* fname2,     // <-- *.vpp2
+                          char* fname2,     // <-- *.cpp2
                           int psp_type,
                           int version,
                           int nfft[3],
@@ -2072,6 +2072,7 @@ CPseudopotential::CPseudopotential(Ion *myionin, Cneb *mycnebin,
 
    if (need_stress)
    {
+      stressexist = need_stress;
       double *dvnl_ptr, *dncore_ptr;;
 
       dvl  = new (std::nothrow) double *[npsp]();
@@ -3889,6 +3890,7 @@ void CPseudopotential::v_local_euv(const double *dng, const double *vc, double *
    double fion[3];
    this->v_local(vl, false, dng, fion);
    const double elocal = mycneb->cc_pack_dot(0, const_cast<double*>(dng), vl);
+   std::cout << "ELOCAL =" << elocal << std::endl;
 
    const double *g_segments[3] = {
       mycneb->Gpackxyz(0, 0),
@@ -3927,12 +3929,13 @@ void CPseudopotential::v_local_euv(const double *dng, const double *vc, double *
    for (int v=0; v<3; ++v)
    for (int u=0; u<3; ++u)
    {
-      double e = -elocal * hm[u + 3*v];
+      double e = -elocal * hm[u+3*v];
       for (int s=0; s<3; ++s)
          e += Bus[u+3*s] * hm[s+3*v];
       stress[u+3*v] = e;
    }
 }
+
 
 
 /*******************************************
@@ -3980,7 +3983,7 @@ void CPseudopotential::v_nonlocal_euv(const double *psi, double *stress, double 
    const int    ispin   = mycneb->ispin;
    const int    nbrillq = mycneb->nbrillq;
    const int    nshift0 = mycneb->npack1_max();
-   const int    nshift  = 2 * nshift0;
+   const int    nshift  = 2*nshift0;
    const double omega   = mycneb->lattice->omega();
    const double scal2   = 1.0 / omega;
 
@@ -3997,9 +4000,9 @@ void CPseudopotential::v_nonlocal_euv(const double *psi, double *stress, double 
    double *exi    = exi_vec.data();
    double *prjtmp = prjtmp_vec.data();
    double *tmp2   = tmp2_vec.data();
-   double *zsw1    = zsw1_vec.data();
-   double *zsw2    = zsw2_vec.data();
-   double *zsw3    = zsw3_vec.data();
+   double *zsw1   = zsw1_vec.data();
+   double *zsw2   = zsw2_vec.data();
+   double *zsw3   = zsw3_vec.data();
 
    double hm[9];
    for (int j=0; j<3; ++j)
@@ -4008,10 +4011,10 @@ void CPseudopotential::v_nonlocal_euv(const double *psi, double *stress, double 
 
    std::array<double, 9> Bus{};
 
-   for (int nbq = 0; nbq < nbrillq; ++nbq)
+   for (int nbq=0; nbq<nbrillq; ++nbq)
    {
-      const int nbq1  = nbq + 1;
-      const int npack1 = mycneb->npack(nbq1);
+      const int nbq1        = nbq + 1;
+      const int npack1      = mycneb->npack(nbq1);
       const double weight_k = mycneb->pbrill_weight(nbq);
 
       // G-vectors for this k-point (1-based index into CGrid)
@@ -4021,7 +4024,7 @@ void CPseudopotential::v_nonlocal_euv(const double *psi, double *stress, double 
          mycneb->Gpackxyz(nbq1, 2)
       };
 
-      const double *psi_k = psi + nbq * nshift * nn;
+      const double *psi_k = psi + nbq*nshift*nn;
 
       for (int ii = 0; ii < myion->nion; ++ii)
       {
@@ -4031,20 +4034,25 @@ void CPseudopotential::v_nonlocal_euv(const double *psi, double *stress, double 
          mystrfac->strfac_pack_cxr(nbq1, nbq, ii, exi);
 
          // ---- prjtmp(l) = vnl(nbq, l) * exi ----
-         for (int l = 0; l < nprj[ia]; ++l)
+         for (int l=0; l<nprj[ia]; ++l)
          {
             const bool sd_function = !(l_projector[ia][l] & 1);
             double *prj   = prjtmp + l * nshift;
             double *vnlprj = vnl[ia] + (l + nbq * nprj[ia]) * nshift0;
             if (sd_function)
-               mycneb->tcc_pack_Mul(nbq1, vnlprj, exi, prj);
+               mycneb->tcc_pack_Mul(nbq1,vnlprj,exi,prj);
             else
-               mycneb->tcc_pack_iMul(nbq1, vnlprj, exi, prj);
+               mycneb->tcc_pack_iMul(nbq1,vnlprj,exi,prj);
          }
 
          // ---- zsw1(l, n) = <psi_n | prj_l> ----
          mycneb->cc_pack_inprjzdot(nbq1, nn, nprj[ia], const_cast<double*>(psi_k), prjtmp, zsw1);
-         mycneb->c3db::parall->Vector_SumAll(1, 2 * nn * nprj[ia], zsw1);
+         mycneb->c3db::parall->Vector_SumAll(1, 2*nn*nprj[ia], zsw1);
+
+         std::cout << "ii=" << ii << " ia=" << ia << " zsw1: ";
+         for (auto q=0; q<(2*nn*nprj[ia]); ++q)
+             std::cout << zsw1[q] << " ";
+         std::cout << std::endl << std::endl;
 
          // ---- sw2 = Gijl * sw1 ----
          Multiply_Gijl_zsw1(nn, nprj[ia], nmax[ia], lmax[ia],
@@ -4052,7 +4060,7 @@ void CPseudopotential::v_nonlocal_euv(const double *psi, double *stress, double 
                             Gijl[ia], zsw1, zsw2);
 
          // ---- dF/dhus and Bus accumulation ----
-         for (int l = 0; l < nprj[ia]; ++l)
+         for (int l=0; l<nprj[ia]; ++l)
          {
             const bool sd_function = !(l_projector[ia][l] & 1);
 
@@ -4060,9 +4068,7 @@ void CPseudopotential::v_nonlocal_euv(const double *psi, double *stress, double 
                for (int u=0; u<3; ++u)
                {
                   // dvnl layout: (nbq, 3*l+s, G)
-                  const double *dvnlprj =
-                     dvnl[ia] + nbq * (3 * nprj[ia] * nshift0)
-                              + (3 * l + s) * nshift0;
+                  const double *dvnlprj = dvnl[ia] + nbq*(3*nprj[ia]*nshift0) + (3 * l + s)*nshift0;
 
                   // tmp2 = dvnlprj * G_u
                   mycneb->rrr_pack_Mul(nbq1, dvnlprj,
@@ -4072,9 +4078,9 @@ void CPseudopotential::v_nonlocal_euv(const double *psi, double *stress, double 
                   double *prj = prjtmp + u * nprj[ia] * nshift
                                        + s * 3 * nprj[ia] * nshift;
                   if (sd_function)
-                     mycneb->tcc_pack_Mul(nbq1, tmp2, exi, prj);
+                     mycneb->tcc_pack_Mul(nbq1,tmp2,exi,prj);
                   else
-                     mycneb->tcc_pack_iMul(nbq1, tmp2, exi, prj);
+                     mycneb->tcc_pack_iMul(nbq1,tmp2,exi,prj);
 
                   // sw3(u, s) = <psi | prj>  (complex-packed into sw3)
                   mycneb->cc_pack_nzdot(nbq1, nn,
@@ -4109,6 +4115,9 @@ void CPseudopotential::v_nonlocal_euv(const double *psi, double *stress, double 
          }
       }
    }
+
+// after the nbq loop, before the final stress computation
+//c3db::parall->Vector_SumAll(2, 9, Bus.data());
 
    for (int v=0; v<3; ++v)
    for (int u=0; u<3; ++u)

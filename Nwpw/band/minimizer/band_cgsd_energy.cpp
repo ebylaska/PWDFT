@@ -802,6 +802,7 @@ void band_cgsd_energy_stress(Solid &mysolid, double *stress, bool doprint, std::
        decoration += std::string(pad_left, ' ') + std::string(name);
        // Note: We adjust padding to ensure we stay within a reasonable visual width
        
+       coutput <<  "     -----    component from band     -----";
        coutput << "\n" << decoration << "   =====" << std::endl;
  
        // 4. Print the Matrix Rows
@@ -840,6 +841,7 @@ void band_cgsd_energy_stress(Solid &mysolid, double *stress, bool doprint, std::
 
    //**** Local pseudo energy component : dE_local/dhuv ****
    std::memset(tstress,0.0,9*sizeof(double));
+   std::cout << "INTO dng_1local_stress!!!!" << std::endl;
    mysolid.dng_1local_stress(tstress);
    if (oprint) print_stress_array(" local psp stress (au)  ", tstress);
    accumulate(tstress);
@@ -885,8 +887,6 @@ void band_cgsd_energy_stress(Solid &mysolid, double *stress, bool doprint, std::
    //**** Dispersion energy component : dE_disp/dhuv ****
    //mymolecule.ion_disp_stress(tstress);
    //accumulate(tstress);
-
-
 
 
 }

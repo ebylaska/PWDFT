@@ -13,9 +13,9 @@ charge 0
 
 geometry noautoz nocenter noautosym
    system crystal
-      lat_a 3.658
-      lat_b 3.658
-      lat_c 3.658
+      lat_a 3.758
+      lat_b 3.758
+      lat_c 3.758
       alpha 90.0
       beta  90.0
       gamma 90.0
@@ -37,6 +37,7 @@ nwpw
   includestress
   tolerances 1.0e-9 1.0e-9
 end
+print high 
 task pspw stress
  
  
@@ -47,7 +48,7 @@ driver
 end
 
 
-task pspw relax
+#task pspw relax
 
 
  
